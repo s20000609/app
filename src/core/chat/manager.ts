@@ -74,6 +74,7 @@ export async function continueConversation(params: {
   swapPlaces?: boolean;
   stream?: boolean;
   requestId?: string;
+  keyMemories?: MemoryEmbedding[] | null;
 }): Promise<ChatContinueResult> {
   const {
     sessionId,
@@ -82,6 +83,7 @@ export async function continueConversation(params: {
     swapPlaces = false,
     stream = true,
     requestId,
+    keyMemories,
   } = params;
 
   return invoke<ChatContinueResult>("chat_continue", {
@@ -92,6 +94,8 @@ export async function continueConversation(params: {
       swapPlaces,
       stream,
       requestId: requestId ?? null,
+      keyMemoriesJson:
+        keyMemories != null && keyMemories.length > 0 ? JSON.stringify(keyMemories) : null,
     },
   });
 }
@@ -102,8 +106,10 @@ export async function regenerateAssistantMessage(params: {
   swapPlaces?: boolean;
   stream?: boolean;
   requestId?: string;
+  keyMemories?: MemoryEmbedding[] | null;
 }): Promise<ChatRegenerateResult> {
-  const { sessionId, messageId, swapPlaces = false, stream = true, requestId } = params;
+  const { sessionId, messageId, swapPlaces = false, stream = true, requestId, keyMemories } =
+    params;
   return invoke<ChatRegenerateResult>("chat_regenerate", {
     args: {
       sessionId,
@@ -111,6 +117,8 @@ export async function regenerateAssistantMessage(params: {
       swapPlaces,
       stream,
       requestId: requestId ?? null,
+      keyMemoriesJson:
+        keyMemories != null && keyMemories.length > 0 ? JSON.stringify(keyMemories) : null,
     },
   });
 }

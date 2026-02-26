@@ -28,7 +28,7 @@
 | 項目 | 說明 |
 |------|------|
 | **儲存** | 在 Tauri iOS 上仍用後端 SQLite；前端用 **getSessionMemoriesFromTauri(sessionId)** 讀出該 session 的 memory_embeddings（`storage/repo.ts`）。 |
-| **發送前接線** | 在 **iOS** 上發送一般訊息時，前端會先呼叫 **getKeyMemoriesForRequest(sessionId, message, { getSessionMemories: getSessionMemoriesFromTauri, embeddingProvider: stubEmbeddingProvider })**，把回傳的 key memories 傳給後端；後端 **chat_completion** 接受可選參數 **keyMemoriesJson**，有值就用它當 relevant memories、不跑 ONNX。見 `chat/manager.ts`、`useChatController.ts`、Rust `ChatCompletionArgs.key_memories_json`。 |
+| **發送前接線** | 在 **iOS** 上：**發送訊息**、**Continue**、**Regenerate** 都會先呼叫 **getKeyMemoriesForRequest**，把 key memories 傳給後端；後端 **chat_completion**、**chat_continue**、**chat_regenerate** 皆接受可選 **keyMemoriesJson**，有值就用它當 relevant memories、不跑 ONNX。見 `chat/manager.ts`、`useChatController.ts`、Rust `ChatCompletionArgs` / `ChatContinueArgs` / `ChatRegenerateArgs.key_memories_json`。 |
 
 ### 還缺什麼（才能「在 iOS 上跑起來且有動態記憶」）
 
@@ -42,7 +42,22 @@
 ### 總結一句
 
 - **現在**：專案對 iOS 的「適配」= **Tauri 可編 iOS，但動態記憶在 iOS 上不會跑**（ONNX 被關掉）。
-- **我們多做的**：把 **prompt 組裝 + 記憶檢索 + 一鍵接線** 都做成 **純 TypeScript**，讓你在 **不依賴 Tauri 的 iOS 專案** 裡也能用同一套邏輯；你只要在 iOS 端補 **儲存**、**發送前接線**、最後 **CoreML**，就能在 iOS 上跑出動態記憶。
+- **我們多做的**：把 **prompt 組裝 + 記憶檢索 + 發送前接線** 都做好；iOS 上發送／Continue／Regenerate 會走 TS 檢索並傳 key memories 給後端，**不會因為 ONNX 沒跑而崩潰**。你只要在 **Mac 上建出 iOS**、再完成 **CoreML 轉換並接上 EmbeddingProvider**，就能在 iOS 上得到與 Android 同級的動態記憶體驗。
+
+---
+
+### 可以像 Android 那樣用嗎？
+
+**可以。** 前提是：**沒有其他 bug**，且 **ONNX 轉成 CoreML 並接好**。
+
+| 項目 | Android | iOS（完成 CoreML 後） |
+|------|--------|------------------------|
+| 聊天、角色、Session、世界書 | ✅ 同一套 | ✅ 同一套 |
+| 動態記憶 | ✅ 後端用 ONNX（`libonnxruntime.so`） | ✅ 前端 TS 檢索 + 你實作的 CoreML EmbeddingProvider |
+| 發送／Continue／Regenerate | ✅ 後端自己跑檢索 | ✅ 前端先算 key memories 再傳給後端，後端不跑 ONNX |
+
+也就是說：**功能上**可以像 Android 一樣用這個專案（含動態記憶）。差別只在「誰算 embedding」：Android 是 Rust + ONNX，iOS 是你在前端接的 CoreML。  
+實際在 iPhone 上跑，仍須在 **Mac 上**用 Tauri 建出 iOS app（或自建 RN／原生專案）；分發／側載／憑證等限制見下方「原開發者對 iOS 版的說明」。
 
 ---
 
@@ -117,7 +132,7 @@
 | **嵌入模型** | 在 Mac 上將現有 `.onnx` 轉成 **CoreML**，在 iOS 上用 CoreML 跑嵌入與向量檢索，取代 ONNX Runtime。 |
 | **Prompt 組裝** | 已將 Rust 的 prompt 邏輯移植到純 TypeScript（`src/core/prompts/PromptEngine.ts`），無 Tauri 依賴。  
    iOS 版可依同邏輯用 **Swift** 重寫，或暫時用輕量 JS 引擎跑同一套 TS，以保持行為一致。 |
-| **LLM 與串流** | 在 iOS 上改為用 **URLSession**（或類似）呼叫 OpenRouter/OpenAI 相容 API，自行處理 SSE 串流。 |
+| **LLM 與串流** | 見下方「需要自己打 OpenRouter API 嗎？」。 |
 
 ## 小結
 
@@ -162,3 +177,133 @@
 
 1. **在 Mac 上建出 Tauri iOS**：編譯產出 IPA，確認一般聊天與發送流程可跑；目前 iOS 上 key memories 會用 stub（空陣列），不會崩潰。  
 2. **轉 CoreML**：將 ONNX 嵌入模型轉成 CoreML，在 iOS 上實作 **EmbeddingProvider**（輸入文字 → CoreML 推理 → 回傳 `number[]`），在 `useChatController` 的 iOS 分支裡改用此 provider 取代 **stubEmbeddingProvider**，即完成動態記憶。
+
+---
+
+## ONNX 輸出格式與 CoreML 對齊（固定維度）
+
+### 現有 ONNX 嵌入模型 I/O（`src-tauri/src/embedding_model/`）
+
+| 項目 | 規格 |
+|------|------|
+| **輸出** | **固定**：`float32` 向量，長度 **512**（`EMBEDDING_DIM`）。若模型輸出為多個 512 的倍數，程式只取前 512（`inference.rs`）。 |
+| **輸入** | **可變長**：`input_ids`、`attention_mask`（及部分模型有 `token_type_ids`），形狀皆為 `[1, seq_len]`，`seq_len` 由實際 token 數決定，上限為 `max_seq_length`（v1 固定 512，v2/v3 可設 512～4096）。 |
+| **Tokenizer** | 與模型同捆的 `tokenizer.json`，需與 ONNX 同一套。 |
+
+### iOS / CoreML 為什麼偏好固定維度
+
+- **CoreML 與 Neural Engine (ANE)** 對固定形狀的圖做最佳化；**動態維度**常會走 CPU 或需要多個編譯版本，效能與相容性較差。
+- 實務上：轉成 CoreML 時把 **輸入序列長度固定**（例如 512），推論時一律 **pad／truncate 到該長度**，輸出就會是固定長度，可與現有 512 維對齊。
+
+### 與 CoreML 對齊做法
+
+| 項目 | 對齊方式 |
+|------|----------|
+| **輸出** | 已固定 512 維，CoreML 輸出型別設成 `[512]` 或 `[1, 512]` 即可，與現有 `MemoryEmbedding.embedding: number[]`（512 維）一致。 |
+| **輸入** | 轉換時將 ONNX 的 **輸入形狀固定**為 `[1, 512]`（或你選的單一 `max_seq_length`，建議先 512 與 v1 一致）。推論前在 iOS 上：用同一份 **tokenizer** 將文字轉成 token ids，再 **pad 或截斷到 512**，再送進 CoreML。 |
+| **Tokenizer** | 沿用現有 `tokenizer.json`（與 ONNX 同來源），在 iOS 上用相同 vocab 與 special tokens 做 encode；pad 時用該 tokenizer 的 pad token id（若無則用 0）。 |
+
+總結：**輸出本來就是固定 512，可直接對齊；輸入在轉 CoreML 時固定為單一 seq_len（例如 512），執行時 pad/truncate 到該長度**，即可兼顧 iOS 效能與現有 ONNX 行為。
+
+---
+
+## 需要自己打 OpenRouter API 與處理串流嗎？
+
+**若你走的是「Tauri 建 iOS」**：**不用**。  
+目前流程是：前端只負責 `invoke("chat_completion", ...)` 與 `listen("api-normalized://...")`；**真正打 OpenRouter（或其它 provider）API、發送請求、處理 SSE 串流**的都在 **Rust 後端**。Tauri iOS 建出來後，同一個後端會跑在裝置上，所以 API 與串流仍由後端處理，前端邏輯不用改，也不需要額外寫一支「打 OpenRouter + 串流」的模組。
+
+**若你之後做「完全不用 Tauri 的 iOS」（例如純 Swift 或 React Native）**：**要**。那時沒有 Rust 後端，就要自己實作呼叫 LLM API 與處理串流。專案裡 **`ios-reference/OpenRouterClient.swift`** 已有一份 Swift 版的 OpenRouter 客戶端（含串流）可當起點；若用 RN 或其它方案，再依需求用 TypeScript/JS 或原生封裝一套即可。
+
+---
+
+## CoreML 接好後，APP 是怎麼呼叫這個模組的？
+
+流程是單向的：**前端 → Tauri 命令 → 原生 CoreML → 回傳 embedding**，其餘檢索與組 prompt 都在前端既有 TS 裡完成。
+
+### 1. 誰在什麼時機呼叫
+
+- **發送一般訊息**、**Continue**、**Regenerate** 時，若 `getPlatform() === "ios"`，`useChatController` 會先呼叫：
+  - `getKeyMemoriesForRequest(sessionId, queryText, { getSessionMemories: getSessionMemoriesFromTauri, embeddingProvider: iosCoreMLEmbeddingProvider })`
+- `getKeyMemoriesForRequest` 內部會對「當前 query 文字」呼叫 **`embeddingProvider.computeEmbedding(queryText)`**；在 iOS 上這個 provider 就是 **`iosCoreMLEmbeddingProvider`**。
+
+### 2. iosCoreMLEmbeddingProvider 做什麼
+
+- 定義在 **`src/core/storage/repo.ts`**：
+  - `computeEmbedding(text)` → 呼叫 Tauri 命令 **`compute_embedding_ios`**，參數 `{ text }`，回傳 `Promise<number[]>`（512 維）。
+  - 若命令尚未實作或失敗，會 `.catch(() => [])`，行為等同 stub，不會崩潰。
+
+### 3. 你需要實作的「模組」（Tauri 側）
+
+- 在 Tauri iOS 專案裡**註冊一個命令**，例如名字 **`compute_embedding_ios`**，簽名：`(text: String) -> Vec<f32>`（或等價的 JSON 回傳）。
+- 該命令內部：
+  - 用與 ONNX 相同的 **tokenizer** 把 `text` 轉成 token ids，
+  - **pad／truncate 到固定長度**（例如 512），
+  - 呼叫 **CoreML 模型** 推論，
+  - 把輸出 512 維 `Float` 陣列回傳給前端。
+
+### 4. 前端呼叫鏈（簡圖）
+
+```
+使用者發送 / Continue / Regenerate
+  → useChatController（偵測 iOS）
+  → getKeyMemoriesForRequest(sessionId, queryText, { getSessionMemories, embeddingProvider: iosCoreMLEmbeddingProvider })
+  → iosCoreMLEmbeddingProvider.computeEmbedding(queryText)
+  → invoke("compute_embedding_ios", { text: queryText })   // 跨橋到 Tauri
+  → Tauri 執行 Swift/原生 CoreML
+  → 回傳 number[]（512）
+  → getKeyMemoriesForRequest 內再呼叫 retrieveRelevantMemories(embedding, memories, limit, minSimilarity)
+  → 得到 keyMemories → 傳給 sendChatTurn / continueConversation / regenerateAssistantMessage 的 keyMemories 參數
+  → 後端用 keyMemoriesJson 組 prompt，不跑 ONNX
+```
+
+所以：**APP 是透過「前端用 `iosCoreMLEmbeddingProvider`」間接呼叫你實作的 Tauri 命令 `compute_embedding_ios`；你只要在 Tauri 側實作該命令並在裡頭跑 CoreML，不需改前端呼叫方式。**
+
+---
+
+## src-tauri 結構分析：iOS 原生動態記憶 (CoreML) 實作用
+
+以下回答 4 個關鍵問題，供設計 Rust 分詞 + Tauri Plugin/FFI 呼叫 Swift CoreML 時使用。
+
+---
+
+### 1. 指令註冊位置
+
+| 項目 | 位置 |
+|------|------|
+| **Command 定義** | **`src-tauri/src/embedding_model/mod.rs`** 第 324–327 行：`#[tauri::command] pub async fn compute_embedding(app: AppHandle, text: String) -> Result<Vec<f32>, String>`，內部轉呼叫 `inference::compute_embedding(app, text).await`。 |
+| **註冊到 Tauri** | **`src-tauri/src/lib.rs`** 約第 363 行，在 `.invoke_handler()` 的列表中：`embedding_model::compute_embedding`。**沒有** `#[cfg(not(ios))]`，因此 **iOS 也會註冊** 同一支 command。 |
+
+也就是說：前端若呼叫的是 **`compute_embedding`**（桌面用），在 iOS 上這支 command 一樣存在且會被呼叫；若要走 CoreML，前端已改為呼叫 **`compute_embedding_ios`**，你需要在 **lib.rs 的 invoke_handler 裡再註冊** 一支新 command（例如 `compute_embedding_ios`），實作內部分詞 + 呼叫 Swift CoreML。
+
+---
+
+### 2. Tokenizer 與 ONNX 的耦合度
+
+| 項目 | 說明 |
+|------|------|
+| **檔案** | **`src-tauri/src/embedding_model/inference.rs`**。 |
+| **Tokenizer** | 使用 **`tokenizers`** crate（`Tokenizer::from_file(tokenizer_path)`），同一檔案第 250 行。從 `tokenizer.json` 載入，與 ONNX 無關。 |
+| **編碼流程** | `compute_embedding_with_session`（約 70–96 行）：先 `tokenizer.encode(text, true)` → `encoding.get_ids()` / `get_attention_mask()` / `get_type_ids()` → 再轉成 `i64` 並塞進 **`ort::Session::run`**。也就是說：**分詞與 Session 是同一函式內的前後兩段，邏輯上可分離**。 |
+| **結論** | **可以在 iOS 單獨使用 Tokenizer**：在 `#[cfg(target_os = "ios")]` 下實作一個只做「載入 tokenizer + encode + 固定長度 pad/truncate」的函式，回傳 `Vec<u32>` 或 `Vec<i64>`（例如 `input_ids` / `attention_mask` / 可選 `token_type_ids`），不呼叫 `ort::Session`。該輸出即可傳給 Swift（或 Tauri Plugin）做 CoreML 推理。注意：`inference.rs` 頂部 `use ort::{ ... Session, Value }` 是整檔使用，若要在同檔做 iOS 專用分支，需用 `#[cfg(target_os = "ios")]` 隔開只含 tokenizer 的程式碼，或把「純分詞」抽到獨立模組（例如 `embedding_model/tokenize.rs`）供 iOS 與桌面共用。 |
+
+---
+
+### 3. 現有 iOS 上呼叫 `compute_embedding` 會發生什麼
+
+| 項目 | 說明 |
+|------|------|
+| **編譯** | **不會**被 `#[cfg(not(ios))]` 擋住。`compute_embedding` 與 `inference::compute_embedding` 在 iOS 上都會編譯；`ort` 在 **Cargo.toml** 是無條件依賴，沒有 `target.'cfg(not(ios))'`。 |
+| **執行時** | 當前端在 iOS 呼叫 **`compute_embedding`**（而非 `compute_embedding_ios`）時：<br>1. 會執行到 **`embedding_model::inference::compute_embedding`**；<br>2. 接著呼叫 **`ort_runtime::ensure_ort_init(&app).await`**（`ort_runtime.rs` 第 8–84 行）。<br>3. 在 iOS 上，**只有** `#[cfg(not(any(target_os = "android", target_os = "ios")))]` 的區塊（下載/設定 ORT dylib、preload）不會跑；**`ort::init().commit()` 仍會執行**（因為在 `#[cfg(not(target_os = "android"))]` 分支）。<br>4. 若系統沒有可用的 ONNX Runtime 或載入失敗，**`ensure_ort_init` 會回傳 `Err`**，或後續 **`create_runtime`**（`Session::builder().commit_from_file(model_path)`）會失敗，**結果是 `compute_embedding` 回傳 `Err(...)`**，不會回傳空陣列。 |
+| **總結** | 在 iOS 上現有 **`compute_embedding`** 是**會被打到、會執行、但會在 ORT 初始化或載入 ONNX 模型時失敗並回傳錯誤**。目前前端在 iOS 已改為呼叫 **`compute_embedding_ios`**（並用 `iosCoreMLEmbeddingProvider`），因此不會走這條會錯的路；你實作 `compute_embedding_ios` 時可完全走「Rust 分詞 → Swift CoreML」路徑，不必改現有 `compute_embedding` 的 iOS 行為。 |
+
+---
+
+### 4. 前端呼叫點與參數／回傳格式
+
+| 項目 | 位置與格式 |
+|------|------------|
+| **桌面用（ONNX）** | **`src/core/storage/files.ts`** 第 108 行：<br>`computeEmbedding: (text: string) => invoke<number[]>("compute_embedding", { text })`。<br>參數：`{ text: string }`。回傳：`Promise<number[]>`（512 維 float）。 |
+| **iOS 用（CoreML）** | **`src/core/storage/repo.ts`** 第 434–439 行：<br>`iosCoreMLEmbeddingProvider` 的 `computeEmbedding(text)` 會呼叫 **`invoke<number[]>("compute_embedding_ios", { text })`**。<br>參數：**`{ text: string }`**。回傳：**`Promise<number[]>`**（512 維），失敗時前端 `.catch(() => [])` 當空陣列。 |
+| **誰觸發** | **`src/ui/pages/chats/hooks/useChatController.ts`**：發送訊息、Continue、Regenerate 時若 `getPlatform() === "ios"`，會呼叫 `getKeyMemoriesForRequest(..., iosCoreMLEmbeddingProvider)`，內部就會對當前 query 字串呼叫上述 `invoke("compute_embedding_ios", { text })`。 |
+
+**Swift 橋接層 API 建議**：Tauri 側新 command 可命名為 **`compute_embedding_ios`**，簽名 **`(text: String) -> Result<Vec<f32>, String>`**，與現有 `compute_embedding` 回傳型別一致；實作內用 Rust 做分詞（同上 tokenizer 邏輯），產出固定長度 token IDs，再經 Tauri Plugin 或 FFI 呼叫 Swift，由 Swift 跑 CoreML 並回傳 512 維 `[Float]`。

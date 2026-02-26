@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { invoke } from "@tauri-apps/api/core";
 import type { MemoryEmbedding } from "../memory";
+import type { EmbeddingProvider } from "../memory";
 import { storageBridge } from "./files";
 import { getDefaultCharacterRules } from "./defaults";
 import {
@@ -421,10 +423,19 @@ export async function getSessionMemoriesFromTauri(sessionId: string): Promise<Me
 
 /**
  * 使用 Tauri 後端 compute_embedding 的 EmbeddingProvider，供桌面端 getKeyMemoriesForRequest 使用。
- * iOS 端請注入 CoreML 實作或 stubEmbeddingProvider。
+ * iOS 上 ONNX 未啟用，請改用 iosCoreMLEmbeddingProvider（需先實作 Tauri 命令 compute_embedding_ios）。
  */
 export const tauriEmbeddingProvider = {
   computeEmbedding: (text: string) => storageBridge.computeEmbedding(text),
+};
+
+/**
+ * iOS 專用：呼叫 Tauri 命令 "compute_embedding_ios"，由原生端跑 CoreML 後回傳 embedding。
+ * 你需在 Tauri 側註冊該命令（例如透過 Swift plugin 跑 CoreML）；若命令尚未實作，會 catch 成 []，行為同 stub。
+ */
+export const iosCoreMLEmbeddingProvider: EmbeddingProvider = {
+  computeEmbedding: (text: string) =>
+    invoke<number[]>("compute_embedding_ios", { text }).catch(() => []),
 };
 
 export async function getSessionMeta(id: string): Promise<Session | null> {

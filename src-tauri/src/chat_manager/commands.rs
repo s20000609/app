@@ -2160,6 +2160,7 @@ pub async fn chat_regenerate(
         swap_places,
         stream,
         request_id,
+        key_memories_json,
     } = args;
     let swap_places = role_swap_enabled(swap_places);
 
@@ -2292,7 +2293,9 @@ pub async fn chat_regenerate(
     let dynamic_memory_enabled = is_dynamic_memory_active(settings, &character);
     let dynamic_window = dynamic_window_size(settings);
 
-    let relevant_memories = if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
+    let relevant_memories = if let Some(ref json) = key_memories_json {
+        serde_json::from_str::<Vec<MemoryEmbedding>>(json).unwrap_or_default()
+    } else if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
         let fixed = ensure_pinned_hot(&mut session.memory_embeddings);
         if fixed > 0 {
             log_info(
@@ -2876,6 +2879,7 @@ pub async fn chat_continue(
         swap_places,
         stream,
         request_id,
+        key_memories_json,
     } = args;
     let swap_places = role_swap_enabled(swap_places);
 
@@ -2969,7 +2973,9 @@ pub async fn chat_continue(
     let dynamic_memory_enabled = is_dynamic_memory_active(settings, &character);
     let dynamic_window = dynamic_window_size(settings);
 
-    let relevant_memories = if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
+    let relevant_memories = if let Some(ref json) = key_memories_json {
+        serde_json::from_str::<Vec<MemoryEmbedding>>(json).unwrap_or_default()
+    } else if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
         let fixed = ensure_pinned_hot(&mut session.memory_embeddings);
         if fixed > 0 {
             log_info(

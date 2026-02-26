@@ -1,10 +1,12 @@
 import { MessageCircle, Plus, Library, Users, Compass } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { TabItem } from "./NavItem";
 
 export function BottomNav({ onCreateClick }: { onCreateClick: () => void }) {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
 
   const handleCreateClick = () => {
     if (typeof window !== "undefined") {
@@ -45,7 +47,7 @@ export function BottomNav({ onCreateClick }: { onCreateClick: () => void }) {
         <TabItem
           to="/chat"
           icon={MessageCircle}
-          label="Chats"
+          label={t("common.bottomNav.chats")}
           active={pathname === "/" || pathname.startsWith("/chat")}
           className="flex-1 h-12 text-sm"
         />
@@ -53,7 +55,7 @@ export function BottomNav({ onCreateClick }: { onCreateClick: () => void }) {
         <TabItem
           to="/group-chats"
           icon={Users}
-          label="Groups"
+          label={t("common.bottomNav.groups")}
           active={pathname.startsWith("/group-chats")}
           className="flex-1 h-12 text-sm"
         />
@@ -61,7 +63,7 @@ export function BottomNav({ onCreateClick }: { onCreateClick: () => void }) {
         <button
           onClick={handleCreateClick}
           className="flex flex-1 h-12 items-center justify-center rounded-xl border border-fg/15 bg-fg/10 text-fg shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition hover:border-fg/25 hover:bg-fg/20"
-          aria-label="Create"
+          aria-label={t("common.bottomNav.create")}
         >
           <Plus size={20} />
         </button>
@@ -69,7 +71,7 @@ export function BottomNav({ onCreateClick }: { onCreateClick: () => void }) {
         <TabItem
           to="/discover"
           icon={Compass}
-          label="Discover"
+          label={t("common.bottomNav.discover")}
           active={pathname.startsWith("/discover")}
           className="flex-1 h-12 text-sm"
         />
@@ -77,7 +79,7 @@ export function BottomNav({ onCreateClick }: { onCreateClick: () => void }) {
         <TabItem
           to="/library"
           icon={Library}
-          label="Library"
+          label={t("common.bottomNav.library")}
           active={pathname.startsWith("/library")}
           className="flex-1 h-12 text-sm"
         />

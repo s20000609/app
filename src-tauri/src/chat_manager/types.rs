@@ -617,6 +617,8 @@ pub struct ChatRegenerateArgs {
     pub stream: Option<bool>,
     #[serde(alias = "requestId")]
     pub request_id: Option<String>,
+    #[serde(alias = "keyMemoriesJson")]
+    pub key_memories_json: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -633,6 +635,8 @@ pub struct ChatContinueArgs {
     pub stream: Option<bool>,
     #[serde(alias = "requestId")]
     pub request_id: Option<String>,
+    #[serde(alias = "keyMemoriesJson")]
+    pub key_memories_json: Option<String>,
 }
 
 #[derive(Deserialize)]
