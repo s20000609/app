@@ -289,6 +289,8 @@ export async function saveCharacter(c: Partial<Character>): Promise<Character> {
     voiceConfig: c.voiceConfig,
     voiceAutoplay: c.voiceAutoplay ?? false,
     chatAppearance: c.chatAppearance,
+    chatTemplates: c.chatTemplates ?? [],
+    defaultChatTemplateId: c.defaultChatTemplateId ?? null,
     createdAt: c.createdAt ?? timestamp,
     updatedAt: timestamp,
   } as Character;
@@ -472,35 +474,61 @@ export async function createSession(
   characterId: string,
   title: string,
   selectedSceneId?: string,
+  templateId?: string,
 ): Promise<Session> {
   const id = globalThis.crypto?.randomUUID?.() ?? uuidv4();
   const timestamp = now();
 
   const messages: StoredMessage[] = [];
+  let sessionPromptTemplateId: string | null | undefined = undefined;
 
   const characters = await listCharacters();
   const character = characters.find((c) => c.id === characterId);
 
-  if (character) {
-    const sceneId = selectedSceneId || character.defaultSceneId || character.scenes[0]?.id;
+  const fallbackSceneId = character
+    ? (selectedSceneId ?? character.defaultSceneId ?? character.scenes[0]?.id)
+    : selectedSceneId;
+  let sessionSceneId = fallbackSceneId;
 
-    if (sceneId) {
-      const scene = character.scenes.find((s) => s.id === sceneId);
-      if (scene) {
-        const sceneContent = scene.selectedVariantId
-          ? (scene.variants?.find((v) => v.id === scene.selectedVariantId)?.content ??
-            scene.content)
-          : scene.content;
+  if (character && templateId) {
+    const template = character.chatTemplates?.find((t) => t.id === templateId);
+    if (template) {
+      sessionSceneId = template.sceneId ?? undefined;
+      sessionPromptTemplateId = template.promptTemplateId ?? character.promptTemplateId ?? null;
 
-        if (sceneContent.trim()) {
-          messages.push({
-            id: globalThis.crypto?.randomUUID?.() ?? uuidv4(),
-            role: "scene", // Use "scene" role instead of "assistant"
-            content: sceneContent.trim(),
-            memoryRefs: [],
-            createdAt: timestamp,
-          });
-        }
+      for (let i = 0; i < template.messages.length; i++) {
+        const msg = template.messages[i];
+        messages.push({
+          id: globalThis.crypto?.randomUUID?.() ?? uuidv4(),
+          role: msg.role === "user" ? "user" : "assistant",
+          content: msg.content,
+          memoryRefs: [],
+          createdAt: timestamp + i + 1,
+        });
+      }
+    }
+  }
+  if (sessionPromptTemplateId === undefined) {
+    sessionPromptTemplateId = character?.promptTemplateId ?? null;
+  }
+
+  if (character && sessionSceneId) {
+    const scene = character.scenes.find((s) => s.id === sessionSceneId);
+    if (scene) {
+      const variantContent = scene.selectedVariantId
+        ? (scene.variants?.find((v) => v.id === scene.selectedVariantId)?.content ?? scene.content)
+        : undefined;
+      const sceneContent =
+        variantContent?.trim() || scene.direction?.trim() || scene.content?.trim() || "";
+
+      if (sceneContent) {
+        messages.unshift({
+          id: globalThis.crypto?.randomUUID?.() ?? uuidv4(),
+          role: "scene",
+          content: sceneContent,
+          memoryRefs: [],
+          createdAt: timestamp,
+        });
       }
     }
   }
@@ -509,7 +537,8 @@ export async function createSession(
     id,
     characterId,
     title,
-    selectedSceneId: selectedSceneId || character?.defaultSceneId || character?.scenes[0]?.id,
+    selectedSceneId: sessionSceneId,
+    promptTemplateId: sessionPromptTemplateId,
     personaDisabled: false,
     memories: [],
     memorySummaryTokenCount: 0,
@@ -562,6 +591,7 @@ export async function createBranchedSession(
     characterId: sourceSession.characterId,
     title: `${sourceSession.title} (branch)`,
     selectedSceneId: sourceSession.selectedSceneId,
+    promptTemplateId: sourceSession.promptTemplateId,
     personaId: sourceSession.personaId,
     personaDisabled: sourceSession.personaDisabled ?? false,
     memories: [...sourceSession.memories],
@@ -621,7 +651,8 @@ export async function createBranchedSessionToCharacter(
     id,
     characterId: targetCharacterId,
     title: `Branch to ${characterName}`,
-    selectedSceneId: targetCharacter?.defaultSceneId || targetCharacter?.scenes?.[0]?.id,
+    selectedSceneId: targetCharacter?.defaultSceneId ?? targetCharacter?.scenes?.[0]?.id,
+    promptTemplateId: targetCharacter?.promptTemplateId ?? null,
     personaId: sourceSession.personaId,
     personaDisabled: sourceSession.personaDisabled ?? false,
     memories: [],

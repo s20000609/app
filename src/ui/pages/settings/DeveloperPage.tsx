@@ -82,7 +82,7 @@ export function DeveloperPage() {
       const session = await createSession(
         character.id,
         `Test Session - ${new Date().toLocaleTimeString()}`,
-        character.scenes?.[0]?.id,
+        character.defaultSceneId ?? character.scenes?.[0]?.id,
       );
 
       showStatus(`✓ Test session created: ${session.id}`);
@@ -344,9 +344,7 @@ function ActionButton({
           <span className="[&_svg]:h-5 [&_svg]:w-5">{icon}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <div
-            className={cn("truncate", typography.body.size, typography.body.weight, "text-fg")}
-          >
+          <div className={cn("truncate", typography.body.size, typography.body.weight, "text-fg")}>
             {title}
           </div>
           <div className={cn("mt-0.5 line-clamp-1", typography.caption.size, "text-fg/45")}>

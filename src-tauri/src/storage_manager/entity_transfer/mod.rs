@@ -75,6 +75,10 @@ pub struct CharacterExportData {
     pub custom_gradient_colors: Option<Vec<String>>,
     pub custom_text_color: Option<String>,
     pub custom_text_secondary: Option<String>,
+    #[serde(default)]
+    pub chat_templates: Vec<ChatTemplateExport>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_chat_template_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -99,6 +103,24 @@ pub struct SceneVariantExport {
     pub direction: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatTemplateExport {
+    pub id: String,
+    pub name: String,
+    pub messages: Vec<ChatTemplateMessageExport>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatTemplateMessageExport {
+    pub id: String,
+    pub role: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -333,6 +355,13 @@ fn parse_uec_character(value: &JsonValue) -> Result<CharacterExportPackage, Stri
         .and_then(|map| map.get("customTextSecondary").and_then(|v| v.as_str()))
         .map(|value| value.to_string());
     let avatar_crop = parse_avatar_crop(app_specific.and_then(|map| map.get("avatarCrop")));
+    let chat_templates: Vec<ChatTemplateExport> = app_specific
+        .and_then(|map| map.get("chatTemplates"))
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+    let default_chat_template_id = app_specific
+        .and_then(|map| map.get("defaultChatTemplateId").and_then(|v| v.as_str()))
+        .map(|value| value.to_string());
 
     let avatar_data = payload
         .get("avatar")
@@ -373,6 +402,8 @@ fn parse_uec_character(value: &JsonValue) -> Result<CharacterExportPackage, Stri
             custom_gradient_colors,
             custom_text_color,
             custom_text_secondary,
+            chat_templates,
+            default_chat_template_id,
         },
         avatar_data,
         background_image_data,
@@ -565,6 +596,7 @@ fn load_character_export_snapshot(
         avatar_crop_x,
         avatar_crop_y,
         avatar_crop_scale,
+        default_chat_template_id,
         created_at,
         updated_at,
     ): (
@@ -595,11 +627,12 @@ fn load_character_export_snapshot(
         Option<f64>,    // avatar_crop_x
         Option<f64>,    // avatar_crop_y
         Option<f64>,    // avatar_crop_scale
+        Option<String>, // default_chat_template_id
         i64,            // created_at
         i64,            // updated_at
     ) = conn
         .query_row(
-            "SELECT name, avatar_path, background_image_path, description, definition, nickname, scenario, creator_notes, creator, creator_notes_multilingual, source, tags, default_scene_id, default_model_id, prompt_template_id, system_prompt, voice_config, voice_autoplay, memory_type, disable_avatar_gradient, custom_gradient_enabled, custom_gradient_colors, custom_text_color, custom_text_secondary, avatar_crop_x, avatar_crop_y, avatar_crop_scale, created_at, updated_at FROM characters WHERE id = ?",
+            "SELECT name, avatar_path, background_image_path, description, definition, nickname, scenario, creator_notes, creator, creator_notes_multilingual, source, tags, default_scene_id, default_model_id, prompt_template_id, system_prompt, voice_config, voice_autoplay, memory_type, disable_avatar_gradient, custom_gradient_enabled, custom_gradient_colors, custom_text_color, custom_text_secondary, avatar_crop_x, avatar_crop_y, avatar_crop_scale, default_chat_template_id, created_at, updated_at FROM characters WHERE id = ?",
             params![character_id],
             |r| {
                 Ok((
@@ -632,6 +665,7 @@ fn load_character_export_snapshot(
                     r.get(26)?,
                     r.get(27)?,
                     r.get(28)?,
+                    r.get(29)?,
                 ))
             },
         )
@@ -704,6 +738,53 @@ fn load_character_export_snapshot(
         });
     }
 
+    // Chat templates
+    let mut chat_templates: Vec<ChatTemplateExport> = Vec::new();
+    let mut tmpl_stmt = conn
+        .prepare("SELECT id, name, created_at FROM chat_templates WHERE character_id = ? ORDER BY created_at ASC")
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let tmpl_rows = tmpl_stmt
+        .query_map(params![character_id], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
+        })
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    for row in tmpl_rows {
+        let (tmpl_id, tmpl_name, tmpl_created_at) =
+            row.map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let mut msg_stmt = conn
+            .prepare("SELECT id, role, content FROM chat_template_messages WHERE template_id = ? ORDER BY idx ASC")
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let msg_rows = msg_stmt
+            .query_map(params![&tmpl_id], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                ))
+            })
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let mut messages: Vec<ChatTemplateMessageExport> = Vec::new();
+        for msg in msg_rows {
+            let (msg_id, role, content) =
+                msg.map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+            messages.push(ChatTemplateMessageExport {
+                id: msg_id,
+                role,
+                content,
+            });
+        }
+        chat_templates.push(ChatTemplateExport {
+            id: tmpl_id,
+            name: tmpl_name,
+            messages,
+            created_at: Some(tmpl_created_at),
+        });
+    }
+
     let avatar_data = if let Some(ref avatar_filename) = avatar_path {
         read_avatar_as_base64(app, &format!("character-{}", character_id), avatar_filename).ok()
     } else {
@@ -771,6 +852,8 @@ fn load_character_export_snapshot(
             custom_gradient_colors,
             custom_text_color,
             custom_text_secondary,
+            chat_templates,
+            default_chat_template_id,
         },
         avatar_data,
         background_image_data,
@@ -917,6 +1000,14 @@ fn build_uec_from_package(
                 "scale": crop.scale,
             }),
         );
+    }
+    if !package.character.chat_templates.is_empty() {
+        let chat_templates = serde_json::to_value(&package.character.chat_templates)
+            .unwrap_or(JsonValue::Array(Vec::new()));
+        app_specific.insert("chatTemplates".into(), chat_templates);
+    }
+    if let Some(dct) = package.character.default_chat_template_id.clone() {
+        app_specific.insert("defaultChatTemplateId".into(), JsonValue::String(dct));
     }
 
     let mut meta = JsonMap::new();
@@ -1374,6 +1465,43 @@ pub fn character_import(app: tauri::AppHandle, import_json: String) -> Result<St
     )
     .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
+    // Import chat templates
+    let mut tmpl_id_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for template in &package.character.chat_templates {
+        let new_tmpl_id = uuid::Uuid::new_v4().to_string();
+        tmpl_id_map.insert(template.id.clone(), new_tmpl_id.clone());
+        let tmpl_created = template.created_at.unwrap_or(now);
+        tx.execute(
+            "INSERT INTO chat_templates (id, character_id, name, created_at) VALUES (?, ?, ?, ?)",
+            params![
+                &new_tmpl_id,
+                &new_character_id,
+                &template.name,
+                tmpl_created
+            ],
+        )
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        for (idx, msg) in template.messages.iter().enumerate() {
+            let new_msg_id = uuid::Uuid::new_v4().to_string();
+            tx.execute(
+                "INSERT INTO chat_template_messages (id, template_id, idx, role, content) VALUES (?, ?, ?, ?, ?)",
+                params![&new_msg_id, &new_tmpl_id, idx as i64, &msg.role, &msg.content],
+            )
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        }
+    }
+    let new_default_chat_template_id = package
+        .character
+        .default_chat_template_id
+        .as_ref()
+        .and_then(|old_id| tmpl_id_map.get(old_id).cloned());
+    tx.execute(
+        "UPDATE characters SET default_chat_template_id = ? WHERE id = ?",
+        params![new_default_chat_template_id, &new_character_id],
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
     tx.commit()
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
@@ -1421,6 +1549,8 @@ pub fn character_import_preview(import_json: String) -> Result<String, String> {
 
     let scenes = serde_json::to_value(&package.character.scenes)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let chat_templates = serde_json::to_value(&package.character.chat_templates)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     let preview = serde_json::json!({
         "name": package.character.name,
@@ -1435,7 +1565,9 @@ pub fn character_import_preview(import_json: String) -> Result<String, String> {
         "tags": package.character.tags,
         "characterBook": package.character.character_book,
         "scenes": scenes,
+        "chatTemplates": chat_templates,
         "defaultSceneId": package.character.default_scene_id,
+        "defaultChatTemplateId": package.character.default_chat_template_id,
         "promptTemplateId": package.character.prompt_template_id,
         "memoryType": memory_type,
         "disableAvatarGradient": package.character.disable_avatar_gradient,

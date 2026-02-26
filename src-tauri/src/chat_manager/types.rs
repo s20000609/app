@@ -476,6 +476,8 @@ pub struct Session {
     #[serde(default)]
     pub selected_scene_id: Option<String>,
     #[serde(default)]
+    pub prompt_template_id: Option<String>,
+    #[serde(default)]
     pub persona_id: Option<String>,
     #[serde(default)]
     pub persona_disabled: bool,

@@ -1310,6 +1310,23 @@ export const SceneSchema = z.object({
 });
 export type Scene = z.infer<typeof SceneSchema>;
 
+export const ChatTemplateMessageSchema = z.object({
+  id: z.string().uuid(),
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+});
+export type ChatTemplateMessage = z.infer<typeof ChatTemplateMessageSchema>;
+
+export const ChatTemplateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  messages: z.array(ChatTemplateMessageSchema).default([]),
+  sceneId: z.string().uuid().nullish(),
+  promptTemplateId: z.string().nullish().optional(),
+  createdAt: z.number().int(),
+});
+export type ChatTemplate = z.infer<typeof ChatTemplateSchema>;
+
 export const DynamicMemorySettingsSchema = z.object({
   enabled: z.boolean().default(false),
   summaryMessageInterval: z.number().min(1).default(20),
@@ -1783,7 +1800,9 @@ export const CharacterSchema = z.object({
   tags: z.array(z.string()).optional(),
   rules: z.array(z.string()).default([]),
   scenes: z.array(SceneSchema).default([]),
+  chatTemplates: z.array(ChatTemplateSchema).default([]),
   defaultSceneId: z.string().uuid().nullish(),
+  defaultChatTemplateId: z.string().uuid().nullish(),
   defaultModelId: z.string().uuid().nullable().optional(),
   fallbackModelId: z.string().uuid().nullable().optional(),
   memoryType: z.enum(["manual", "dynamic"]).default("manual"),
@@ -1806,6 +1825,7 @@ export const SessionSchema = z.object({
   characterId: z.string().uuid(),
   title: z.string(),
   selectedSceneId: z.string().uuid().nullish(), // ID of the scene from character.scenes array
+  promptTemplateId: z.string().nullish().optional(),
   personaId: z.union([z.string().uuid(), z.literal(""), z.null(), z.undefined()]).optional(),
   personaDisabled: z.boolean().optional().default(false),
   voiceAutoplay: z.boolean().nullable().optional(),

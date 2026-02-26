@@ -845,6 +845,12 @@ fn has_placeholder(entries: &[SystemPromptEntry], placeholder: &str) -> bool {
         .any(|entry| entry.content.contains(placeholder))
 }
 
+fn has_scene_placeholder(content: &str) -> bool {
+    content.contains("{{scene}}")
+        || content.contains("{{scene_direction}}")
+        || content.contains("{{direction}}")
+}
+
 fn is_dynamic_memory_active(settings: &Settings, character: &Character) -> bool {
     settings
         .advanced_settings
@@ -873,7 +879,50 @@ pub fn build_system_prompt_entries(
         base_template_source,
         base_template_id,
         condense_prompt_entries,
-    ) = if let Some(char_template_id) = &character.prompt_template_id {
+    ) = if let Some(session_template_id) = &session.prompt_template_id {
+        if let Ok(Some(template)) = prompts::get_template(app, session_template_id) {
+            debug_parts.push(json!({
+                "source": "session_template",
+                "template_id": session_template_id
+            }));
+            (
+                template.content,
+                template.entries,
+                "session_template",
+                Some(session_template_id.clone()),
+                template.condense_prompt_entries,
+            )
+        } else if let Some(char_template_id) = &character.prompt_template_id {
+            debug_parts.push(json!({
+                "source": "session_template_not_found",
+                "template_id": session_template_id,
+                "fallback": "character_template"
+            }));
+            if let Ok(Some(template)) = prompts::get_template(app, char_template_id) {
+                (
+                    template.content,
+                    template.entries,
+                    "character_template",
+                    Some(char_template_id.clone()),
+                    template.condense_prompt_entries,
+                )
+            } else {
+                debug_parts.push(json!({
+                    "source": "character_template_not_found",
+                    "template_id": char_template_id,
+                    "fallback": "app_default"
+                }));
+                get_app_default_template_content(app, settings, &mut debug_parts)
+            }
+        } else {
+            debug_parts.push(json!({
+                "source": "session_template_not_found",
+                "template_id": session_template_id,
+                "fallback": "app_default"
+            }));
+            get_app_default_template_content(app, settings, &mut debug_parts)
+        }
+    } else if let Some(char_template_id) = &character.prompt_template_id {
         if let Ok(Some(template)) = prompts::get_template(app, char_template_id) {
             debug_parts.push(json!({
                 "source": "character_template",
@@ -904,9 +953,18 @@ pub fn build_system_prompt_entries(
         base_entries
     };
 
+    let has_scene_message = session
+        .messages
+        .iter()
+        .any(|msg| msg.role.eq_ignore_ascii_case("scene") && !msg.content.trim().is_empty());
+    let skip_scene_placeholder_entries = session.selected_scene_id.is_none() && !has_scene_message;
+
     let mut rendered_entries: Vec<SystemPromptEntry> = Vec::new();
     for entry in base_entries.iter() {
         if !entry.enabled && !entry.system_prompt {
+            continue;
+        }
+        if skip_scene_placeholder_entries && has_scene_placeholder(&entry.content) {
             continue;
         }
         let rendered =
@@ -1064,6 +1122,7 @@ pub fn build_system_prompt_entries(
                 "base_template_source": base_template_source,
                 "base_template_id": base_template_id,
                 "condense_prompt_entries": condense_prompt_entries,
+                "session_prompt_template_id": session.prompt_template_id,
                 "model_prompt_template_id": model.prompt_template_id,
                 "character_prompt_template_id": character.prompt_template_id,
                 "settings_prompt_template_id": settings.prompt_template_id,
@@ -1575,6 +1634,7 @@ mod tests {
             title: "t".into(),
             system_prompt: None,
             selected_scene_id: None,
+            prompt_template_id: None,
             persona_id: None,
             persona_disabled: false,
             voice_autoplay: None,

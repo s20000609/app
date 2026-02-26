@@ -35,6 +35,7 @@ fn read_character(conn: &rusqlite::Connection, id: &str) -> Result<JsonValue, St
         custom_text_color,
         custom_text_secondary,
         chat_appearance,
+        default_chat_template_id,
         created_at,
         updated_at,
     ): (
@@ -67,14 +68,15 @@ fn read_character(conn: &rusqlite::Connection, id: &str) -> Result<JsonValue, St
         Option<String>,
         Option<String>,
         Option<String>,
+        Option<String>,
         i64,
         i64,
     ) = conn
         .query_row(
-            "SELECT name, avatar_path, avatar_crop_x, avatar_crop_y, avatar_crop_scale, background_image_path, description, definition, nickname, scenario, creator_notes, creator, creator_notes_multilingual, source, tags, default_scene_id, default_model_id, fallback_model_id, prompt_template_id, system_prompt, voice_config, voice_autoplay, memory_type, disable_avatar_gradient, custom_gradient_enabled, custom_gradient_colors, custom_text_color, custom_text_secondary, chat_appearance, created_at, updated_at FROM characters WHERE id = ?",
+            "SELECT name, avatar_path, avatar_crop_x, avatar_crop_y, avatar_crop_scale, background_image_path, description, definition, nickname, scenario, creator_notes, creator, creator_notes_multilingual, source, tags, default_scene_id, default_model_id, fallback_model_id, prompt_template_id, system_prompt, voice_config, voice_autoplay, memory_type, disable_avatar_gradient, custom_gradient_enabled, custom_gradient_colors, custom_text_color, custom_text_secondary, chat_appearance, default_chat_template_id, created_at, updated_at FROM characters WHERE id = ?",
             params![id],
             |r| Ok((
-                r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?, r.get(11)?, r.get(12)?, r.get(13)?, r.get(14)?, r.get(15)?, r.get(16)?, r.get(17)?, r.get(18)?, r.get(19)?, r.get(20)?, r.get(21)?, r.get(22)?, r.get::<_, i64>(23)?, r.get::<_, i64>(24)?, r.get(25)?, r.get(26)?, r.get(27)?, r.get(28)?, r.get(29)?, r.get(30)?
+                r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?, r.get(11)?, r.get(12)?, r.get(13)?, r.get(14)?, r.get(15)?, r.get(16)?, r.get(17)?, r.get(18)?, r.get(19)?, r.get(20)?, r.get(21)?, r.get(22)?, r.get::<_, i64>(23)?, r.get::<_, i64>(24)?, r.get(25)?, r.get(26)?, r.get(27)?, r.get(28)?, r.get(29)?, r.get(30)?, r.get(31)?
             )),
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
@@ -149,6 +151,54 @@ fn read_character(conn: &rusqlite::Connection, id: &str) -> Result<JsonValue, St
         scenes.push(JsonValue::Object(obj));
     }
 
+    // chat templates
+    let mut templates_stmt = conn.prepare("SELECT id, name, scene_id, prompt_template_id, created_at FROM chat_templates WHERE character_id = ? ORDER BY created_at ASC").map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let templates_rows = templates_stmt
+        .query_map(params![id], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, Option<String>>(2)?,
+                r.get::<_, Option<String>>(3)?,
+                r.get::<_, i64>(4)?,
+            ))
+        })
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let mut chat_templates: Vec<JsonValue> = Vec::new();
+    for row in templates_rows {
+        let (tmpl_id, tmpl_name, tmpl_scene_id, tmpl_prompt_template_id, tmpl_created_at) =
+            row.map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let mut msg_stmt = conn.prepare("SELECT id, role, content FROM chat_template_messages WHERE template_id = ? ORDER BY idx ASC").map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let msg_rows = msg_stmt
+            .query_map(params![&tmpl_id], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                ))
+            })
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let mut messages: Vec<JsonValue> = Vec::new();
+        for msg in msg_rows {
+            let (msg_id, role, content) =
+                msg.map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+            messages.push(serde_json::json!({"id": msg_id, "role": role, "content": content}));
+        }
+        let mut tmpl_json = serde_json::json!({
+            "id": tmpl_id,
+            "name": tmpl_name,
+            "messages": messages,
+            "createdAt": tmpl_created_at,
+        });
+        if let Some(ref sid) = tmpl_scene_id {
+            tmpl_json["sceneId"] = JsonValue::String(sid.clone());
+        }
+        if let Some(ref ptid) = tmpl_prompt_template_id {
+            tmpl_json["promptTemplateId"] = JsonValue::String(ptid.clone());
+        }
+        chat_templates.push(tmpl_json);
+    }
+
     let mut root = JsonMap::new();
     root.insert("id".into(), JsonValue::String(id.to_string()));
     root.insert("name".into(), JsonValue::String(name));
@@ -203,8 +253,12 @@ fn read_character(conn: &rusqlite::Connection, id: &str) -> Result<JsonValue, St
     }
     root.insert("rules".into(), JsonValue::Array(rules));
     root.insert("scenes".into(), JsonValue::Array(scenes));
+    root.insert("chatTemplates".into(), JsonValue::Array(chat_templates));
     if let Some(ds) = default_scene_id {
         root.insert("defaultSceneId".into(), JsonValue::String(ds));
+    }
+    if let Some(dct) = default_chat_template_id {
+        root.insert("defaultChatTemplateId".into(), JsonValue::String(dct));
     }
     if let Some(dm) = default_model_id {
         root.insert("defaultModelId".into(), JsonValue::String(dm));
@@ -618,6 +672,64 @@ pub fn character_upsert(app: tauri::AppHandle, character_json: String) -> Result
         );
         e.to_string()
     })?;
+
+    // Delete existing chat templates (cascade deletes messages)
+    tx.execute(
+        "DELETE FROM chat_templates WHERE character_id = ?",
+        params![&id],
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
+    // Insert chat templates
+    if let Some(templates) = c.get("chatTemplates").and_then(|v| v.as_array()) {
+        for t in templates {
+            let tid = t
+                .get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+            let tname = t.get("name").and_then(|v| v.as_str()).unwrap_or("");
+            let tscene_id: Option<&str> = t.get("sceneId").and_then(|v| v.as_str());
+            let tprompt_template_id: Option<&str> =
+                t.get("promptTemplateId").and_then(|v| v.as_str());
+            let tcreated = t.get("createdAt").and_then(|v| v.as_i64()).unwrap_or(now);
+            tx.execute(
+                "INSERT INTO chat_templates (id, character_id, name, scene_id, prompt_template_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                params![&tid, &id, tname, tscene_id, tprompt_template_id, tcreated],
+            )
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+            if let Some(msgs) = t.get("messages").and_then(|v| v.as_array()) {
+                for (idx, m) in msgs.iter().enumerate() {
+                    let mid = m
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+                    let role = m
+                        .get("role")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("assistant");
+                    let content = m.get("content").and_then(|v| v.as_str()).unwrap_or("");
+                    tx.execute(
+                        "INSERT INTO chat_template_messages (id, template_id, idx, role, content) VALUES (?, ?, ?, ?, ?)",
+                        params![&mid, &tid, idx as i64, role, content],
+                    )
+                    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+                }
+            }
+        }
+    }
+
+    let default_chat_template_id = c
+        .get("defaultChatTemplateId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    tx.execute(
+        "UPDATE characters SET default_chat_template_id = ? WHERE id = ?",
+        params![default_chat_template_id, &id],
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
     tx.commit().map_err(|e| {
         log_error(
             &app,

@@ -49,6 +49,8 @@ import {
   CreationHelperPage,
 } from "./ui/pages/characters";
 import { CreatePersonaPage, PersonasPage, EditPersonaPage } from "./ui/pages/personas";
+import ChatTemplateListPage from "./ui/pages/characters/ChatTemplateListPage";
+import ChatTemplateEditorPage from "./ui/pages/characters/ChatTemplateEditorPage";
 import { SearchPage } from "./ui/pages/search";
 import { LibraryPage } from "./ui/pages/library/LibraryPage";
 import { StandaloneLorebookEditor } from "./ui/pages/library/StandaloneLorebookEditor";
@@ -273,6 +275,10 @@ function AppContent() {
 
   const isLorebookEditorRoute = useMemo(
     () => location.pathname.startsWith("/library/lorebooks/"),
+    [location.pathname],
+  );
+  const isTemplateEditorRoute = useMemo(
+    () => /^\/settings\/characters\/[^/]+\/templates\/[^/]+$/.test(location.pathname),
     [location.pathname],
   );
 
@@ -553,7 +559,9 @@ function AppContent() {
                     ? "overflow-hidden px-0 pt-0 pb-0"
                     : isLorebookEditorRoute
                       ? "overflow-hidden px-0 pt-0 pb-0"
-                      : isDiscoveryRoute
+                      : isTemplateEditorRoute
+                        ? "overflow-hidden px-0 pt-0 pb-0"
+                        : isDiscoveryRoute
                         ? "overflow-hidden px-0 pt-0 pb-0"
                         : `overflow-y-auto px-4 pt-4 ${showBottomNav ? "pb-[calc(96px+env(safe-area-inset-bottom))]" : "pb-6"}`
           }`}
@@ -666,6 +674,14 @@ function AppContent() {
               <Route
                 path="/settings/characters/:characterId/lorebook"
                 element={<LorebookEditor />}
+              />
+              <Route
+                path="/settings/characters/:characterId/templates"
+                element={<ChatTemplateListPage />}
+              />
+              <Route
+                path="/settings/characters/:characterId/templates/:templateId"
+                element={<ChatTemplateEditorPage />}
               />
               <Route path="/create/persona" element={<CreatePersonaPage />} />
               <Route path="/personas" element={<PersonasPage />} />

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AvatarCrop, Character } from "./schemas";
+import type { AvatarCrop, Character, ChatTemplate } from "./schemas";
 
 export type CharacterFileFormat =
   | "uec"
@@ -46,7 +46,9 @@ export interface CharacterImportPreview {
   tags?: string[];
   characterBook?: CharacterBookImport | null;
   scenes: SceneExport[];
+  chatTemplates: ChatTemplate[];
   defaultSceneId: string | null;
+  defaultChatTemplateId: string | null;
   promptTemplateId: string | null;
   memoryType: "manual" | "dynamic";
   disableAvatarGradient: boolean;

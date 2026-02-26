@@ -55,6 +55,7 @@ import { typography, radius, spacing, interactive, cn, colors } from "../../desi
 import { Routes, useNavigationManager } from "../../navigation";
 import { PersonaSelector } from "../group-chats/components/settings";
 import { storageBridge } from "../../../core/storage/files";
+import { ChatTemplateSelector } from "./components/ChatTemplateSelector";
 
 function isImageLike(value?: string) {
   if (!value) return false;
@@ -297,6 +298,7 @@ function ChatSettingsContent({ character }: { character: Character }) {
   );
   const [sessionOverrideEnabled, setSessionOverrideEnabled] = useState<boolean>(false);
   const [showPersonaActions, setShowPersonaActions] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [selectedPersonaForActions, setSelectedPersonaForActions] = useState<Persona | null>(null);
   const [messageCount, setMessageCount] = useState<number>(0);
   const [pendingChatpkgImport, setPendingChatpkgImport] = useState<{
@@ -406,13 +408,36 @@ function ChatSettingsContent({ character }: { character: Character }) {
   const handleNewChat = async () => {
     if (!characterId || !currentCharacter) return;
 
+    // If character has templates, show selector
+    if (currentCharacter.chatTemplates && currentCharacter.chatTemplates.length > 0) {
+      setShowTemplateSelector(true);
+      return;
+    }
+
     try {
       const session = await createSession(
         characterId,
         "New Chat",
-        currentCharacter.scenes && currentCharacter.scenes.length > 0
-          ? currentCharacter.scenes[0].id
-          : undefined,
+        currentCharacter.defaultSceneId ?? currentCharacter.scenes?.[0]?.id,
+      );
+      navigate(`/chat/${characterId}?sessionId=${session.id}`, { replace: true });
+    } catch (error) {
+      console.error("Failed to create new chat:", error);
+    }
+  };
+
+  const handleTemplateSelected = async (templateId: string | null) => {
+    if (!characterId || !currentCharacter) return;
+    setShowTemplateSelector(false);
+    try {
+      const sceneId = templateId
+        ? undefined
+        : (currentCharacter.defaultSceneId ?? currentCharacter.scenes?.[0]?.id);
+      const session = await createSession(
+        characterId,
+        "New Chat",
+        sceneId,
+        templateId ?? undefined,
       );
       navigate(`/chat/${characterId}?sessionId=${session.id}`, { replace: true });
     } catch (error) {
@@ -1629,6 +1654,15 @@ function ChatSettingsContent({ character }: { character: Character }) {
           />
         </MenuSection>
       </BottomMenu>
+
+      {/* Template selector */}
+      <ChatTemplateSelector
+        isOpen={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        templates={currentCharacter.chatTemplates ?? []}
+        defaultTemplateId={currentCharacter.defaultChatTemplateId}
+        onSelect={handleTemplateSelected}
+      />
     </div>
   );
 }

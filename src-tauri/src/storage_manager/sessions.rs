@@ -88,10 +88,10 @@ fn json_usage_summary(
 fn read_session_meta(conn: &rusqlite::Connection, id: &str) -> Result<Option<JsonValue>, String> {
     let row = conn
         .query_row(
-            "SELECT character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, memory_status, memory_error, archived, created_at, updated_at FROM sessions WHERE id = ?",
+            "SELECT character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, memory_status, memory_error, archived, created_at, updated_at, prompt_template_id FROM sessions WHERE id = ?",
             params![id],
             |r| Ok((
-                r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?, r.get::<_, Option<String>>(3)?, r.get::<_, Option<String>>(4)?, r.get::<_, Option<i64>>(5)?, r.get::<_, Option<i64>>(6)?, r.get::<_, Option<f64>>(7)?, r.get::<_, Option<f64>>(8)?, r.get::<_, Option<i64>>(9)?, r.get::<_, Option<f64>>(10)?, r.get::<_, Option<f64>>(11)?, r.get::<_, Option<i64>>(12)?, r.get::<_, String>(13)?, r.get::<_, String>(14)?, r.get::<_, Option<String>>(15)?, r.get::<_, i64>(16)?, r.get::<_, String>(17)?, r.get::<_, Option<String>>(18)?, r.get::<_, Option<String>>(19)?, r.get::<_, i64>(20)?, r.get::<_, i64>(21)?, r.get::<_, i64>(22)?
+                r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?, r.get::<_, Option<String>>(3)?, r.get::<_, Option<String>>(4)?, r.get::<_, Option<i64>>(5)?, r.get::<_, Option<i64>>(6)?, r.get::<_, Option<f64>>(7)?, r.get::<_, Option<f64>>(8)?, r.get::<_, Option<i64>>(9)?, r.get::<_, Option<f64>>(10)?, r.get::<_, Option<f64>>(11)?, r.get::<_, Option<i64>>(12)?, r.get::<_, String>(13)?, r.get::<_, String>(14)?, r.get::<_, Option<String>>(15)?, r.get::<_, i64>(16)?, r.get::<_, String>(17)?, r.get::<_, Option<String>>(18)?, r.get::<_, Option<String>>(19)?, r.get::<_, i64>(20)?, r.get::<_, i64>(21)?, r.get::<_, i64>(22)?, r.get::<_, Option<String>>(23)?
             )),
         )
         .optional()
@@ -120,6 +120,7 @@ fn read_session_meta(conn: &rusqlite::Connection, id: &str) -> Result<Option<Jso
         archived,
         created_at,
         updated_at,
+        prompt_template_id,
     )) = row
     else {
         return Ok(None);
@@ -157,6 +158,7 @@ fn read_session_meta(conn: &rusqlite::Connection, id: &str) -> Result<Option<Jso
         "title": title,
         "systemPrompt": system_prompt,
         "selectedSceneId": selected_scene_id,
+        "promptTemplateId": prompt_template_id,
         "personaId": persona_id,
         "personaDisabled": persona_disabled.unwrap_or(0) != 0,
         "voiceAutoplay": voice_autoplay.map(|value| value != 0),
@@ -179,10 +181,10 @@ fn read_session_meta(conn: &rusqlite::Connection, id: &str) -> Result<Option<Jso
 fn read_session(conn: &rusqlite::Connection, id: &str) -> Result<Option<JsonValue>, String> {
     let row = conn
         .query_row(
-            "SELECT character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, memory_status, memory_error, archived, created_at, updated_at FROM sessions WHERE id = ?",
+            "SELECT character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, memory_status, memory_error, archived, created_at, updated_at, prompt_template_id FROM sessions WHERE id = ?",
             params![id],
             |r| Ok((
-                r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?, r.get::<_, Option<String>>(3)?, r.get::<_, Option<String>>(4)?, r.get::<_, Option<i64>>(5)?, r.get::<_, Option<i64>>(6)?, r.get::<_, Option<f64>>(7)?, r.get::<_, Option<f64>>(8)?, r.get::<_, Option<i64>>(9)?, r.get::<_, Option<f64>>(10)?, r.get::<_, Option<f64>>(11)?, r.get::<_, Option<i64>>(12)?, r.get::<_, String>(13)?, r.get::<_, String>(14)?, r.get::<_, Option<String>>(15)?, r.get::<_, i64>(16)?, r.get::<_, String>(17)?, r.get::<_, Option<String>>(18)?, r.get::<_, Option<String>>(19)?, r.get::<_, i64>(20)?, r.get::<_, i64>(21)?, r.get::<_, i64>(22)?
+                r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?, r.get::<_, Option<String>>(3)?, r.get::<_, Option<String>>(4)?, r.get::<_, Option<i64>>(5)?, r.get::<_, Option<i64>>(6)?, r.get::<_, Option<f64>>(7)?, r.get::<_, Option<f64>>(8)?, r.get::<_, Option<i64>>(9)?, r.get::<_, Option<f64>>(10)?, r.get::<_, Option<f64>>(11)?, r.get::<_, Option<i64>>(12)?, r.get::<_, String>(13)?, r.get::<_, String>(14)?, r.get::<_, Option<String>>(15)?, r.get::<_, i64>(16)?, r.get::<_, String>(17)?, r.get::<_, Option<String>>(18)?, r.get::<_, Option<String>>(19)?, r.get::<_, i64>(20)?, r.get::<_, i64>(21)?, r.get::<_, i64>(22)?, r.get::<_, Option<String>>(23)?
             )),
         )
         .optional()
@@ -211,6 +213,7 @@ fn read_session(conn: &rusqlite::Connection, id: &str) -> Result<Option<JsonValu
         archived,
         created_at,
         updated_at,
+        prompt_template_id,
     )) = row
     else {
         return Ok(None);
@@ -355,6 +358,7 @@ fn read_session(conn: &rusqlite::Connection, id: &str) -> Result<Option<JsonValu
         "title": title,
         "systemPrompt": system_prompt,
         "selectedSceneId": selected_scene_id,
+        "promptTemplateId": prompt_template_id,
         "personaId": persona_id,
         "personaDisabled": persona_disabled.unwrap_or(0) != 0,
         "voiceAutoplay": voice_autoplay.map(|value| value != 0),
@@ -915,6 +919,10 @@ pub fn session_upsert_meta(app: tauri::AppHandle, session_json: String) -> Resul
         .get("selectedSceneId")
         .and_then(|v| v.as_str())
         .map(|x| x.to_string());
+    let prompt_template_id = s
+        .get("promptTemplateId")
+        .and_then(|v| v.as_str())
+        .map(|x| x.to_string());
     let persona_id = s
         .get("personaId")
         .and_then(|v| v.as_str())
@@ -980,13 +988,14 @@ pub fn session_upsert_meta(app: tauri::AppHandle, session_json: String) -> Resul
     let top_k = adv.and_then(|v| v.get("topK")).and_then(|v| v.as_i64());
 
     conn.execute(
-        r#"INSERT INTO sessions (id, character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, memory_status, memory_error, archived, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        r#"INSERT INTO sessions (id, character_id, title, system_prompt, selected_scene_id, prompt_template_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, memory_status, memory_error, archived, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               character_id=excluded.character_id,
               title=excluded.title,
               system_prompt=excluded.system_prompt,
               selected_scene_id=excluded.selected_scene_id,
+              prompt_template_id=excluded.prompt_template_id,
               persona_id=excluded.persona_id,
               persona_disabled=excluded.persona_disabled,
               voice_autoplay=excluded.voice_autoplay,
@@ -1011,6 +1020,7 @@ pub fn session_upsert_meta(app: tauri::AppHandle, session_json: String) -> Resul
             title,
             system_prompt,
             selected_scene_id,
+            prompt_template_id,
             persona_id,
             persona_disabled,
             voice_autoplay,
@@ -1322,6 +1332,10 @@ pub fn session_upsert(app: tauri::AppHandle, session_json: String) -> Result<(),
         .get("selectedSceneId")
         .and_then(|v| v.as_str())
         .map(|x| x.to_string());
+    let prompt_template_id = s
+        .get("promptTemplateId")
+        .and_then(|v| v.as_str())
+        .map(|x| x.to_string());
     let persona_id = s
         .get("personaId")
         .and_then(|v| v.as_str())
@@ -1399,13 +1413,14 @@ pub fn session_upsert(app: tauri::AppHandle, session_json: String) -> Result<(),
         .transaction()
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
     tx.execute(
-        r#"INSERT INTO sessions (id, character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, archived, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        r#"INSERT INTO sessions (id, character_id, title, system_prompt, selected_scene_id, prompt_template_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events, archived, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               character_id=excluded.character_id,
               title=excluded.title,
               system_prompt=excluded.system_prompt,
               selected_scene_id=excluded.selected_scene_id,
+              prompt_template_id=excluded.prompt_template_id,
               persona_id=excluded.persona_id,
               persona_disabled=excluded.persona_disabled,
               voice_autoplay=excluded.voice_autoplay,
@@ -1422,7 +1437,7 @@ pub fn session_upsert(app: tauri::AppHandle, session_json: String) -> Result<(),
               memory_tool_events=excluded.memory_tool_events,
               archived=excluded.archived,
               updated_at=excluded.updated_at"#,
-        params![&id, character_id, title, system_prompt, selected_scene_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, &memories_json, &memory_embeddings_json, memory_summary, memory_summary_token_count, &memory_tool_events_json, archived, created_at, updated_at],
+        params![&id, character_id, title, system_prompt, selected_scene_id, prompt_template_id, persona_id, persona_disabled, voice_autoplay, temperature, top_p, max_output_tokens, frequency_penalty, presence_penalty, top_k, &memories_json, &memory_embeddings_json, memory_summary, memory_summary_token_count, &memory_tool_events_json, archived, created_at, updated_at],
     ).map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     if let Some(msgs) = s.get("messages").and_then(|v| v.as_array()) {

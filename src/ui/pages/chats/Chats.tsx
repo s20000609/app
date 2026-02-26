@@ -26,6 +26,7 @@ import {
   type CharacterFileFormat,
 } from "../../../core/storage/characterTransfer";
 import { storageBridge } from "../../../core/storage/files";
+import { ChatTemplateSelector } from "./components/ChatTemplateSelector";
 
 export function ChatPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -47,6 +48,9 @@ export function ChatPage() {
   >({});
   const [hiding, setHiding] = useState(false);
   const [viewMode, setViewMode] = useState<ChatsViewMode>("hero");
+  const [templateSelectorCharacter, setTemplateSelectorCharacter] = useState<Character | null>(
+    null,
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -150,6 +154,24 @@ export function ChatPage() {
     };
   }, []);
 
+  const createNewChat = async (character: Character, templateId?: string | null) => {
+    try {
+      const sceneId = templateId
+        ? undefined
+        : (character.defaultSceneId ?? character.scenes?.[0]?.id);
+      const session = await createSession(
+        character.id,
+        "New Chat",
+        sceneId,
+        templateId ?? undefined,
+      );
+      navigate(`/chat/${character.id}?sessionId=${session.id}`);
+    } catch (error) {
+      console.error("Failed to create session:", error);
+      navigate(`/chat/${character.id}`);
+    }
+  };
+
   const startChat = async (character: Character) => {
     try {
       const latestSessionId = latestSessionByCharacter[character.id]?.id;
@@ -158,12 +180,13 @@ export function ChatPage() {
         return;
       }
 
-      const session = await createSession(
-        character.id,
-        "New Chat",
-        character.scenes && character.scenes.length > 0 ? character.scenes[0].id : undefined,
-      );
-      navigate(`/chat/${character.id}?sessionId=${session.id}`);
+      // If character has templates, show selector
+      if (character.chatTemplates && character.chatTemplates.length > 0) {
+        setTemplateSelectorCharacter(character);
+        return;
+      }
+
+      await createNewChat(character);
     } catch (error) {
       console.error("Failed to load or create session:", error);
       navigate(`/chat/${character.id}`);
@@ -456,6 +479,20 @@ export function ChatPage() {
           </div>
         </div>
       </BottomMenu>
+
+      {/* Template selector */}
+      <ChatTemplateSelector
+        isOpen={!!templateSelectorCharacter}
+        onClose={() => setTemplateSelectorCharacter(null)}
+        templates={templateSelectorCharacter?.chatTemplates ?? []}
+        defaultTemplateId={templateSelectorCharacter?.defaultChatTemplateId}
+        onSelect={(templateId) => {
+          if (templateSelectorCharacter) {
+            createNewChat(templateSelectorCharacter, templateId);
+          }
+          setTemplateSelectorCharacter(null);
+        }}
+      />
     </div>
   );
 }

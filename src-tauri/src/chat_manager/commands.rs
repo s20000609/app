@@ -3698,6 +3698,7 @@ pub fn render_prompt_preview(
             title: "Preview".to_string(),
             system_prompt: None,
             selected_scene_id: None,
+            prompt_template_id: None,
             persona_id: None,
             persona_disabled: false,
             voice_autoplay: None,

@@ -619,7 +619,7 @@ export function useChatController(
           targetSession = await createSession(
             match.id,
             match.name ?? "New chat",
-            match.scenes && match.scenes.length > 0 ? match.scenes[0].id : undefined,
+            match.defaultSceneId ?? match.scenes?.[0]?.id,
           );
         }
 

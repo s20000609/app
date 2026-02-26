@@ -66,6 +66,21 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
         title: "Edit Persona",
       },
       {
+        match: (p) =>
+          p.startsWith("/settings/characters/") && p.includes("/templates/new"),
+        title: "New Template",
+      },
+      {
+        match: (p) =>
+          p.startsWith("/settings/characters/") && p.includes("/templates/") && !p.endsWith("/templates"),
+        title: "Edit Template",
+      },
+      {
+        match: (p) =>
+          p.startsWith("/settings/characters/") && p.endsWith("/templates"),
+        title: "Chat Templates",
+      },
+      {
         match: (p) => p.startsWith("/settings/characters/") && p.endsWith("/edit"),
         title: "Edit Character",
       },
@@ -221,6 +236,10 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
     () => basePath === "/settings/accessibility/colors",
     [basePath],
   );
+  const isTemplateEdit = useMemo(
+    () => /^\/settings\/characters\/[^/]+\/templates\/[^/]+$/.test(basePath),
+    [basePath],
+  );
   const showSaveButton =
     isCharacterEdit ||
     isPersonaEdit ||
@@ -229,7 +248,8 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
     isPromptEdit ||
     isPromptNew ||
     isChatAppearanceEdit ||
-    isColorCustomizationEdit;
+    isColorCustomizationEdit ||
+    isTemplateEdit;
 
   // Track save button state from window globals
   const [canSave, setCanSave] = useState(false);
@@ -272,6 +292,11 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
         const newIsSaving = !!globalWindow.__saveColorCustomizationSaving;
         setCanSave((prev) => (prev !== newCanSave ? newCanSave : prev));
         setIsSaving((prev) => (prev !== newIsSaving ? newIsSaving : prev));
+      } else if (isTemplateEdit) {
+        const newCanSave = !!globalWindow.__saveCharacterCanSave;
+        const newIsSaving = !!globalWindow.__saveCharacterSaving;
+        setCanSave((prev) => (prev !== newCanSave ? newCanSave : prev));
+        setIsSaving((prev) => (prev !== newIsSaving ? newIsSaving : prev));
       }
     };
 
@@ -290,6 +315,7 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
     isPromptNew,
     isChatAppearanceEdit,
     isColorCustomizationEdit,
+    isTemplateEdit,
   ]);
 
   useEffect(() => {
@@ -551,6 +577,11 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
                   typeof globalWindow.__saveColorCustomization === "function"
                 ) {
                   globalWindow.__saveColorCustomization();
+                } else if (
+                  isTemplateEdit &&
+                  typeof globalWindow.__saveCharacter === "function"
+                ) {
+                  globalWindow.__saveCharacter();
                 }
               }}
               disabled={!canSave || isSaving}

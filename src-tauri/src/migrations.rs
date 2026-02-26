@@ -7,7 +7,7 @@ use crate::storage_manager::{settings::storage_read_settings, settings::storage_
 use crate::utils::log_info;
 
 /// Current migration version
-pub const CURRENT_MIGRATION_VERSION: u32 = 37;
+pub const CURRENT_MIGRATION_VERSION: u32 = 40;
 
 pub fn run_migrations(app: &AppHandle) -> Result<(), String> {
     log_info(app, "migrations", "Starting migration check");
@@ -23,6 +23,9 @@ pub fn run_migrations(app: &AppHandle) -> Result<(), String> {
         migrate_v34_to_v35(app)?;
         migrate_v35_to_v36(app)?;
         migrate_v36_to_v37(app)?;
+        migrate_v37_to_v38(app)?;
+        migrate_v38_to_v39(app)?;
+        migrate_v39_to_v40(app)?;
         log_info(
             app,
             "migrations",
@@ -415,6 +418,36 @@ pub fn run_migrations(app: &AppHandle) -> Result<(), String> {
         );
         migrate_v36_to_v37(app)?;
         version = 37;
+    }
+
+    if version < 38 {
+        log_info(
+            app,
+            "migrations",
+            "Running migration v37 -> v38: Add chat_templates tables",
+        );
+        migrate_v37_to_v38(app)?;
+        version = 38;
+    }
+
+    if version < 39 {
+        log_info(
+            app,
+            "migrations",
+            "Running migration v38 -> v39: Add scene_id to chat_templates",
+        );
+        migrate_v38_to_v39(app)?;
+        version = 39;
+    }
+
+    if version < 40 {
+        log_info(
+            app,
+            "migrations",
+            "Running migration v39 -> v40: Add prompt_template_id to chat_templates and sessions",
+        );
+        migrate_v39_to_v40(app)?;
+        version = 40;
     }
 
     // Update the stored version
@@ -2455,5 +2488,64 @@ fn migrate_v36_to_v37(app: &AppHandle) -> Result<(), String> {
     )
     .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
+    Ok(())
+}
+
+fn migrate_v37_to_v38(app: &AppHandle) -> Result<(), String> {
+    use crate::storage_manager::db::open_db;
+
+    let conn = open_db(app)?;
+
+    conn.execute_batch(
+        r#"
+        CREATE TABLE IF NOT EXISTS chat_templates (
+          id TEXT PRIMARY KEY,
+          character_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          scene_id TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(character_id) REFERENCES characters(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS chat_template_messages (
+          id TEXT PRIMARY KEY,
+          template_id TEXT NOT NULL,
+          idx INTEGER NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          FOREIGN KEY(template_id) REFERENCES chat_templates(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_ctm_template ON chat_template_messages(template_id);
+        CREATE INDEX IF NOT EXISTS idx_chat_templates_character ON chat_templates(character_id);
+        "#,
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
+    let _ = conn.execute(
+        "ALTER TABLE characters ADD COLUMN default_chat_template_id TEXT",
+        [],
+    );
+
+    Ok(())
+}
+
+fn migrate_v38_to_v39(app: &AppHandle) -> Result<(), String> {
+    use crate::storage_manager::db::open_db;
+    let conn = open_db(app)?;
+    let _ = conn.execute("ALTER TABLE chat_templates ADD COLUMN scene_id TEXT", []);
+    Ok(())
+}
+
+fn migrate_v39_to_v40(app: &AppHandle) -> Result<(), String> {
+    let conn = crate::storage_manager::db::open_db(app)?;
+    let _ = conn.execute(
+        "ALTER TABLE chat_templates ADD COLUMN prompt_template_id TEXT",
+        [],
+    );
+    let _ = conn.execute(
+        "ALTER TABLE sessions ADD COLUMN prompt_template_id TEXT",
+        [],
+    );
     Ok(())
 }

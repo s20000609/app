@@ -65,7 +65,11 @@ export function SearchPage() {
         return;
       }
 
-      const session = await createSession(character.id, "New Chat", character.scenes?.[0]?.id);
+      const session = await createSession(
+        character.id,
+        "New Chat",
+        character.defaultSceneId ?? character.scenes?.[0]?.id,
+      );
       navigate(`/chat/${character.id}?sessionId=${session.id}`);
     } catch (error) {
       console.error("Failed to load or create session:", error);
@@ -202,9 +206,7 @@ function TabButton({
       onClick={onClick}
       className={cn(
         "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-all",
-        active
-          ? "bg-fg/15 text-fg"
-          : "bg-fg/5 text-fg/50 hover:bg-fg/10 hover:text-fg/70",
+        active ? "bg-fg/15 text-fg" : "bg-fg/5 text-fg/50 hover:bg-fg/10 hover:text-fg/70",
       )}
     >
       {icon}
@@ -385,9 +387,7 @@ const PersonaCard = memo(
               </span>
             )}
           </div>
-          <p className="line-clamp-1 text-[13px] leading-tight text-fg/50">
-            {persona.description}
-          </p>
+          <p className="line-clamp-1 text-[13px] leading-tight text-fg/50">{persona.description}</p>
         </div>
 
         {/* Subtle chevron */}

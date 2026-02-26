@@ -313,6 +313,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
           voice_config TEXT,
           voice_autoplay INTEGER NOT NULL DEFAULT 0,
           disable_avatar_gradient INTEGER NOT NULL DEFAULT 0,
+          default_chat_template_id TEXT,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL
         );
@@ -384,6 +385,26 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
           FOREIGN KEY(scene_id) REFERENCES scenes(id) ON DELETE CASCADE
         );
 
+        -- Chat templates (multi-message conversation starters)
+        CREATE TABLE IF NOT EXISTS chat_templates (
+          id TEXT PRIMARY KEY,
+          character_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          scene_id TEXT,
+          prompt_template_id TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(character_id) REFERENCES characters(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS chat_template_messages (
+          id TEXT PRIMARY KEY,
+          template_id TEXT NOT NULL,
+          idx INTEGER NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          FOREIGN KEY(template_id) REFERENCES chat_templates(id) ON DELETE CASCADE
+        );
+
         -- Personas
         CREATE TABLE IF NOT EXISTS personas (
           id TEXT PRIMARY KEY,
@@ -405,6 +426,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
           title TEXT NOT NULL,
           system_prompt TEXT,
           selected_scene_id TEXT,
+          prompt_template_id TEXT,
           persona_id TEXT,
           persona_disabled INTEGER NOT NULL DEFAULT 0,
           voice_autoplay INTEGER,
@@ -624,6 +646,8 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
           ON creation_helper_sessions(creation_goal, updated_at DESC);
         CREATE INDEX IF NOT EXISTS idx_scenes_character ON scenes(character_id);
         CREATE INDEX IF NOT EXISTS idx_scene_variants_scene ON scene_variants(scene_id);
+        CREATE INDEX IF NOT EXISTS idx_chat_templates_character ON chat_templates(character_id);
+        CREATE INDEX IF NOT EXISTS idx_ctm_template ON chat_template_messages(template_id);
         CREATE INDEX IF NOT EXISTS idx_personas_default ON personas(is_default);
         CREATE INDEX IF NOT EXISTS idx_usage_time ON usage_records(timestamp);
         CREATE INDEX IF NOT EXISTS idx_usage_provider ON usage_records(provider_id);
