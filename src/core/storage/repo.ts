@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { MemoryEmbedding } from "../memory";
 import { storageBridge } from "./files";
 import { getDefaultCharacterRules } from "./defaults";
 import {
@@ -408,6 +409,23 @@ export async function getSession(id: string): Promise<Session | null> {
   const data = await storageBridge.sessionGet(id);
   return data ? SessionSchema.parse(data) : null;
 }
+
+/**
+ * 從 Tauri 後端取得該 session 的 memory_embeddings，供 getKeyMemoriesForRequest 使用（桌面端接線）。
+ * iOS 端請實作自己的 GetSessionMemories（從本地儲存讀出）。
+ */
+export async function getSessionMemoriesFromTauri(sessionId: string): Promise<MemoryEmbedding[]> {
+  const session = await getSession(sessionId);
+  return (session?.memoryEmbeddings ?? []) as MemoryEmbedding[];
+}
+
+/**
+ * 使用 Tauri 後端 compute_embedding 的 EmbeddingProvider，供桌面端 getKeyMemoriesForRequest 使用。
+ * iOS 端請注入 CoreML 實作或 stubEmbeddingProvider。
+ */
+export const tauriEmbeddingProvider = {
+  computeEmbedding: (text: string) => storageBridge.computeEmbedding(text),
+};
 
 export async function getSessionMeta(id: string): Promise<Session | null> {
   const data = await storageBridge.sessionGetMeta(id);

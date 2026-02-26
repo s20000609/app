@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "sync-version": "node scripts/sync-version.mjs",
     "tauri": "tauri",
-    "check": "(tsc --noEmit && cd src-tauri && cargo check) && echo 'All checks successful.' || echo 'Check failed.'"
+    "check": "(tsc --noEmit && cd src-tauri && cargo check) && echo 'All checks successful.' || echo 'Check failed.'",
+    "test:prompt": "npx tsx src/core/prompts/test.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

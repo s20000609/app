@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { MemoryEmbedding } from "../memory";
 import type { StoredMessage, UsageSummary, ImageAttachment } from "../storage/schemas";
 
 export interface ChatTurnResult {
@@ -33,6 +34,8 @@ export async function sendChatTurn(params: {
   stream?: boolean;
   requestId?: string;
   attachments?: ImageAttachment[];
+  /** When set (e.g. on iOS), backend uses these as key memories instead of running ONNX retrieval. */
+  keyMemories?: MemoryEmbedding[] | null;
 }): Promise<ChatTurnResult> {
   const {
     sessionId,
@@ -43,6 +46,7 @@ export async function sendChatTurn(params: {
     stream = true,
     requestId,
     attachments = [],
+    keyMemories,
   } = params;
   if (!message.trim() && attachments.length === 0) {
     throw new Error("Message cannot be empty");
@@ -58,6 +62,7 @@ export async function sendChatTurn(params: {
       stream,
       requestId: requestId ?? null,
       attachments,
+      keyMemoriesJson: keyMemories != null && keyMemories.length > 0 ? JSON.stringify(keyMemories) : null,
     },
   });
 }

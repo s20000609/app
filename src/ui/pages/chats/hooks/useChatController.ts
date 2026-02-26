@@ -47,6 +47,12 @@ import {
   createThinkStreamState,
   finalizeThinkStream,
 } from "../../../../core/utils/thinkTags";
+import {
+  getKeyMemoriesForRequest,
+  stubEmbeddingProvider,
+  type MemoryEmbedding,
+} from "../../../../core/memory";
+import { getSessionMemoriesFromTauri } from "../../../../core/storage/repo";
 
 const INITIAL_MESSAGE_LIMIT = 50;
 const OLDER_MESSAGE_PAGE = 50;
@@ -1014,6 +1020,19 @@ export function useChatController(
           }
         });
 
+        // On iOS, run TS memory retrieval and pass key memories so backend skips ONNX.
+        let keyMemories: MemoryEmbedding[] | undefined;
+        try {
+          if (getPlatform() === "ios") {
+            keyMemories = await getKeyMemoriesForRequest(state.session.id, message, {
+              getSessionMemories: getSessionMemoriesFromTauri,
+              embeddingProvider: stubEmbeddingProvider,
+            });
+          }
+        } catch {
+          keyMemories = undefined;
+        }
+
         const result = await sendChatTurn({
           sessionId: state.session.id,
           characterId: state.character.id,
@@ -1023,6 +1042,7 @@ export function useChatController(
           stream: true,
           requestId,
           attachments: messageAttachments.length > 0 ? messageAttachments : undefined,
+          keyMemories: keyMemories ?? undefined,
         });
 
         const replaced = messagesRef.current.map((msg) => {

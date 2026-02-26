@@ -27,4 +27,9 @@ export function getPlatform(): AppPlatform {
                 arch: archName
             };
     };
-};
+}
+
+/** True when running as Tauri app on iOS (used for frontend memory retrieval path). */
+export function isIOS(): boolean {
+    return type() === "ios";
+}

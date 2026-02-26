@@ -96,3 +96,24 @@ export async function validateTemplateVariables(
 ): Promise<void> {
   await invoke("validate_template_variables", { templateId, content, entries });
 }
+
+// Pure TypeScript prompt engine (no Tauri). Use for iOS or when backend is unavailable.
+export {
+  buildSystemPromptEntries,
+  renderWithContext,
+  defaultModularPromptEntries,
+  getContentRulesForPureMode,
+  pureModeLevelFromAppState,
+  formatLorebookForPrompt,
+} from "./PromptEngine";
+export type {
+  PromptEngineOptions,
+  PureModeLevel,
+  AppStateForPrompt,
+  SystemPromptEntry as PromptEngineEntry,
+  Character as PromptEngineCharacter,
+  Persona as PromptEnginePersona,
+  Session as PromptEngineSession,
+  Settings as PromptEngineSettings,
+  Model as PromptEngineModel,
+} from "./PromptEngine";

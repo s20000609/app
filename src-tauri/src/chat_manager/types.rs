@@ -600,6 +600,9 @@ pub struct ChatCompletionArgs {
     pub request_id: Option<String>,
     #[serde(default)]
     pub attachments: Vec<ImageAttachment>,
+    /// When set (e.g. from iOS frontend), use these as relevant memories instead of running ONNX retrieval.
+    #[serde(alias = "keyMemoriesJson")]
+    pub key_memories_json: Option<String>,
 }
 
 #[derive(Deserialize)]

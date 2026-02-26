@@ -1247,6 +1247,7 @@ pub async fn chat_completion(
         stream,
         request_id,
         attachments,
+        key_memories_json,
     } = args;
     let swap_places = role_swap_enabled(swap_places);
 
@@ -1425,9 +1426,12 @@ pub async fn chat_completion(
     };
 
     // Retrieve top-k relevant memories for this turn.
-    // - Dynamic memory: use semantic search over memory embeddings
+    // - When key_memories_json is set (e.g. iOS frontend did TS retrieval): use it and skip ONNX.
+    // - Otherwise dynamic memory: use semantic search over memory embeddings (ONNX).
     // - Manual memory: memories are injected via system prompt (see below)
-    let relevant_memories = if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
+    let relevant_memories = if let Some(ref json) = key_memories_json {
+        serde_json::from_str::<Vec<MemoryEmbedding>>(json).unwrap_or_default()
+    } else if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
         let fixed = ensure_pinned_hot(&mut session.memory_embeddings);
         if fixed > 0 {
             log_info(
