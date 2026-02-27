@@ -17,6 +17,7 @@ export const ADVANCED_LLAMA_THREADS_BATCH_RANGE = { min: 1, max: 256 };
 export const ADVANCED_LLAMA_SEED_RANGE = { min: 0, max: 2_147_483_647 };
 export const ADVANCED_LLAMA_ROPE_FREQ_BASE_RANGE = { min: 0, max: 1_000_000 };
 export const ADVANCED_LLAMA_ROPE_FREQ_SCALE_RANGE = { min: 0, max: 10 };
+export const ADVANCED_LLAMA_BATCH_SIZE_RANGE = { min: 1, max: 8192 };
 export const ADVANCED_OLLAMA_NUM_CTX_RANGE = { min: 0, max: 262_144 };
 export const ADVANCED_OLLAMA_NUM_PREDICT_RANGE = { min: 0, max: 131_072 };
 export const ADVANCED_OLLAMA_NUM_KEEP_RANGE = { min: 0, max: 32_768 };
@@ -84,6 +85,8 @@ export function sanitizeAdvancedModelSettings(input: AdvancedModelSettings): Adv
       false,
     ),
     llamaOffloadKqv: input.llamaOffloadKqv ?? null,
+    llamaBatchSize: sanitize(input.llamaBatchSize, ADVANCED_LLAMA_BATCH_SIZE_RANGE, true),
+    llamaKvType: input.llamaKvType ?? null,
     ollamaNumCtx: sanitize(input.ollamaNumCtx, ADVANCED_OLLAMA_NUM_CTX_RANGE, true),
     ollamaNumPredict: sanitize(input.ollamaNumPredict, ADVANCED_OLLAMA_NUM_PREDICT_RANGE, true),
     ollamaNumKeep: sanitize(input.ollamaNumKeep, ADVANCED_OLLAMA_NUM_KEEP_RANGE, true),

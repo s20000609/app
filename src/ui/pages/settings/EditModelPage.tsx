@@ -17,6 +17,7 @@ import {
   ADVANCED_LLAMA_SEED_RANGE,
   ADVANCED_LLAMA_ROPE_FREQ_BASE_RANGE,
   ADVANCED_LLAMA_ROPE_FREQ_SCALE_RANGE,
+  ADVANCED_LLAMA_BATCH_SIZE_RANGE,
   ADVANCED_OLLAMA_NUM_CTX_RANGE,
   ADVANCED_OLLAMA_NUM_PREDICT_RANGE,
   ADVANCED_OLLAMA_NUM_KEEP_RANGE,
@@ -56,8 +57,25 @@ type LlamaCppContextInfo = {
   maxContextLength: number;
   recommendedContextLength?: number | null;
   availableMemoryBytes?: number | null;
+  availableVramBytes?: number | null;
   modelSizeBytes?: number | null;
 };
+
+const LLAMA_KV_TYPE_OPTIONS = [
+  { value: "auto", label: "Auto (model default)" },
+  { value: "f16", label: "F16 (best quality, highest VRAM)" },
+  { value: "q8_0", label: "Q8_0 (recommended)" },
+  { value: "q8_1", label: "Q8_1" },
+  { value: "q6_k", label: "Q6_K" },
+  { value: "q5_k", label: "Q5_K" },
+  { value: "q5_1", label: "Q5_1" },
+  { value: "q5_0", label: "Q5_0" },
+  { value: "q4_k", label: "Q4_K" },
+  { value: "q4_1", label: "Q4_1" },
+  { value: "q4_0", label: "Q4_0" },
+  { value: "q3_k", label: "Q3_K" },
+  { value: "q2_k", label: "Q2_K (max VRAM saving)" },
+] as const;
 
 const normalizeSearchText = (value?: string) =>
   (value ?? "")
@@ -134,6 +152,8 @@ export function EditModelPage() {
     handleLlamaRopeFreqBaseChange,
     handleLlamaRopeFreqScaleChange,
     handleLlamaOffloadKqvChange,
+    handleLlamaBatchSizeChange,
+    handleLlamaKvTypeChange,
     handleOllamaNumCtxChange,
     handleOllamaNumPredictChange,
     handleOllamaNumKeepChange,
@@ -401,8 +421,32 @@ export function EditModelPage() {
     return (bytes / 1024 ** 3).toFixed(1);
   };
   const availableRamGiB = formatGiB(llamaContextInfo?.availableMemoryBytes ?? null);
+  const availableVramGiB = formatGiB(llamaContextInfo?.availableVramBytes ?? null);
   const modelSizeGiB = formatGiB(llamaContextInfo?.modelSizeBytes ?? null);
   const ollamaStopText = (modelAdvancedDraft.ollamaStop ?? []).join("\n");
+  const applyLlamaPreset = (preset: "balanced" | "throughput" | "vram" | "cpu_ram") => {
+    if (preset === "balanced") {
+      handleLlamaBatchSizeChange(512);
+      handleLlamaKvTypeChange("q8_0");
+      handleLlamaOffloadKqvChange(true);
+      return;
+    }
+    if (preset === "throughput") {
+      handleLlamaBatchSizeChange(1024);
+      handleLlamaKvTypeChange("f16");
+      handleLlamaOffloadKqvChange(true);
+      return;
+    }
+    if (preset === "vram") {
+      handleLlamaBatchSizeChange(512);
+      handleLlamaKvTypeChange("q4_k");
+      handleLlamaOffloadKqvChange(true);
+      return;
+    }
+    handleLlamaBatchSizeChange(256);
+    handleLlamaKvTypeChange("q8_0");
+    handleLlamaOffloadKqvChange(false);
+  };
 
   // Register window globals for header save button
   useEffect(() => {
@@ -448,6 +492,7 @@ export function EditModelPage() {
         const info = await invoke<LlamaCppContextInfo>("llamacpp_context_info", {
           modelPath,
           llamaOffloadKqv: modelAdvancedDraft.llamaOffloadKqv ?? null,
+          llamaKvType: modelAdvancedDraft.llamaKvType ?? null,
         });
         if (!cancelled) {
           setLlamaContextInfo(info);
@@ -473,7 +518,12 @@ export function EditModelPage() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [editorModel?.name, isLocalModel, modelAdvancedDraft.llamaOffloadKqv]);
+  }, [
+    editorModel?.name,
+    isLocalModel,
+    modelAdvancedDraft.llamaOffloadKqv,
+    modelAdvancedDraft.llamaKvType,
+  ]);
 
   const scopeOrder = ["text", "image", "audio"] as const;
   const toggleScope = (
@@ -1115,10 +1165,12 @@ export function EditModelPage() {
                                 ? ` • Recommended: ${recommendedContextLength.toLocaleString()}`
                                 : ""}
                             </p>
-                            {(availableRamGiB || modelSizeGiB) && (
+                            {(availableRamGiB || availableVramGiB || modelSizeGiB) && (
                               <p>
                                 {availableRamGiB ? `Available RAM: ${availableRamGiB} GB` : ""}
-                                {availableRamGiB && modelSizeGiB ? " • " : ""}
+                                {availableRamGiB && (availableVramGiB || modelSizeGiB) ? " • " : ""}
+                                {availableVramGiB ? `Available VRAM: ${availableVramGiB} GB` : ""}
+                                {availableVramGiB && modelSizeGiB ? " • " : ""}
                                 {modelSizeGiB ? `Model size: ${modelSizeGiB} GB` : ""}
                               </p>
                             )}
@@ -1301,6 +1353,45 @@ export function EditModelPage() {
                           </span>
                         </div>
 
+                        <div className="space-y-3 rounded-xl border border-fg/10 bg-surface-el/10 p-3">
+                          <span className="block text-xs font-medium text-fg/70">
+                            Quick Presets
+                          </span>
+                          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                            <button
+                              type="button"
+                              onClick={() => applyLlamaPreset("balanced")}
+                              className="rounded-lg border border-fg/10 bg-surface-el/20 px-2.5 py-2 text-[11px] text-fg/80 transition hover:border-fg/20 hover:bg-surface-el/30"
+                            >
+                              Balanced
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyLlamaPreset("throughput")}
+                              className="rounded-lg border border-fg/10 bg-surface-el/20 px-2.5 py-2 text-[11px] text-fg/80 transition hover:border-fg/20 hover:bg-surface-el/30"
+                            >
+                              Throughput
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyLlamaPreset("vram")}
+                              className="rounded-lg border border-fg/10 bg-surface-el/20 px-2.5 py-2 text-[11px] text-fg/80 transition hover:border-fg/20 hover:bg-surface-el/30"
+                            >
+                              VRAM Saver
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyLlamaPreset("cpu_ram")}
+                              className="rounded-lg border border-fg/10 bg-surface-el/20 px-2.5 py-2 text-[11px] text-fg/80 transition hover:border-fg/20 hover:bg-surface-el/30"
+                            >
+                              CPU + RAM
+                            </button>
+                          </div>
+                          <span className="block text-[10px] text-fg/40">
+                            Presets adjust `Offload KQV`, `Batch Size`, and `KV Cache Type`.
+                          </span>
+                        </div>
+
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
@@ -1477,6 +1568,82 @@ export function EditModelPage() {
                               <option value="off" className="bg-[#16171d]">
                                 Off
                               </option>
+                            </select>
+                            <span className="block text-[10px] text-fg/40">
+                              {modelAdvancedDraft.llamaOffloadKqv === true
+                                ? "Using VRAM for context (KV cache on GPU)"
+                                : modelAdvancedDraft.llamaOffloadKqv === false
+                                  ? "Using RAM for context (KV cache on CPU)"
+                                  : "Auto: runtime decides VRAM vs RAM for context"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                          <div className="space-y-4">
+                            <div className="space-y-0.5">
+                              <span className="block text-xs font-medium text-fg/70">
+                                Batch Size
+                              </span>
+                              <span className="block text-[10px] text-fg/40">
+                                Prompt eval chunk size (lower is safer on AMD)
+                              </span>
+                            </div>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={ADVANCED_LLAMA_BATCH_SIZE_RANGE.min}
+                              max={ADVANCED_LLAMA_BATCH_SIZE_RANGE.max}
+                              step={1}
+                              value={modelAdvancedDraft.llamaBatchSize ?? ""}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const next = raw === "" ? null : Number(raw);
+                                handleLlamaBatchSizeChange(
+                                  next === null || !Number.isFinite(next) || next <= 0
+                                    ? null
+                                    : Math.trunc(next),
+                                );
+                              }}
+                              placeholder="512"
+                              className={numberInputClassName}
+                            />
+                            <div className="flex justify-between text-[10px] text-fg/30 px-0.5 mt-1">
+                              <span>Default 512</span>
+                              <span>{ADVANCED_LLAMA_BATCH_SIZE_RANGE.max}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-4">
+                            <div className="space-y-0.5">
+                              <span className="block text-xs font-medium text-fg/70">
+                                KV Cache Type
+                              </span>
+                              <span className="block text-[10px] text-fg/40">
+                                Quantize KV cache to save VRAM
+                              </span>
+                            </div>
+                            <select
+                              value={modelAdvancedDraft.llamaKvType ?? "auto"}
+                              onChange={(e) =>
+                                handleLlamaKvTypeChange(
+                                  e.target.value === "auto"
+                                    ? null
+                                    : (e.target.value as NonNullable<
+                                        typeof modelAdvancedDraft.llamaKvType
+                                      >),
+                                )
+                              }
+                              className="w-full rounded-xl border border-fg/10 bg-surface-el/20 px-3 py-2.5 text-sm text-fg transition focus:border-fg/30 focus:outline-none"
+                            >
+                              {LLAMA_KV_TYPE_OPTIONS.map((option) => (
+                                <option
+                                  key={option.value}
+                                  value={option.value}
+                                  className="bg-[#16171d]"
+                                >
+                                  {option.label}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>

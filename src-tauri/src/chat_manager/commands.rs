@@ -614,6 +614,37 @@ fn resolve_llama_offload_kqv(
         .or(settings.advanced_model_settings.llama_offload_kqv)
 }
 
+fn resolve_llama_batch_size(session: &Session, model: &Model, settings: &Settings) -> Option<u32> {
+    session
+        .advanced_model_settings
+        .as_ref()
+        .and_then(|cfg| cfg.llama_batch_size)
+        .or_else(|| {
+            model
+                .advanced_model_settings
+                .as_ref()
+                .and_then(|cfg| cfg.llama_batch_size)
+        })
+        .or(settings.advanced_model_settings.llama_batch_size)
+        .filter(|v| *v > 0)
+}
+
+fn resolve_llama_kv_type(session: &Session, model: &Model, settings: &Settings) -> Option<String> {
+    session
+        .advanced_model_settings
+        .as_ref()
+        .and_then(|cfg| cfg.llama_kv_type.clone())
+        .or_else(|| {
+            model
+                .advanced_model_settings
+                .as_ref()
+                .and_then(|cfg| cfg.llama_kv_type.clone())
+        })
+        .or_else(|| settings.advanced_model_settings.llama_kv_type.clone())
+        .map(|v| v.trim().to_ascii_lowercase())
+        .filter(|v| !v.is_empty())
+}
+
 fn build_llama_extra_fields(
     session: &Session,
     model: &Model,
@@ -640,6 +671,12 @@ fn build_llama_extra_fields(
     }
     if let Some(v) = resolve_llama_offload_kqv(session, model, settings) {
         extra.insert("llamaOffloadKqv".to_string(), json!(v));
+    }
+    if let Some(v) = resolve_llama_batch_size(session, model, settings) {
+        extra.insert("llamaBatchSize".to_string(), json!(v));
+    }
+    if let Some(v) = resolve_llama_kv_type(session, model, settings) {
+        extra.insert("llamaKvType".to_string(), json!(v));
     }
 
     if extra.is_empty() {

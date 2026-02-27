@@ -52,6 +52,8 @@ type ControllerReturn = {
   handleLlamaRopeFreqBaseChange: (value: number | null) => void;
   handleLlamaRopeFreqScaleChange: (value: number | null) => void;
   handleLlamaOffloadKqvChange: (value: boolean | null) => void;
+  handleLlamaBatchSizeChange: (value: number | null) => void;
+  handleLlamaKvTypeChange: (value: AdvancedModelSettings["llamaKvType"]) => void;
   handleOllamaNumCtxChange: (value: number | null) => void;
   handleOllamaNumPredictChange: (value: number | null) => void;
   handleOllamaNumKeepChange: (value: number | null) => void;
@@ -485,6 +487,32 @@ export function useModelEditorController(): ControllerReturn {
         payload: {
           ...state.modelAdvancedDraft,
           llamaOffloadKqv: value,
+        },
+      });
+    },
+    [dispatch, state.modelAdvancedDraft],
+  );
+
+  const handleLlamaBatchSizeChange = useCallback(
+    (value: number | null) => {
+      dispatch({
+        type: "set_model_advanced_draft",
+        payload: {
+          ...state.modelAdvancedDraft,
+          llamaBatchSize: value,
+        },
+      });
+    },
+    [dispatch, state.modelAdvancedDraft],
+  );
+
+  const handleLlamaKvTypeChange = useCallback(
+    (value: AdvancedModelSettings["llamaKvType"]) => {
+      dispatch({
+        type: "set_model_advanced_draft",
+        payload: {
+          ...state.modelAdvancedDraft,
+          llamaKvType: value ?? null,
         },
       });
     },
@@ -968,6 +996,8 @@ export function useModelEditorController(): ControllerReturn {
     handleLlamaRopeFreqBaseChange,
     handleLlamaRopeFreqScaleChange,
     handleLlamaOffloadKqvChange,
+    handleLlamaBatchSizeChange,
+    handleLlamaKvTypeChange,
     handleOllamaNumCtxChange,
     handleOllamaNumPredictChange,
     handleOllamaNumKeepChange,

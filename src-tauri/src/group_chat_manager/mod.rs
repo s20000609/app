@@ -197,6 +197,25 @@ fn build_llama_extra_fields(model: &Model, settings: &Settings) -> Option<HashMa
     {
         extra.insert("llamaOffloadKqv".to_string(), json!(v));
     }
+    if let Some(v) = model
+        .advanced_model_settings
+        .as_ref()
+        .and_then(|a| a.llama_batch_size)
+        .or(settings.advanced_model_settings.llama_batch_size)
+        .filter(|v| *v > 0)
+    {
+        extra.insert("llamaBatchSize".to_string(), json!(v));
+    }
+    if let Some(v) = model
+        .advanced_model_settings
+        .as_ref()
+        .and_then(|a| a.llama_kv_type.clone())
+        .or_else(|| settings.advanced_model_settings.llama_kv_type.clone())
+        .map(|v| v.trim().to_ascii_lowercase())
+        .filter(|v| !v.is_empty())
+    {
+        extra.insert("llamaKvType".to_string(), json!(v));
+    }
 
     if extra.is_empty() {
         None
