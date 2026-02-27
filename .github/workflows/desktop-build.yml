@@ -13,20 +13,31 @@ on:
         required: false
         default: false
         type: boolean
+      build_llama_cpu_linux:
+        description: "Build Linux desktop with llama.cpp CPU"
+        required: false
+        default: true
+        type: boolean
       build_llama_cuda_windows:
         description: "Also build Windows desktop with llama.cpp CUDA support"
         required: false
         default: false
         type: boolean
       build_llama_vulkan_windows:
-        description: "Build Windows Vulkan version"
+        description: "Build Windows Vulkan version with llama.cpp Vulkan support"
         required: false
         default: false
+        type: boolean
+      build_llama_cpu_windows:
+        description: "Build Windows desktop with llama.cpp CPU"
+        required: false
+        default: true
         type: boolean
 
 jobs:
   linux_cpu:
     name: Linux Build (CPU)
+    if: ${{ inputs.build_llama_cpu_linux == true }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       APTABASE_KEY: ${{ secrets.APTABASE_KEY }}
@@ -412,6 +423,7 @@ jobs:
 
   windows_cpu:
     name: Windows Build (CPU)
+    if: ${{ inputs.build_llama_cpu_windows == true }}
     runs-on: blacksmith-4vcpu-windows-2025
     env:
       APTABASE_KEY: ${{ secrets.APTABASE_KEY }}
