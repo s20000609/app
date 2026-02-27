@@ -93,6 +93,24 @@ pub fn parse_mentions(message: &str, characters: &[CharacterInfo]) -> Option<Str
 /// Build a prompt for LLM-based character selection
 pub fn build_selection_prompt(context: &GroupChatContext) -> String {
     let mut prompt = String::new();
+    let muted_ids: std::collections::HashSet<&str> = context
+        .session
+        .muted_character_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    let selectable_characters: Vec<&CharacterInfo> = context
+        .characters
+        .iter()
+        .filter(|c| !muted_ids.contains(c.id.as_str()))
+        .collect();
+    if selectable_characters.is_empty() {
+        prompt.push_str(
+            "## Participants\n\nAll participants are currently muted for automatic selection.\n",
+        );
+        prompt.push_str("Only explicit @mentions should trigger a response.\n\n");
+        return prompt;
+    }
 
     prompt.push_str(
         "You are a narrator for a group chat. Your task is to select which character should respond next.\n\n",
@@ -112,7 +130,7 @@ pub fn build_selection_prompt(context: &GroupChatContext) -> String {
         .map(|m| m.turn_number)
         .unwrap_or(0);
 
-    for character in &context.characters {
+    for character in &selectable_characters {
         let stats = context
             .participation_stats
             .iter()
@@ -208,6 +226,11 @@ pub fn build_selection_prompt(context: &GroupChatContext) -> String {
     prompt.push_str(
         "5. **Allow exceptions**: Private conversations or urgent topics can override balance\n\n",
     );
+    if !context.session.muted_character_ids.is_empty() {
+        prompt.push_str(
+            "6. **Muted participants**: Ignore muted participants for automatic selection.\n\n",
+        );
+    }
 
     prompt.push_str("Use the select_next_speaker tool to choose a character.");
 
@@ -253,6 +276,21 @@ pub fn build_select_next_speaker_tool(characters: &[CharacterInfo]) -> serde_jso
 /// - Recency (soft penalty for speaking too recently)
 /// - Name mentions in user message
 pub fn heuristic_select_speaker(context: &GroupChatContext) -> Result<SelectionResult, String> {
+    let muted_ids: std::collections::HashSet<&str> = context
+        .session
+        .muted_character_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    let selectable_characters: Vec<&CharacterInfo> = context
+        .characters
+        .iter()
+        .filter(|c| !muted_ids.contains(c.id.as_str()))
+        .collect();
+    if selectable_characters.is_empty() {
+        return Err("All participants are muted".to_string());
+    }
+
     let total_messages: i32 = context
         .participation_stats
         .iter()
@@ -268,7 +306,7 @@ pub fn heuristic_select_speaker(context: &GroupChatContext) -> Result<SelectionR
     // Score each character
     let mut scores: Vec<(String, f32, String)> = Vec::new();
 
-    for character in &context.characters {
+    for character in &selectable_characters {
         let stats = context
             .participation_stats
             .iter()
@@ -284,7 +322,7 @@ pub fn heuristic_select_speaker(context: &GroupChatContext) -> Result<SelectionR
         // Favor characters who have spoken less (participation balance)
         if total_messages > 0 {
             let participation_rate = speak_count as f32 / total_messages as f32;
-            let expected_rate = 1.0 / context.characters.len() as f32;
+            let expected_rate = 1.0 / selectable_characters.len() as f32;
 
             if participation_rate < expected_rate {
                 // Under-represented, boost score
@@ -371,7 +409,23 @@ pub fn heuristic_select_speaker(context: &GroupChatContext) -> Result<SelectionR
 /// Picks the next character in the character_ids list after the last speaker.
 /// If no one has spoken yet, picks the first character.
 pub fn round_robin_select_speaker(context: &GroupChatContext) -> Result<SelectionResult, String> {
-    let character_ids: &[String] = &context.session.character_ids;
+    let muted_ids: std::collections::HashSet<&str> = context
+        .session
+        .muted_character_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    let selectable_ids: Vec<String> = context
+        .session
+        .character_ids
+        .iter()
+        .filter(|id| !muted_ids.contains(id.as_str()))
+        .cloned()
+        .collect();
+    if selectable_ids.is_empty() {
+        return Err("All participants are muted".to_string());
+    }
+    let character_ids: &[String] = &selectable_ids;
     if character_ids.is_empty() {
         return Err("No characters in group".to_string());
     }
@@ -479,6 +533,7 @@ pub fn parse_tool_call_response(response: &str) -> Option<SelectionResult> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::storage_manager::group_sessions::GroupSession;
 
     fn test_characters() -> Vec<CharacterInfo> {
         vec![
@@ -507,6 +562,41 @@ mod tests {
                 memory_type: "manual".to_string(),
             },
         ]
+    }
+
+    fn test_context(muted_character_ids: Vec<&str>) -> GroupChatContext {
+        GroupChatContext {
+            session: GroupSession {
+                id: "session-1".to_string(),
+                name: "Test".to_string(),
+                character_ids: vec![
+                    "char-1".to_string(),
+                    "char-2".to_string(),
+                    "char-3".to_string(),
+                ],
+                muted_character_ids: muted_character_ids
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                persona_id: None,
+                created_at: 0,
+                updated_at: 0,
+                archived: false,
+                chat_type: "conversation".to_string(),
+                starting_scene: None,
+                background_image_path: None,
+                memories: vec![],
+                memory_embeddings: vec![],
+                memory_summary: String::new(),
+                memory_summary_token_count: 0,
+                memory_tool_events: vec![],
+                speaker_selection_method: "heuristic".to_string(),
+            },
+            characters: test_characters(),
+            participation_stats: vec![],
+            recent_messages: vec![],
+            user_message: "hello".to_string(),
+        }
     }
 
     #[test]
@@ -562,5 +652,38 @@ mod tests {
             selection.reasoning,
             Some("Alice is best suited".to_string())
         );
+    }
+
+    #[test]
+    fn test_heuristic_ignores_muted_participants() {
+        let context = test_context(vec!["char-1", "char-2"]);
+        let result =
+            heuristic_select_speaker(&context).expect("heuristic selection should succeed");
+        assert_eq!(result.character_id, "char-3");
+    }
+
+    #[test]
+    fn test_round_robin_ignores_muted_participants() {
+        let mut context = test_context(vec!["char-2"]);
+        context.recent_messages = vec![crate::storage_manager::group_sessions::GroupMessage {
+            id: "m1".to_string(),
+            session_id: "session-1".to_string(),
+            role: "assistant".to_string(),
+            content: "hey".to_string(),
+            speaker_character_id: Some("char-1".to_string()),
+            turn_number: 1,
+            created_at: 0,
+            usage: None,
+            variants: None,
+            selected_variant_id: None,
+            is_pinned: false,
+            attachments: vec![],
+            reasoning: None,
+            selection_reasoning: None,
+            model_id: None,
+        }];
+        let result =
+            round_robin_select_speaker(&context).expect("round-robin selection should succeed");
+        assert_eq!(result.character_id, "char-3");
     }
 }

@@ -16,6 +16,8 @@ import {
   Download,
   Upload,
   Users,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,6 +69,8 @@ export function GroupChatSettingsPage() {
     handleAddCharacter,
     handleRemoveCharacter,
     handleChangeSpeakerSelectionMethod,
+    handleSetCharacterMuted,
+    mutedCharacterIds,
     getParticipationPercent,
     participationStats,
   } = useGroupChatSettingsController(groupSessionId, {
@@ -658,7 +662,7 @@ export function GroupChatSettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <SectionHeader
                 title="Characters"
-                subtitle={`${groupCharacters.length} participants`}
+                subtitle={`${groupCharacters.length} participants · ${groupCharacters.length - (session?.mutedCharacterIds?.length ?? 0)} active`}
               />
               <button
                 onClick={() => setShowAddCharacter(true)}
@@ -681,6 +685,7 @@ export function GroupChatSettingsPage() {
               <AnimatePresence mode="popLayout">
                 {groupCharacters.map((character) => {
                   const percent = getParticipationPercent(character.id);
+                  const isMuted = mutedCharacterIds.has(character.id);
 
                   return (
                     <motion.div
@@ -697,7 +702,10 @@ export function GroupChatSettingsPage() {
                     >
                       <CharacterAvatar character={character} size="md" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-fg truncate">{character.name}</p>
+                        <p className="text-sm font-medium text-fg truncate">
+                          {character.name}
+                          {isMuted && <span className="ml-2 text-[10px] text-fg/40">(muted)</span>}
+                        </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 h-1.5 rounded-full bg-fg/10 overflow-hidden">
                             <div
@@ -708,6 +716,18 @@ export function GroupChatSettingsPage() {
                           <span className="text-[10px] text-fg/50 tabular-nums">{percent}%</span>
                         </div>
                       </div>
+                      <button
+                        onClick={() => handleSetCharacterMuted(character.id, !isMuted)}
+                        className={cn(
+                          "flex items-center justify-center rounded-lg p-1.5 transition",
+                          isMuted
+                            ? "text-amber-300 hover:bg-amber-500/10"
+                            : "text-fg/40 hover:text-fg hover:bg-fg/10",
+                        )}
+                        title={isMuted ? "Unmute character" : "Mute character"}
+                      >
+                        {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                      </button>
                       <button
                         onClick={() => setShowRemoveConfirm(character.id)}
                         disabled={groupCharacters.length <= 2}
@@ -736,6 +756,10 @@ export function GroupChatSettingsPage() {
                 A group chat requires at least 2 characters
               </p>
             )}
+            <p className="mt-2 text-xs text-fg/40 text-center">
+              Muted characters are skipped by auto speaker selection, but can still respond via
+              explicit `@mention`.
+            </p>
           </section>
 
           {/* Session Management */}

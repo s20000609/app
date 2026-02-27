@@ -534,7 +534,7 @@ fn export_group_sessions(app: &tauri::AppHandle) -> Result<Vec<JsonValue>, Strin
 
     let mut stmt = conn
         .prepare(
-            "SELECT id, name, character_ids, persona_id, created_at, updated_at, archived,
+            "SELECT id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived,
                     chat_type, starting_scene, background_image_path,
                     memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events
              FROM group_sessions",
@@ -548,18 +548,19 @@ fn export_group_sessions(app: &tauri::AppHandle) -> Result<Vec<JsonValue>, Strin
                 "id": id.clone(),
                 "name": r.get::<_, String>(1)?,
                 "character_ids": r.get::<_, String>(2)?,
-                "persona_id": r.get::<_, Option<String>>(3)?,
-                "created_at": r.get::<_, i64>(4)?,
-                "updated_at": r.get::<_, i64>(5)?,
-                "archived": r.get::<_, i64>(6)? != 0,
-                "chat_type": r.get::<_, String>(7)?,
-                "starting_scene": r.get::<_, Option<String>>(8)?,
-                "background_image_path": r.get::<_, Option<String>>(9)?,
-                "memories": r.get::<_, String>(10)?,
-                "memory_embeddings": r.get::<_, String>(11)?,
-                "memory_summary": r.get::<_, String>(12)?,
-                "memory_summary_token_count": r.get::<_, i64>(13)?,
-                "memory_tool_events": r.get::<_, String>(14)?,
+                "muted_character_ids": r.get::<_, String>(3)?,
+                "persona_id": r.get::<_, Option<String>>(4)?,
+                "created_at": r.get::<_, i64>(5)?,
+                "updated_at": r.get::<_, i64>(6)?,
+                "archived": r.get::<_, i64>(7)? != 0,
+                "chat_type": r.get::<_, String>(8)?,
+                "starting_scene": r.get::<_, Option<String>>(9)?,
+                "background_image_path": r.get::<_, Option<String>>(10)?,
+                "memories": r.get::<_, String>(11)?,
+                "memory_embeddings": r.get::<_, String>(12)?,
+                "memory_summary": r.get::<_, String>(13)?,
+                "memory_summary_token_count": r.get::<_, i64>(14)?,
+                "memory_tool_events": r.get::<_, String>(15)?,
             });
             Ok((id, json))
         })
@@ -1688,14 +1689,17 @@ fn import_group_sessions(app: &tauri::AppHandle, data: &JsonValue) -> Result<(),
             let session_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
             conn.execute(
-                "INSERT INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived,
+                "INSERT INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived,
                  chat_type, starting_scene, background_image_path,
                  memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
                 params![
                     session_id,
                     item.get("name").and_then(|v| v.as_str()).unwrap_or("Group Chat"),
                     item.get("character_ids").and_then(|v| v.as_str()).unwrap_or("[]"),
+                    item.get("muted_character_ids")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("[]"),
                     item.get("persona_id").and_then(|v| v.as_str()),
                     item.get("created_at").and_then(|v| v.as_i64()),
                     item.get("updated_at").and_then(|v| v.as_i64()),

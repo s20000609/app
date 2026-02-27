@@ -317,6 +317,7 @@ pub struct GroupSession {
     pub id: String,
     pub name: String,
     pub character_ids: String,
+    pub muted_character_ids: String,
     pub persona_id: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,

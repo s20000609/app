@@ -1355,6 +1355,7 @@ export const GroupSessionSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   characterIds: z.array(z.string().uuid()),
+  mutedCharacterIds: z.array(z.string().uuid()).default([]),
   personaId: z.string().uuid().nullish(),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),

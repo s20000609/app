@@ -196,7 +196,7 @@ fn read_group_session_payload(
 ) -> Result<Option<JsonValue>, String> {
     let row = conn
         .query_row(
-            "SELECT id, name, character_ids, persona_id, created_at, updated_at, archived,
+            "SELECT id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived,
                     chat_type, starting_scene, background_image_path,
                     memories, memory_embeddings, memory_summary, memory_summary_token_count,
                     memory_tool_events, speaker_selection_method
@@ -207,19 +207,20 @@ fn read_group_session_payload(
                     r.get::<_, String>(0)?,
                     r.get::<_, String>(1)?,
                     r.get::<_, String>(2)?,
-                    r.get::<_, Option<String>>(3)?,
-                    r.get::<_, i64>(4)?,
+                    r.get::<_, String>(3)?,
+                    r.get::<_, Option<String>>(4)?,
                     r.get::<_, i64>(5)?,
                     r.get::<_, i64>(6)?,
-                    r.get::<_, String>(7)?,
-                    r.get::<_, Option<String>>(8)?,
+                    r.get::<_, i64>(7)?,
+                    r.get::<_, String>(8)?,
                     r.get::<_, Option<String>>(9)?,
                     r.get::<_, Option<String>>(10)?,
                     r.get::<_, Option<String>>(11)?,
                     r.get::<_, Option<String>>(12)?,
-                    r.get::<_, Option<i64>>(13)?,
-                    r.get::<_, Option<String>>(14)?,
+                    r.get::<_, Option<String>>(13)?,
+                    r.get::<_, Option<i64>>(14)?,
                     r.get::<_, Option<String>>(15)?,
+                    r.get::<_, Option<String>>(16)?,
                 ))
             },
         )
@@ -230,6 +231,7 @@ fn read_group_session_payload(
         id,
         name,
         character_ids_json,
+        muted_character_ids_json,
         persona_id,
         created_at,
         updated_at,
@@ -250,6 +252,8 @@ fn read_group_session_payload(
 
     let character_ids: JsonValue =
         serde_json::from_str(&character_ids_json).unwrap_or_else(|_| JsonValue::Array(vec![]));
+    let muted_character_ids: JsonValue = serde_json::from_str(&muted_character_ids_json)
+        .unwrap_or_else(|_| JsonValue::Array(vec![]));
     let memories: JsonValue = memories_json
         .as_deref()
         .and_then(|s| serde_json::from_str(s).ok())
@@ -271,6 +275,7 @@ fn read_group_session_payload(
         "id": id,
         "name": name,
         "characterIds": character_ids,
+        "mutedCharacterIds": muted_character_ids,
         "personaId": persona_id,
         "createdAt": created_at,
         "updatedAt": updated_at,
@@ -1168,16 +1173,29 @@ pub fn chatpkg_import(
                 .get("speakerSelectionMethod")
                 .and_then(|v| v.as_str())
                 .unwrap_or("llm");
+            let muted_character_ids: Vec<String> = group_session
+                .get("mutedCharacterIds")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|value| value.as_str())
+                        .filter_map(|old_id| source_to_target_char.get(old_id).cloned())
+                        .filter(|id| unique_character_ids.contains(id))
+                        .collect()
+                })
+                .unwrap_or_default();
 
             conn.execute(
-                "INSERT INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived,
+                "INSERT INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived,
                  chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary,
                  memory_summary_token_count, memory_tool_events, speaker_selection_method)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
                 params![
                     &new_session_id,
                     name,
                     serde_json::to_string(&unique_character_ids)
+                        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
+                    serde_json::to_string(&muted_character_ids)
                         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
                     persona_id,
                     created_at,

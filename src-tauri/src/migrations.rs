@@ -7,7 +7,7 @@ use crate::storage_manager::{settings::storage_read_settings, settings::storage_
 use crate::utils::log_info;
 
 /// Current migration version
-pub const CURRENT_MIGRATION_VERSION: u32 = 40;
+pub const CURRENT_MIGRATION_VERSION: u32 = 41;
 
 pub fn run_migrations(app: &AppHandle) -> Result<(), String> {
     log_info(app, "migrations", "Starting migration check");
@@ -26,6 +26,7 @@ pub fn run_migrations(app: &AppHandle) -> Result<(), String> {
         migrate_v37_to_v38(app)?;
         migrate_v38_to_v39(app)?;
         migrate_v39_to_v40(app)?;
+        migrate_v40_to_v41(app)?;
         log_info(
             app,
             "migrations",
@@ -448,6 +449,16 @@ pub fn run_migrations(app: &AppHandle) -> Result<(), String> {
         );
         migrate_v39_to_v40(app)?;
         version = 40;
+    }
+
+    if version < 41 {
+        log_info(
+            app,
+            "migrations",
+            "Running migration v40 -> v41: Add muted_character_ids to group_sessions",
+        );
+        migrate_v40_to_v41(app)?;
+        version = 41;
     }
 
     // Update the stored version
@@ -2545,6 +2556,15 @@ fn migrate_v39_to_v40(app: &AppHandle) -> Result<(), String> {
     );
     let _ = conn.execute(
         "ALTER TABLE sessions ADD COLUMN prompt_template_id TEXT",
+        [],
+    );
+    Ok(())
+}
+
+fn migrate_v40_to_v41(app: &AppHandle) -> Result<(), String> {
+    let conn = crate::storage_manager::db::open_db(app)?;
+    let _ = conn.execute(
+        "ALTER TABLE group_sessions ADD COLUMN muted_character_ids TEXT NOT NULL DEFAULT '[]'",
         [],
     );
     Ok(())

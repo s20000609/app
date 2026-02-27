@@ -777,7 +777,7 @@ fn fetch_group_sessions(conn: &DbConnection, ids: &[String]) -> Result<Vec<u8>, 
     }
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
 
-    let sql = format!("SELECT id, name, character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events FROM group_sessions WHERE id IN ({})", placeholders);
+    let sql = format!("SELECT id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events FROM group_sessions WHERE id IN ({})", placeholders);
     let mut stmt = conn
         .prepare(&sql)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
@@ -787,18 +787,19 @@ fn fetch_group_sessions(conn: &DbConnection, ids: &[String]) -> Result<Vec<u8>, 
                 id: r.get(0)?,
                 name: r.get(1)?,
                 character_ids: r.get(2)?,
-                persona_id: r.get(3)?,
-                created_at: r.get(4)?,
-                updated_at: r.get(5)?,
-                archived: r.get(6)?,
-                chat_type: r.get(7)?,
-                starting_scene: r.get(8)?,
-                background_image_path: r.get(9)?,
-                memories: r.get(10)?,
-                memory_embeddings: r.get(11)?,
-                memory_summary: r.get(12)?,
-                memory_summary_token_count: r.get(13)?,
-                memory_tool_events: r.get(14)?,
+                muted_character_ids: r.get(3)?,
+                persona_id: r.get(4)?,
+                created_at: r.get(5)?,
+                updated_at: r.get(6)?,
+                archived: r.get(7)?,
+                chat_type: r.get(8)?,
+                starting_scene: r.get(9)?,
+                background_image_path: r.get(10)?,
+                memories: r.get(11)?,
+                memory_embeddings: r.get(12)?,
+                memory_summary: r.get(13)?,
+                memory_summary_token_count: r.get(14)?,
+                memory_tool_events: r.get(15)?,
             })
         })
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
@@ -1668,9 +1669,9 @@ fn apply_group_sessions(conn: &mut DbConnection, data: &[u8]) -> Result<(), Stri
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     for s in sessions {
-        tx.execute(r#"INSERT OR REPLACE INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
-                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)"#,
-                    params![s.id, s.name, s.character_ids, s.persona_id, s.created_at, s.updated_at, s.archived, s.chat_type, s.starting_scene, s.background_image_path, s.memories, s.memory_embeddings, s.memory_summary, s.memory_summary_token_count, s.memory_tool_events]).map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        tx.execute(r#"INSERT OR REPLACE INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
+                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)"#,
+                    params![s.id, s.name, s.character_ids, s.muted_character_ids, s.persona_id, s.created_at, s.updated_at, s.archived, s.chat_type, s.starting_scene, s.background_image_path, s.memories, s.memory_embeddings, s.memory_summary, s.memory_summary_token_count, s.memory_tool_events]).map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
     }
 
     for p in participation {

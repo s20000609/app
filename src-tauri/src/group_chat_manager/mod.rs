@@ -3083,9 +3083,24 @@ async fn select_speaker_via_llm_with_tracking(
 
     // Build selection prompt
     let selection_prompt = selection::build_selection_prompt(context);
+    let muted_set: std::collections::HashSet<&str> = context
+        .session
+        .muted_character_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    let selectable_characters: Vec<CharacterInfo> = context
+        .characters
+        .iter()
+        .filter(|c| !muted_set.contains(c.id.as_str()))
+        .cloned()
+        .collect();
+    if selectable_characters.is_empty() {
+        return Err("All participants are muted. Use @mention to select a speaker.".to_string());
+    }
 
     // Build tool definition
-    let tool = selection::build_select_next_speaker_tool(&context.characters);
+    let tool = selection::build_select_next_speaker_tool(&selectable_characters);
 
     let messages = vec![json!({
         "role": "user",

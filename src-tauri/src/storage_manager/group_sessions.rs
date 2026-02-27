@@ -56,6 +56,8 @@ pub struct GroupSession {
     pub id: String,
     pub name: String,
     pub character_ids: Vec<String>,
+    #[serde(default)]
+    pub muted_character_ids: Vec<String>,
     pub persona_id: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,
@@ -200,7 +202,7 @@ pub struct GroupSessionPreview {
 fn read_group_session(conn: &Connection, id: &str) -> Result<Option<GroupSession>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, name, character_ids, persona_id, created_at, updated_at,
+            "SELECT id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at,
                     memories, memory_embeddings, memory_summary, memory_summary_token_count, archived, memory_tool_events,
                     chat_type, starting_scene, background_image_path, speaker_selection_method
              FROM group_sessions WHERE id = ?1",
@@ -220,59 +222,66 @@ fn read_group_session(conn: &Connection, id: &str) -> Result<Option<GroupSession
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
         let character_ids: Vec<String> =
             serde_json::from_str(&character_ids_json).unwrap_or_default();
+        let muted_character_ids_json: String = row
+            .get::<_, Option<String>>(3)
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
+            .unwrap_or_else(|| "[]".to_string());
+        let mut muted_character_ids: Vec<String> =
+            serde_json::from_str(&muted_character_ids_json).unwrap_or_default();
+        muted_character_ids.retain(|id| character_ids.contains(id));
 
         let memories_json: String = row
-            .get::<_, Option<String>>(6)
+            .get::<_, Option<String>>(7)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or_else(|| "[]".to_string());
         let memories: Vec<String> = serde_json::from_str(&memories_json).unwrap_or_default();
 
         let memory_embeddings_json: String = row
-            .get::<_, Option<String>>(7)
+            .get::<_, Option<String>>(8)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or_else(|| "[]".to_string());
         let memory_embeddings: Vec<MemoryEmbedding> =
             serde_json::from_str(&memory_embeddings_json).unwrap_or_default();
 
         let memory_summary: String = row
-            .get::<_, Option<String>>(8)
+            .get::<_, Option<String>>(9)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or_default();
         let memory_summary_token_count: i32 = row
-            .get::<_, Option<i32>>(9)
+            .get::<_, Option<i32>>(10)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or(0);
 
         let archived: bool = row
-            .get::<_, Option<i32>>(10)
+            .get::<_, Option<i32>>(11)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .map(|v| v != 0)
             .unwrap_or(false);
 
         let memory_tool_events_json: String = row
-            .get::<_, Option<String>>(11)
+            .get::<_, Option<String>>(12)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or_else(|| "[]".to_string());
         let memory_tool_events: Vec<serde_json::Value> =
             serde_json::from_str(&memory_tool_events_json).unwrap_or_default();
 
         let chat_type: String = row
-            .get::<_, Option<String>>(12)
+            .get::<_, Option<String>>(13)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or_else(|| "conversation".to_string());
 
         let starting_scene_json: Option<String> = row
-            .get(13)
+            .get(14)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
         let starting_scene: Option<serde_json::Value> =
             starting_scene_json.and_then(|s| serde_json::from_str(&s).ok());
 
         let background_image_path: Option<String> = row
-            .get(14)
+            .get(15)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
         let speaker_selection_method: String = row
-            .get::<_, Option<String>>(15)
+            .get::<_, Option<String>>(16)
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?
             .unwrap_or_else(|| "llm".to_string());
 
@@ -284,14 +293,15 @@ fn read_group_session(conn: &Connection, id: &str) -> Result<Option<GroupSession
                 .get(1)
                 .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
             character_ids,
+            muted_character_ids,
             persona_id: row
-                .get(3)
-                .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
-            created_at: row
                 .get(4)
                 .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
-            updated_at: row
+            created_at: row
                 .get(5)
+                .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
+            updated_at: row
+                .get(6)
                 .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?,
             archived,
             chat_type,
@@ -800,6 +810,8 @@ pub fn group_session_duplicate(
     let name = new_name.unwrap_or_else(|| format!("{} (copy)", source.name));
     let character_ids_json = serde_json::to_string(&source.character_ids)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let muted_character_ids_json = serde_json::to_string(&source.muted_character_ids)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     // Use source persona_id, or fallback to default persona if source had none
     let final_persona_id = if source.persona_id.is_none() {
@@ -837,12 +849,13 @@ pub fn group_session_duplicate(
         .ok();
 
     conn.execute(
-        "INSERT INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?5, 0, ?6, ?7, ?8)",
+        "INSERT INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 0, ?7, ?8, ?9)",
         params![
             new_id,
             name,
             character_ids_json,
+            muted_character_ids_json,
             final_persona_id,
             now,
             chat_type,
@@ -881,6 +894,8 @@ pub fn group_session_duplicate_with_messages(
     let new_id = Uuid::new_v4().to_string();
     let name = new_name.unwrap_or_else(|| format!("{} (copy)", source.name));
     let character_ids_json = serde_json::to_string(&source.character_ids)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let muted_character_ids_json = serde_json::to_string(&source.muted_character_ids)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     // Use source persona_id, or fallback to default persona if source had none
@@ -985,12 +1000,13 @@ pub fn group_session_duplicate_with_messages(
 
     // Try to insert with background_image_path, fall back if column doesn't exist
     let insert_result = conn.execute(
-        "INSERT INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?5, 0, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+        "INSERT INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 0, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![
             new_id,
             name,
             character_ids_json,
+            muted_character_ids_json,
             final_persona_id,
             now,
             chat_type,
@@ -1007,12 +1023,13 @@ pub fn group_session_duplicate_with_messages(
     if insert_result.is_err() {
         // Fallback without background_image_path if column doesn't exist
         conn.execute(
-            "INSERT INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?5, 0, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            "INSERT INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, memories, memory_embeddings, memory_summary, memory_summary_token_count, memory_tool_events)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 0, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 new_id,
                 name,
                 character_ids_json,
+                muted_character_ids_json,
                 final_persona_id,
                 now,
                 chat_type,
@@ -1284,8 +1301,8 @@ pub fn group_session_create(
         .and_then(|s| serde_json::from_str(s).ok());
 
     conn.execute(
-        "INSERT INTO group_sessions (id, name, character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, speaker_selection_method)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?5, 0, ?6, ?7, ?8, ?9)",
+        "INSERT INTO group_sessions (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, speaker_selection_method)
+         VALUES (?1, ?2, ?3, '[]', ?4, ?5, ?5, 0, ?6, ?7, ?8, ?9)",
         params![
             id,
             name,
@@ -1324,6 +1341,7 @@ pub fn group_session_create(
         id: id.clone(),
         name,
         character_ids,
+        muted_character_ids: Vec::new(),
         persona_id: final_persona_id,
         created_at: now as i64,
         updated_at: now as i64,
@@ -1368,9 +1386,16 @@ pub fn group_session_update(
     let character_ids: Vec<String> = serde_json::from_str(&character_ids_json)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
+    let existing =
+        read_group_session(&conn, &id)?.ok_or_else(|| "Session not found".to_string())?;
+    let mut muted_character_ids = existing.muted_character_ids;
+    muted_character_ids.retain(|cid| character_ids.contains(cid));
+    let muted_character_ids_json = serde_json::to_string(&muted_character_ids)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
     conn.execute(
-        "UPDATE group_sessions SET name = ?1, character_ids = ?2, persona_id = ?3, updated_at = ?4 WHERE id = ?5",
-        params![name, character_ids_json, persona_id, now, id],
+        "UPDATE group_sessions SET name = ?1, character_ids = ?2, muted_character_ids = ?3, persona_id = ?4, updated_at = ?5 WHERE id = ?6",
+        params![name, character_ids_json, muted_character_ids_json, persona_id, now, id],
     )
     .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
@@ -1458,13 +1483,20 @@ pub fn group_session_remove_character(
         .into_iter()
         .filter(|id| id != &character_id)
         .collect();
+    let muted_character_ids: Vec<String> = session
+        .muted_character_ids
+        .into_iter()
+        .filter(|id| id != &character_id)
+        .collect();
 
     let character_ids_json = serde_json::to_string(&character_ids)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    let muted_character_ids_json = serde_json::to_string(&muted_character_ids)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     conn.execute(
-        "UPDATE group_sessions SET character_ids = ?1, updated_at = ?2 WHERE id = ?3",
-        params![character_ids_json, now, session_id],
+        "UPDATE group_sessions SET character_ids = ?1, muted_character_ids = ?2, updated_at = ?3 WHERE id = ?4",
+        params![character_ids_json, muted_character_ids_json, now, session_id],
     )
     .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
@@ -1596,6 +1628,42 @@ pub fn group_session_update_speaker_selection_method(
     conn.execute(
         "UPDATE group_sessions SET speaker_selection_method = ?1, updated_at = ?2 WHERE id = ?3",
         params![speaker_selection_method, now, session_id],
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
+    match read_group_session(&conn, &session_id)? {
+        Some(session) => serde_json::to_string(&session)
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e)),
+        None => Err(crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            "Session not found",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn group_session_update_muted_character_ids(
+    session_id: String,
+    muted_character_ids_json: String,
+    pool: State<'_, SwappablePool>,
+) -> Result<String, String> {
+    let conn = pool.get_connection()?;
+    let now = now_ms() as i64;
+
+    let session =
+        read_group_session(&conn, &session_id)?.ok_or_else(|| "Session not found".to_string())?;
+    let mut muted_character_ids: Vec<String> = serde_json::from_str(&muted_character_ids_json)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    muted_character_ids.retain(|id| session.character_ids.contains(id));
+    muted_character_ids.sort();
+    muted_character_ids.dedup();
+    let next_muted_json = serde_json::to_string(&muted_character_ids)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
+    conn.execute(
+        "UPDATE group_sessions SET muted_character_ids = ?1, updated_at = ?2 WHERE id = ?3",
+        params![next_muted_json, now, session_id],
     )
     .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 

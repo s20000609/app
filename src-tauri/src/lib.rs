@@ -447,6 +447,7 @@ pub fn run() {
             storage_manager::group_sessions::group_session_update_background_image,
             storage_manager::group_sessions::group_session_update_chat_type,
             storage_manager::group_sessions::group_session_update_speaker_selection_method,
+            storage_manager::group_sessions::group_session_update_muted_character_ids,
             storage_manager::group_sessions::group_participation_stats,
             storage_manager::group_sessions::group_participation_increment,
             storage_manager::group_sessions::group_messages_list,

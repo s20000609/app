@@ -541,6 +541,11 @@ export const storageBridge = {
       sessionId,
       speakerSelectionMethod,
     }).then((s) => JSON.parse(s)),
+  groupSessionUpdateMutedCharacterIds: (sessionId: string, mutedCharacterIds: string[]) =>
+    invoke<string>("group_session_update_muted_character_ids", {
+      sessionId,
+      mutedCharacterIdsJson: JSON.stringify(mutedCharacterIds),
+    }).then((s) => JSON.parse(s)),
 
   // Group Participation
   groupParticipationStats: (sessionId: string) =>

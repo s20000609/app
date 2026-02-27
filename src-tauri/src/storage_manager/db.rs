@@ -574,6 +574,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           character_ids TEXT NOT NULL DEFAULT '[]',
+          muted_character_ids TEXT NOT NULL DEFAULT '[]',
           persona_id TEXT,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL,
