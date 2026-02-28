@@ -3710,8 +3710,9 @@ pub async fn group_chat_send(
         }),
     );
 
-    let (selected_character_id, selection_reasoning, was_mentioned) = if let Some(mentioned_id) =
-        mention_result
+    let (mut selected_character_id, mut selection_reasoning, was_mentioned) = if let Some(
+        mentioned_id,
+    ) = mention_result
     {
         log_info(
             &app,
@@ -3772,6 +3773,25 @@ pub async fn group_chat_send(
             }
         }
     };
+
+    if !was_mentioned
+        && context
+            .session
+            .muted_character_ids
+            .contains(&selected_character_id)
+    {
+        log_warn(
+            &app,
+            "group_chat_send",
+            format!(
+                "Auto-selection returned muted character {}. Falling back to heuristic selection.",
+                selected_character_id
+            ),
+        );
+        let fallback = selection::heuristic_select_speaker(&context)?;
+        selected_character_id = fallback.character_id;
+        selection_reasoning = fallback.reasoning;
+    }
 
     if !context
         .session
@@ -3985,15 +4005,21 @@ pub async fn group_chat_regenerate(
         .recent_messages
         .retain(|m| m.turn_number < turn_number);
 
-    let (selected_character_id, selection_reasoning) = if let Some(forced_id) = force_character_id {
+    let (mut selected_character_id, mut selection_reasoning, allow_muted_selection) = if let Some(
+        forced_id,
+    ) =
+        force_character_id
+    {
         (
             forced_id,
             Some("User forced character selection".to_string()),
+            true,
         )
     } else if let Some(speaker_id) = original_speaker.clone() {
         (
             speaker_id,
             Some("Reroll: kept original speaker".to_string()),
+            true,
         )
     } else {
         let selection_result = tokio::select! {
@@ -4008,7 +4034,7 @@ pub async fn group_chat_regenerate(
             selection = select_speaker_via_llm(&app, &context, &settings) => selection,
         };
         match selection_result {
-            Ok(selection) => (selection.character_id, selection.reasoning),
+            Ok(selection) => (selection.character_id, selection.reasoning, false),
             Err(err) => {
                 log_error(
                     &app,
@@ -4016,10 +4042,29 @@ pub async fn group_chat_regenerate(
                     format!("LLM selection failed: {}", err),
                 );
                 let fallback = selection::heuristic_select_speaker(&context)?;
-                (fallback.character_id, fallback.reasoning)
+                (fallback.character_id, fallback.reasoning, false)
             }
         }
     };
+
+    if !allow_muted_selection
+        && context
+            .session
+            .muted_character_ids
+            .contains(&selected_character_id)
+    {
+        log_warn(
+            &app,
+            "group_chat_regenerate",
+            format!(
+                "Auto-selection returned muted character {}. Falling back to heuristic selection.",
+                selected_character_id
+            ),
+        );
+        let fallback = selection::heuristic_select_speaker(&context)?;
+        selected_character_id = fallback.character_id;
+        selection_reasoning = fallback.reasoning;
+    }
 
     let character = context
         .characters
@@ -4168,21 +4213,26 @@ pub async fn group_chat_continue(
 
     let mut context = build_selection_context(&conn, &session_id, "")?;
 
-    let (selected_character_id, selection_reasoning) = if let Some(forced_id) = force_character_id {
+    let (mut selected_character_id, mut selection_reasoning, allow_muted_selection) = if let Some(
+        forced_id,
+    ) =
+        force_character_id
+    {
         (
             forced_id,
             Some("User requested specific character".to_string()),
+            true,
         )
     } else {
         let method = context.session.speaker_selection_method.as_str();
         match method {
             "heuristic" => {
                 let result = selection::heuristic_select_speaker(&context)?;
-                (result.character_id, result.reasoning)
+                (result.character_id, result.reasoning, false)
             }
             "round_robin" => {
                 let result = selection::round_robin_select_speaker(&context)?;
-                (result.character_id, result.reasoning)
+                (result.character_id, result.reasoning, false)
             }
             _ => {
                 let selection_result = tokio::select! {
@@ -4197,7 +4247,7 @@ pub async fn group_chat_continue(
                     selection = select_speaker_via_llm(&app, &context, &settings) => selection,
                 };
                 match selection_result {
-                    Ok(selection) => (selection.character_id, selection.reasoning),
+                    Ok(selection) => (selection.character_id, selection.reasoning, false),
                     Err(err) => {
                         log_error(
                             &app,
@@ -4205,12 +4255,31 @@ pub async fn group_chat_continue(
                             format!("LLM selection failed: {}", err),
                         );
                         let fallback = selection::heuristic_select_speaker(&context)?;
-                        (fallback.character_id, fallback.reasoning)
+                        (fallback.character_id, fallback.reasoning, false)
                     }
                 }
             }
         }
     };
+
+    if !allow_muted_selection
+        && context
+            .session
+            .muted_character_ids
+            .contains(&selected_character_id)
+    {
+        log_warn(
+            &app,
+            "group_chat_continue",
+            format!(
+                "Auto-selection returned muted character {}. Falling back to heuristic selection.",
+                selected_character_id
+            ),
+        );
+        let fallback = selection::heuristic_select_speaker(&context)?;
+        selected_character_id = fallback.character_id;
+        selection_reasoning = fallback.reasoning;
+    }
 
     let character = context
         .characters
