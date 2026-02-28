@@ -66,7 +66,10 @@ pub async fn engine_health(
         .map_err(|e| format!("Failed to reach Engine: {}", e))?;
     let status = resp.status();
     if !status.is_success() {
-        return Err(format!("Engine health check failed (HTTP {})", status.as_u16()));
+        return Err(format!(
+            "Engine health check failed (HTTP {})",
+            status.as_u16()
+        ));
     }
     resp.json::<HealthResponse>()
         .await
@@ -88,7 +91,10 @@ pub async fn engine_setup_status(
             req = req.header("Authorization", format!("Bearer {}", key));
         }
     }
-    let resp = req.send().await.map_err(|e| format!("Engine unreachable: {}", e))?;
+    let resp = req
+        .send()
+        .await
+        .map_err(|e| format!("Engine unreachable: {}", e))?;
     resp.json::<SetupStatusResponse>()
         .await
         .map_err(|e| format!("Failed to parse setup status: {}", e))
@@ -139,7 +145,11 @@ pub async fn engine_config_llm(
             .get("detail")
             .and_then(|d| d.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("Config LLM failed ({}): {}", status.as_u16(), detail));
+        return Err(format!(
+            "Config LLM failed ({}): {}",
+            status.as_u16(),
+            detail
+        ));
     }
     Ok(body)
 }
@@ -255,7 +265,11 @@ async fn engine_put_config<T: serde::Serialize>(
             .get("detail")
             .and_then(|d| d.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("Config update failed ({}): {}", status.as_u16(), detail));
+        return Err(format!(
+            "Config update failed ({}): {}",
+            status.as_u16(),
+            detail
+        ));
     }
     Ok(data)
 }
@@ -280,10 +294,7 @@ pub async fn engine_get_config(base_url: String, api_key: String) -> Result<Valu
 // ── Characters ──────────────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn engine_characters_list(
-    base_url: String,
-    api_key: String,
-) -> Result<Value, String> {
+pub async fn engine_characters_list(base_url: String, api_key: String) -> Result<Value, String> {
     engine_get(&base_url, &api_key, "/characters").await
 }
 
@@ -293,7 +304,13 @@ pub async fn engine_character_load(
     api_key: String,
     slug: String,
 ) -> Result<Value, String> {
-    engine_post(&base_url, &api_key, &format!("/characters/{}/load", slug), &Value::Null).await
+    engine_post(
+        &base_url,
+        &api_key,
+        &format!("/characters/{}/load", slug),
+        &Value::Null,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -302,7 +319,13 @@ pub async fn engine_character_unload(
     api_key: String,
     slug: String,
 ) -> Result<Value, String> {
-    engine_post(&base_url, &api_key, &format!("/characters/{}/unload", slug), &Value::Null).await
+    engine_post(
+        &base_url,
+        &api_key,
+        &format!("/characters/{}/unload", slug),
+        &Value::Null,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -311,14 +334,16 @@ pub async fn engine_character_activity(
     api_key: String,
     slug: String,
 ) -> Result<Value, String> {
-    engine_get(&base_url, &api_key, &format!("/characters/{}/activity", slug)).await
+    engine_get(
+        &base_url,
+        &api_key,
+        &format!("/characters/{}/activity", slug),
+    )
+    .await
 }
 
 #[tauri::command]
-pub async fn engine_character_template(
-    base_url: String,
-    api_key: String,
-) -> Result<Value, String> {
+pub async fn engine_character_template(base_url: String, api_key: String) -> Result<Value, String> {
     engine_get(&base_url, &api_key, "/characters/template").await
 }
 
@@ -377,7 +402,13 @@ pub async fn engine_chat(
     slug: String,
     body: Value,
 ) -> Result<Value, String> {
-    engine_post_long(&base_url, &api_key, &format!("/characters/{}/chat", slug), &body).await
+    engine_post_long(
+        &base_url,
+        &api_key,
+        &format!("/characters/{}/chat", slug),
+        &body,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -414,7 +445,11 @@ async fn engine_get(base_url: &str, api_key: &str, path: &str) -> Result<Value, 
             .get("detail")
             .and_then(|d| d.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("Engine request failed ({}): {}", status.as_u16(), detail));
+        return Err(format!(
+            "Engine request failed ({}): {}",
+            status.as_u16(),
+            detail
+        ));
     }
     Ok(data)
 }
@@ -460,7 +495,11 @@ async fn engine_post_with_client(
             .get("detail")
             .and_then(|d| d.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("Engine request failed ({}): {}", status.as_u16(), detail));
+        return Err(format!(
+            "Engine request failed ({}): {}",
+            status.as_u16(),
+            detail
+        ));
     }
     Ok(data)
 }
@@ -488,16 +527,16 @@ async fn engine_put(
             .get("detail")
             .and_then(|d| d.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("Engine request failed ({}): {}", status.as_u16(), detail));
+        return Err(format!(
+            "Engine request failed ({}): {}",
+            status.as_u16(),
+            detail
+        ));
     }
     Ok(data)
 }
 
-async fn engine_delete(
-    base_url: &str,
-    api_key: &str,
-    path: &str,
-) -> Result<Value, String> {
+async fn engine_delete(base_url: &str, api_key: &str, path: &str) -> Result<Value, String> {
     let client = http_client()?;
     let url = format!("{}{}", trim_url(base_url), path);
     let headers = engine_headers(api_key)?;
@@ -514,7 +553,11 @@ async fn engine_delete(
             .get("detail")
             .and_then(|d| d.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("Engine request failed ({}): {}", status.as_u16(), detail));
+        return Err(format!(
+            "Engine request failed ({}): {}",
+            status.as_u16(),
+            detail
+        ));
     }
     Ok(data)
 }
