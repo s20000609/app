@@ -197,7 +197,9 @@ export function ChatFooter({
               "disabled:cursor-not-allowed disabled:opacity-40",
             )}
             title={onOpenPlusMenu ? t("chats.footer.moreOptions") : t("chats.footer.addImage")}
-            aria-label={onOpenPlusMenu ? t("chats.footer.moreOptions") : t("chats.footer.addImageAttachment")}
+            aria-label={
+              onOpenPlusMenu ? t("chats.footer.moreOptions") : t("chats.footer.addImageAttachment")
+            }
           >
             <Plus size={20} />
           </button>

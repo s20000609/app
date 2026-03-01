@@ -9,12 +9,13 @@ import {
 } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { ArrowLeftRight, ChevronDown, X } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, User, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import type {
   AccessibilitySettings,
   Character,
   Model,
+  Persona,
   Scene,
   StoredMessage,
 } from "../../../core/storage/schemas";
@@ -41,7 +42,9 @@ import {
   getSession,
   getSessionMeta,
   listCharacters,
+  listPersonas,
   readSettings,
+  saveSession,
   SETTINGS_UPDATED_EVENT,
   SESSION_UPDATED_EVENT,
 } from "../../../core/storage";
@@ -66,6 +69,7 @@ import { useAvatar } from "../../hooks/useAvatar";
 import { Image, RefreshCw, Sparkles, Check, PenLine, Lock } from "lucide-react";
 import { radius, cn } from "../../design-tokens";
 import { useI18n } from "../../../core/i18n/context";
+import { PersonaSelector } from "../group-chats/components/settings";
 
 const LONG_PRESS_DELAY = 450;
 const SCROLL_THRESHOLD = 10; // pixels of movement to cancel long press
@@ -138,11 +142,13 @@ export function ChatConversationPage() {
   const [swapPlaces, setSwapPlaces] = useState(false);
   const [showChoiceMenu, setShowChoiceMenu] = useState(false);
   const [showResultMenu, setShowResultMenu] = useState(false);
+  const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const [generatedReply, setGeneratedReply] = useState<string | null>(null);
   const [generatingReply, setGeneratingReply] = useState(false);
   const [helpMeReplyError, setHelpMeReplyError] = useState<string | null>(null);
   const [helpMeReplyEnabled, setHelpMeReplyEnabled] = useState(true);
   const [shouldTriggerFileInput, setShouldTriggerFileInput] = useState(false);
+  const [personas, setPersonas] = useState<Persona[]>([]);
   const helpMeReplyRequestIdRef = useRef<string | null>(null);
   const helpMeReplyUnlistenRef = useRef<UnlistenFn | null>(null);
   const helpMeReplyLoadingTimeoutRef = useRef<number | null>(null);
@@ -994,6 +1000,46 @@ export function ChatConversationPage() {
     setShowPlusMenu(true);
   }, []);
 
+  const handleOpenPersonaSelector = useCallback(async () => {
+    try {
+      const personaList = await listPersonas();
+      setPersonas(personaList);
+    } catch (error) {
+      console.error("Failed to load personas:", error);
+      setPersonas([]);
+    }
+    setShowPlusMenu(false);
+    setShowPersonaSelector(true);
+  }, []);
+
+  const handleChangePersona = useCallback(
+    async (personaId: string | null) => {
+      if (!session) return;
+      try {
+        const disablePersona = personaId === null;
+        const updatedSession = {
+          ...session,
+          personaId: disablePersona ? null : personaId,
+          personaDisabled: disablePersona,
+          updatedAt: Date.now(),
+        };
+        await saveSession(updatedSession);
+        setSessionForHeader(updatedSession);
+      } catch (error) {
+        console.error("Failed to change persona:", error);
+      }
+    },
+    [session],
+  );
+
+  const selectedPersonaId = useMemo(() => {
+    if (!session) return undefined;
+    if (session.personaDisabled || session.personaId === "") return "";
+    if (session.personaId) return session.personaId;
+    const defaultPersona = personas.find((p) => p.isDefault);
+    return defaultPersona?.id;
+  }, [session, personas]);
+
   const handleEnableSwapPlaces = useCallback(() => {
     setSwapPlaces(true);
     setShowPlusMenu(false);
@@ -1803,8 +1849,20 @@ export function ChatConversationPage() {
       </BottomMenu>
 
       {/* Plus Menu - Upload Image | Help Me Reply */}
-      <BottomMenu isOpen={showPlusMenu} onClose={() => setShowPlusMenu(false)} title={t("chats.addContent")}>
+      <BottomMenu
+        isOpen={showPlusMenu}
+        onClose={() => setShowPlusMenu(false)}
+        title={t("chats.addContent")}
+      >
         <div className="space-y-2">
+          <MenuButton
+            icon={User}
+            title={t("chats.settings.persona")}
+            description={persona?.title ?? "No persona"}
+            onClick={() => {
+              void handleOpenPersonaSelector();
+            }}
+          />
           <MenuButton
             icon={ArrowLeftRight}
             title={swapPlaces ? t("chats.swapPlacesOn") : t("chats.swapPlaces")}
@@ -1823,7 +1881,11 @@ export function ChatConversationPage() {
             }
           />
           {supportsImageInput && (
-            <MenuButton icon={Image} title={t("chats.uploadImage")} onClick={handlePlusMenuImageUpload} />
+            <MenuButton
+              icon={Image}
+              title={t("chats.uploadImage")}
+              onClick={handlePlusMenuImageUpload}
+            />
           )}
           {helpMeReplyEnabled && (
             <MenuButton
@@ -1835,6 +1897,14 @@ export function ChatConversationPage() {
           )}
         </div>
       </BottomMenu>
+
+      <PersonaSelector
+        isOpen={showPersonaSelector}
+        onClose={() => setShowPersonaSelector(false)}
+        personas={personas}
+        selectedPersonaId={selectedPersonaId}
+        onSelect={handleChangePersona}
+      />
 
       {/* Choice Menu - Use existing draft or generate new */}
       <BottomMenu

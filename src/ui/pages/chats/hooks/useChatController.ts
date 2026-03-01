@@ -17,6 +17,7 @@ import {
   listSessionPreviews,
   saveSession,
   SETTINGS_UPDATED_EVENT,
+  SESSION_UPDATED_EVENT,
   readSettings,
   toggleMessagePin,
 } from "../../../../core/storage/repo";
@@ -567,6 +568,57 @@ export function useChatController(
       window.removeEventListener(SETTINGS_UPDATED_EVENT, handler);
     };
   }, [characterId, state.character, log]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!state.session?.id) return;
+
+    let cancelled = false;
+
+    const handler = async () => {
+      try {
+        const latest = await getSessionMeta(state.session!.id);
+        if (!latest || cancelled) return;
+        if (state.character && latest.characterId !== state.character.id) return;
+
+        const normalizedSession: Session = {
+          ...latest,
+          messages: messagesRef.current,
+        };
+        const personaDisabled =
+          normalizedSession.personaDisabled || normalizedSession.personaId === "";
+        let selectedPersona: Persona | null = null;
+        if (!personaDisabled && normalizedSession.personaId) {
+          const allPersonas = await listPersonas().catch(() => [] as Persona[]);
+          selectedPersona = allPersonas.find((p) => p.id === normalizedSession.personaId) ?? null;
+        }
+        if (!selectedPersona && !personaDisabled) {
+          selectedPersona = await getDefaultPersona().catch((err) => {
+            console.warn("ChatController: failed to load persona", err);
+            return null;
+          });
+        }
+
+        if (cancelled) return;
+        lastKnownSessionTimestampRef.current = normalizedSession.updatedAt;
+        dispatch({
+          type: "BATCH",
+          actions: [
+            { type: "SET_PERSONA", payload: selectedPersona },
+            { type: "SET_SESSION", payload: normalizedSession },
+          ],
+        });
+      } catch (err) {
+        console.warn("ChatController: failed to sync session update", err);
+      }
+    };
+
+    window.addEventListener(SESSION_UPDATED_EVENT, handler);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(SESSION_UPDATED_EVENT, handler);
+    };
+  }, [state.character, state.session?.id]);
 
   useEffect(() => {
     if (!characterId) return;
