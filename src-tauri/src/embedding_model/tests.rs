@@ -2,8 +2,8 @@ use super::*;
 use crate::utils::{log_error, log_info};
 use ort::session::{builder::GraphOptimizationLevel, Session};
 use tauri::Emitter;
-use tokio::time::{timeout, Duration};
 use tokenizers::Tokenizer;
+use tokio::time::{timeout, Duration};
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]

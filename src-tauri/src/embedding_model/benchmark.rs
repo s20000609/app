@@ -293,7 +293,10 @@ pub async fn run_embedding_dev_benchmark(app: AppHandle) -> Result<DevBenchmarkR
                                 format!("Missing cached embedding for pair text B ({})", pair_name),
                             )
                         })?;
-                        pair_scores.insert((*pair_name).to_string(), super::util::cosine_similarity(e1, e2));
+                        pair_scores.insert(
+                            (*pair_name).to_string(),
+                            super::util::cosine_similarity(e1, e2),
+                        );
                     }
 
                     Ok((

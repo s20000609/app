@@ -234,7 +234,8 @@ pub fn groups_list(pool: State<'_, SwappablePool>) -> Result<String, String> {
         });
     }
 
-    serde_json::to_string(&items).map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))
+    serde_json::to_string(&items)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))
 }
 
 #[tauri::command]
@@ -273,7 +274,8 @@ pub fn group_create(
     };
 
     let chat_type_value = chat_type.unwrap_or_else(default_chat_type);
-    let selection_method = speaker_selection_method.unwrap_or_else(default_speaker_selection_method);
+    let selection_method =
+        speaker_selection_method.unwrap_or_else(default_speaker_selection_method);
 
     conn.execute(
         "INSERT INTO group_characters (id, name, character_ids, muted_character_ids, persona_id, created_at, updated_at, archived, chat_type, starting_scene, background_image_path, speaker_selection_method)
@@ -308,7 +310,8 @@ pub fn group_create(
         memory_type: "manual".to_string(),
     };
 
-    serde_json::to_string(&item).map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))
+    serde_json::to_string(&item)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))
 }
 
 #[tauri::command]
@@ -340,8 +343,9 @@ pub fn group_update(
     let character_ids: Vec<String> = serde_json::from_str(&character_ids_json)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
-    let existing = read_group(&conn, &id)?
-        .ok_or_else(|| crate::utils::err_msg(module_path!(), line!(), "Group character not found"))?;
+    let existing = read_group(&conn, &id)?.ok_or_else(|| {
+        crate::utils::err_msg(module_path!(), line!(), "Group character not found")
+    })?;
 
     let mut muted_character_ids = match muted_character_ids_json {
         Some(json) => serde_json::from_str(&json)
@@ -409,7 +413,11 @@ pub fn group_update(
 }
 
 #[tauri::command]
-pub fn group_update_name(id: String, name: String, pool: State<'_, SwappablePool>) -> Result<(), String> {
+pub fn group_update_name(
+    id: String,
+    name: String,
+    pool: State<'_, SwappablePool>,
+) -> Result<(), String> {
     let conn = pool.get_connection()?;
     let now = now_ms() as i64;
     conn.execute(
@@ -541,8 +549,7 @@ pub fn group_update_muted_character_ids(
             |row| row.get(0),
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
-    let character_ids: Vec<String> =
-        serde_json::from_str(&char_json).unwrap_or_default();
+    let character_ids: Vec<String> = serde_json::from_str(&char_json).unwrap_or_default();
 
     muted.retain(|cid| character_ids.contains(cid));
     muted.sort();

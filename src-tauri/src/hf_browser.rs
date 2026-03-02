@@ -311,11 +311,13 @@ impl<'a> GgufReader<'a> {
     }
 
     fn read_u32(&mut self) -> Option<u32> {
-        self.read_bytes(4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        self.read_bytes(4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
     }
 
     fn read_i32(&mut self) -> Option<i32> {
-        self.read_bytes(4).map(|b| i32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        self.read_bytes(4)
+            .map(|b| i32::from_le_bytes([b[0], b[1], b[2], b[3]]))
     }
 
     fn read_u64(&mut self) -> Option<u64> {
@@ -329,7 +331,8 @@ impl<'a> GgufReader<'a> {
     }
 
     fn read_f32(&mut self) -> Option<f32> {
-        self.read_bytes(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        self.read_bytes(4)
+            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
     }
 
     fn read_f64(&mut self) -> Option<f64> {
@@ -352,26 +355,51 @@ impl<'a> GgufReader<'a> {
 
     fn skip_value(&mut self, value_type: u32) -> Option<()> {
         match value_type {
-            0 => { self.read_u8()?; }        // UINT8
-            1 => { self.read_u8()?; }        // INT8
-            2 => { self.read_bytes(2)?; }    // UINT16
-            3 => { self.read_bytes(2)?; }    // INT16
-            4 => { self.read_u32()?; }       // UINT32
-            5 => { self.read_i32()?; }       // INT32
-            6 => { self.read_f32()?; }       // FLOAT32
-            7 => { self.read_bool()?; }      // BOOL
-            8 => { self.read_string()?; }    // STRING
-            9 => {                           // ARRAY
+            0 => {
+                self.read_u8()?;
+            } // UINT8
+            1 => {
+                self.read_u8()?;
+            } // INT8
+            2 => {
+                self.read_bytes(2)?;
+            } // UINT16
+            3 => {
+                self.read_bytes(2)?;
+            } // INT16
+            4 => {
+                self.read_u32()?;
+            } // UINT32
+            5 => {
+                self.read_i32()?;
+            } // INT32
+            6 => {
+                self.read_f32()?;
+            } // FLOAT32
+            7 => {
+                self.read_bool()?;
+            } // BOOL
+            8 => {
+                self.read_string()?;
+            } // STRING
+            9 => {
+                // ARRAY
                 let arr_type = self.read_u32()?;
                 let arr_len = self.read_u64()?;
                 for _ in 0..arr_len {
                     self.skip_value(arr_type)?;
                 }
             }
-            10 => { self.read_u64()?; }     // UINT64
-            11 => { self.read_i64()?; }      // INT64
-            12 => { self.read_f64()?; }      // FLOAT64
-            _ => return None,                // Unknown type
+            10 => {
+                self.read_u64()?;
+            } // UINT64
+            11 => {
+                self.read_i64()?;
+            } // INT64
+            12 => {
+                self.read_f64()?;
+            } // FLOAT64
+            _ => return None, // Unknown type
         }
         Some(())
     }
@@ -381,8 +409,12 @@ impl<'a> GgufReader<'a> {
         match value_type {
             0 => self.read_u8().map(|v| v as u64),
             1 => self.read_u8().map(|v| v as i8 as u64),
-            2 => self.read_bytes(2).map(|b| u16::from_le_bytes([b[0], b[1]]) as u64),
-            3 => self.read_bytes(2).map(|b| i16::from_le_bytes([b[0], b[1]]) as u64),
+            2 => self
+                .read_bytes(2)
+                .map(|b| u16::from_le_bytes([b[0], b[1]]) as u64),
+            3 => self
+                .read_bytes(2)
+                .map(|b| i16::from_le_bytes([b[0], b[1]]) as u64),
             4 => self.read_u32().map(|v| v as u64),
             5 => self.read_i32().map(|v| v as u64),
             10 => self.read_u64(),
@@ -446,8 +478,11 @@ fn parse_gguf_meta(data: &[u8]) -> Option<GgufModelMeta> {
         }
     }
 
-    let arch = meta.architecture.clone().unwrap_or_else(|| "llama".to_string());
-    
+    let arch = meta
+        .architecture
+        .clone()
+        .unwrap_or_else(|| "llama".to_string());
+
     let key_block_count = format!("{}.block_count", arch);
     let key_embedding_length = format!("{}.embedding_length", arch);
     let key_head_count = format!("{}.attention.head_count", arch);
@@ -547,18 +582,18 @@ fn quant_quality_score(quant: &str) -> f64 {
     match quant.to_uppercase().as_str() {
         "F32" | "BF16" | "F16" => 100.0,
         "Q8_K" | "Q8_K_S" | "Q8_K_L" | "Q8_K_XL" => 95.0,
-        "Q8_0" => 90.0,                                        // Legacy 8-bit
+        "Q8_0" => 90.0, // Legacy 8-bit
         "Q6_K" | "Q6_K_S" | "Q6_K_L" | "Q6_K_XL" => 90.0,
         "Q5_K_M" | "Q5_K_L" | "Q5_K_XL" | "Q5_K" => 85.0,
         "Q5_K_S" => 80.0,
-        "Q5_0" | "Q5_1" => 70.0,                               // Legacy 5-bit (−10)
+        "Q5_0" | "Q5_1" => 70.0, // Legacy 5-bit (−10)
         "Q4_K_M" | "Q4_K_L" | "Q4_K_XL" | "Q4_K" => 75.0,
         "Q4_K_S" => 70.0,
-        "IQ4_XS" | "IQ4_NL" => 72.0,                           // I-quant 4-bit (↑ from 65)
-        "Q4_0" | "Q4_1" => 60.0,                               // Legacy 4-bit (−10)
+        "IQ4_XS" | "IQ4_NL" => 72.0, // I-quant 4-bit (↑ from 65)
+        "Q4_0" | "Q4_1" => 60.0,     // Legacy 4-bit (−10)
         "Q3_K_M" | "Q3_K_L" | "Q3_K_XL" | "Q3_K" => 60.0,
         "Q3_K_S" => 50.0,
-        "IQ3_M" | "IQ3_S" => 52.0,                             // I-quant 3-bit (↑ from 45)
+        "IQ3_M" | "IQ3_S" => 52.0, // I-quant 3-bit (↑ from 45)
         "IQ3_XS" | "IQ3_XXS" => 45.0,
         "Q2_K" | "Q2_K_S" | "Q2_K_M" | "Q2_K_L" | "Q2_K_XL" => 35.0,
         "IQ2_M" | "IQ2_S" | "IQ2_XS" | "IQ2_XXS" => 25.0,
@@ -583,7 +618,11 @@ fn kv_base_per_token(meta: &GgufModelMeta) -> Option<f64> {
     let heads = meta.head_count.filter(|&h| h > 0)? as f64;
     let heads_kv = meta.head_count_kv.unwrap_or(meta.head_count?) as f64;
 
-    let arch = meta.architecture.as_deref().unwrap_or("llama").to_lowercase();
+    let arch = meta
+        .architecture
+        .as_deref()
+        .unwrap_or("llama")
+        .to_lowercase();
 
     // DeepSeek MLA: KV cache uses compressed latent dimension instead of full head dim
     if (arch.starts_with("deepseek") || arch == "deepseek2") && meta.kv_lora_rank.is_some() {
@@ -601,7 +640,11 @@ fn kv_base_per_token(meta: &GgufModelMeta) -> Option<f64> {
 /// the effective context for KV cache is capped at the window size.
 /// Returns the effective context to use for KV cache calculation.
 fn effective_kv_context(meta: &GgufModelMeta, requested_ctx: u64) -> u64 {
-    let arch = meta.architecture.as_deref().unwrap_or("llama").to_lowercase();
+    let arch = meta
+        .architecture
+        .as_deref()
+        .unwrap_or("llama")
+        .to_lowercase();
     // Gemma 2 and Cohere use sliding window attention
     if arch == "gemma2" || arch == "cohere" {
         if let Some(window) = meta.sliding_window {
@@ -661,11 +704,17 @@ fn score_configuration(
         0.0
     } else {
         let ratio = total_available as f64 / total_needed as f64;
-        if ratio < 1.2 { 20.0 }
-        else if ratio < 1.5 { 50.0 }
-        else if ratio < 2.0 { 70.0 }
-        else if ratio < 3.0 { 85.0 }
-        else { 100.0 }
+        if ratio < 1.2 {
+            20.0
+        } else if ratio < 1.5 {
+            50.0
+        } else if ratio < 2.0 {
+            70.0
+        } else if ratio < 3.0 {
+            85.0
+        } else {
+            100.0
+        }
     };
 
     //   GPU acceleration (35%)
@@ -702,12 +751,18 @@ fn score_configuration(
 
     // KV headroom (15%)
     let kv_score = if kv_cache_bytes > 0 {
-        let headroom = total_available.saturating_sub(model_size).saturating_sub(overhead);
+        let headroom = total_available
+            .saturating_sub(model_size)
+            .saturating_sub(overhead);
         if headroom == 0 {
             0.0
         } else if headroom >= kv_cache_bytes {
             let ratio = headroom as f64 / kv_cache_bytes as f64;
-            if ratio >= 2.0 { 100.0 } else { 50.0 + 50.0 * (ratio - 1.0) }
+            if ratio >= 2.0 {
+                100.0
+            } else {
+                50.0 + 50.0 * (ratio - 1.0)
+            }
         } else {
             50.0 * (headroom as f64 / kv_cache_bytes as f64)
         }
@@ -716,7 +771,11 @@ fn score_configuration(
     };
 
     let raw = memory_score * 0.25 + gpu_score * 0.35 + kv_score * 0.15 + quant_quality * 0.25;
-    let capped = if memory_score == 0.0 { raw.min(10.0) } else { raw };
+    let capped = if memory_score == 0.0 {
+        raw.min(10.0)
+    } else {
+        raw
+    };
     let score = (capped.round() as u32).min(100);
 
     (score, fits_in_ram, fits_in_vram)
@@ -1002,13 +1061,8 @@ fn build_recommendation(
                 .map(|b| (b * bpv * effective_ctx as f64) as u64)
                 .unwrap_or(0);
 
-            let (score, _, _) = score_configuration(
-                file.size,
-                qq,
-                kv_bytes,
-                total_available,
-                available_vram,
-            );
+            let (score, _, _) =
+                score_configuration(file.size, qq, kv_bytes, total_available, available_vram);
 
             if best.as_ref().map_or(true, |b| score > b.score) {
                 best = Some(BestRecommendation {
@@ -1035,7 +1089,10 @@ fn build_recommendation(
                 continue;
             }
             let qq = quant_quality_score(&file.quantization);
-            if gpu_candidate.as_ref().map_or(true, |(_, prev_rec)| qq > prev_rec.quant_quality as f64) {
+            if gpu_candidate
+                .as_ref()
+                .map_or(true, |(_, prev_rec)| qq > prev_rec.quant_quality as f64)
+            {
                 gpu_candidate = Some((file, rec));
             }
         }
@@ -2019,7 +2076,11 @@ pub async fn hf_compute_runability(
     log_info(
         &app,
         "hf_browser",
-        format!("computing runability for {} ({} files)", model_id, files.len()),
+        format!(
+            "computing runability for {} ({} files)",
+            model_id,
+            files.len()
+        ),
     );
 
     let meta = fetch_gguf_meta(&app, &model_id, &files).await;
@@ -2033,7 +2094,12 @@ pub async fn hf_compute_runability(
         format!("system: RAM={:?} VRAM={:?}", available_ram, available_vram),
     );
 
-    Ok(compute_scores(&files, meta.as_ref(), available_ram, available_vram))
+    Ok(compute_scores(
+        &files,
+        meta.as_ref(),
+        available_ram,
+        available_vram,
+    ))
 }
 
 #[tauri::command]
@@ -2060,12 +2126,21 @@ pub async fn hf_get_recommendation_data(
     log_info(
         &app,
         "hf_browser",
-        format!("computing recommendations for {} ({} files)", model_id, files.len()),
+        format!(
+            "computing recommendations for {} ({} files)",
+            model_id,
+            files.len()
+        ),
     );
 
     let meta = fetch_gguf_meta(&app, &model_id, &files).await;
     let available_ram = crate::llama_cpp::available_memory_bytes().unwrap_or(0);
     let available_vram = crate::llama_cpp::available_vram_bytes().unwrap_or(0);
 
-    Ok(build_recommendation(&files, meta.as_ref(), available_ram, available_vram))
+    Ok(build_recommendation(
+        &files,
+        meta.as_ref(),
+        available_ram,
+        available_vram,
+    ))
 }

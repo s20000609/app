@@ -660,7 +660,12 @@ fn resolve_llama_flash_attention(
                 .as_ref()
                 .and_then(|cfg| cfg.llama_flash_attention.clone())
         })
-        .or_else(|| settings.advanced_model_settings.llama_flash_attention.clone())
+        .or_else(|| {
+            settings
+                .advanced_model_settings
+                .llama_flash_attention
+                .clone()
+        })
         .map(|v| v.trim().to_ascii_lowercase())
         .filter(|v| !v.is_empty())
 }

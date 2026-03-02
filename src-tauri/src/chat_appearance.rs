@@ -82,9 +82,7 @@ fn color_to_luminance(color: &str) -> f64 {
 
     // oklch(L C H) — approximate by lightness
     if trimmed.starts_with("oklch(") {
-        let inner = trimmed
-            .trim_start_matches("oklch(")
-            .trim_end_matches(')');
+        let inner = trimmed.trim_start_matches("oklch(").trim_end_matches(')');
         let first_token = inner.split_whitespace().next().unwrap_or("");
         let l = if first_token.ends_with('%') {
             first_token
@@ -159,9 +157,19 @@ pub fn compute_chat_theme(
         // NOT the fg token. Use the actual bubble color luminance.
         let is_light = bg_brightness.unwrap() > 127.5;
         let actual_bubble_lum = if is_light { 0.0 } else { 0.35 }; // black ≈ 0, gray-600 ≈ 0.35
-        compute_text_color(bg_brightness, actual_bubble_lum, opacity_01, &settings.text_mode)
+        compute_text_color(
+            bg_brightness,
+            actual_bubble_lum,
+            opacity_01,
+            &settings.text_mode,
+        )
     } else {
-        compute_text_color(bg_brightness, assistant_lum, opacity_01, &settings.text_mode)
+        compute_text_color(
+            bg_brightness,
+            assistant_lum,
+            opacity_01,
+            &settings.text_mode,
+        )
     };
 
     let user_token = &settings.user_bubble_color;

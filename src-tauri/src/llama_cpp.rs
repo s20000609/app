@@ -25,10 +25,9 @@ mod desktop {
     use llama_cpp_2::TokenToStringError;
     use llama_cpp_sys_2::{
         ggml_backend_dev_count, ggml_backend_dev_get, ggml_backend_dev_memory,
-        ggml_backend_dev_type, ggml_blck_size, llama_flash_attn_type,
-        GGML_BACKEND_DEVICE_TYPE_ACCEL, GGML_BACKEND_DEVICE_TYPE_GPU,
-        GGML_BACKEND_DEVICE_TYPE_IGPU, LLAMA_FLASH_ATTN_TYPE_AUTO, LLAMA_FLASH_ATTN_TYPE_DISABLED,
-        LLAMA_FLASH_ATTN_TYPE_ENABLED,
+        ggml_backend_dev_type, llama_flash_attn_type, GGML_BACKEND_DEVICE_TYPE_ACCEL,
+        GGML_BACKEND_DEVICE_TYPE_GPU, GGML_BACKEND_DEVICE_TYPE_IGPU, LLAMA_FLASH_ATTN_TYPE_AUTO,
+        LLAMA_FLASH_ATTN_TYPE_DISABLED, LLAMA_FLASH_ATTN_TYPE_ENABLED,
     };
     use std::num::NonZeroU32;
     use std::path::Path;
@@ -409,31 +408,6 @@ mod desktop {
         let bytes_per_value = kv_bytes_per_value(llama_kv_type);
         let bytes = (n_layer as f64) * (effective_n_embd as f64) * 2.0 * bytes_per_value;
         Some(bytes.max(0.0) as u64)
-    }
-
-    fn validate_kv_type_compatibility(
-        model: &LlamaModel,
-        kv_type: KvCacheType,
-    ) -> Result<(), String> {
-        let n_head = u64::from(model.n_head()).max(1);
-        let n_embd = u64::try_from(model.n_embd()).unwrap_or(0);
-        if n_embd == 0 || n_embd % n_head != 0 {
-            return Ok(());
-        }
-        let n_embd_head = n_embd / n_head;
-        let raw_type: llama_cpp_sys_2::ggml_type = kv_type.into();
-        // SAFETY: pure query helper over enum value.
-        let block_size = unsafe { ggml_blck_size(raw_type) };
-        if block_size > 1 {
-            let block = block_size as u64;
-            if n_embd_head % block != 0 {
-                return Err(format!(
-                    "Invalid llamaKvType for this model: head dimension {} is not divisible by block size {}. Use f16, q8_0, q8_1, q5_0/q5_1, or q4_0/q4_1.",
-                    n_embd_head, block
-                ));
-            }
-        }
-        Ok(())
     }
 
     fn compute_recommended_context(
@@ -849,10 +823,6 @@ mod desktop {
                 ));
             }
 
-            if let Some(kv_type) = llama_kv_type {
-                validate_kv_type_compatibility(model, kv_type)?;
-            }
-
             let n_batch = ctx_size.min(llama_batch_size).max(1);
             let resolved_offload_kqv = if llama_offload_kqv.is_some() {
                 llama_offload_kqv
@@ -902,7 +872,13 @@ mod desktop {
                 ),
             );
             let mut ctx = model.new_context(backend, ctx_params).map_err(|e| {
-                let detail = if e.to_string().contains("null reference from llama.cpp") {
+                let raw_error = e.to_string();
+                let detail = if let Some(kv_type_raw) = llama_kv_type_raw.as_deref() {
+                    format!(
+                        "llama.cpp rejected llamaKvType='{}' while creating the context (ctx={}, batch={}, offload_kqv={:?}): {}",
+                        kv_type_raw, ctx_size, n_batch, resolved_offload_kqv, raw_error
+                    )
+                } else if raw_error.contains("null reference from llama.cpp") {
                     if let Some(recommended) = recommended_ctx {
                         if recommended > 0 && ctx_size > recommended {
                             format!(
@@ -918,7 +894,7 @@ mod desktop {
                         "Likely memory allocation failure (OOM) in llama.cpp. Try lower context length, lower llamaBatchSize, or a denser KV type (q8_0/q4_0).".to_string()
                     }
                 } else {
-                    e.to_string()
+                    raw_error
                 };
                 crate::utils::err_msg(
                     module_path!(),
