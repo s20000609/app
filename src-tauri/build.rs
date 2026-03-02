@@ -100,11 +100,17 @@ fn setup_android_libs() -> anyhow::Result<()> {
 }
 
 fn setup_macos_libs() -> anyhow::Result<()> {
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
+    let resource_dir = manifest_dir.join("onnxruntime");
+    fs::create_dir_all(&resource_dir)?;
+
     if let Ok(path) = env::var("ORT_LIB_LOCATION") {
-        if !path.trim().is_empty() {
+        let trimmed = path.trim();
+        if !trimmed.is_empty() {
+            copy_macos_dylibs_from_dir(Path::new(trimmed), &resource_dir)?;
             println!(
-                "cargo:warning=ORT_LIB_LOCATION is set for macOS build ({}); skipping bundled ONNX Runtime download.",
-                path
+                "cargo:warning=ORT_LIB_LOCATION is set for macOS build ({}); copied ONNX Runtime dylibs into {:?}.",
+                trimmed, resource_dir
             );
             return Ok(());
         }
@@ -122,10 +128,6 @@ fn setup_macos_libs() -> anyhow::Result<()> {
             return Ok(());
         }
     };
-
-    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let resource_dir = manifest_dir.join("onnxruntime");
-    fs::create_dir_all(&resource_dir)?;
 
     let dylib_path = resource_dir.join("libonnxruntime.dylib");
     let shared_path = resource_dir.join("libonnxruntime_providers_shared.dylib");
@@ -151,6 +153,63 @@ fn setup_macos_libs() -> anyhow::Result<()> {
     extract_tgz_dylibs_from_dir(&response, &lib_dir_in_archive, &resource_dir)?;
     if dylib_path.exists() {
         println!("cargo:warning=Extracted: {:?}", dylib_path);
+    }
+
+    Ok(())
+}
+
+fn copy_macos_dylibs_from_dir(src_dir: &Path, dest_dir: &Path) -> anyhow::Result<()> {
+    if !src_dir.exists() {
+        anyhow::bail!("ORT_LIB_LOCATION does not exist: {}", src_dir.display());
+    }
+    if !src_dir.is_dir() {
+        anyhow::bail!("ORT_LIB_LOCATION is not a directory: {}", src_dir.display());
+    }
+
+    let mut copied_count = 0usize;
+    let mut has_main_dylib = false;
+    let mut has_shared_provider = false;
+
+    for entry in fs::read_dir(src_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if !path.is_file() || path.extension().and_then(|ext| ext.to_str()) != Some("dylib") {
+            continue;
+        }
+
+        let Some(file_name) = path.file_name() else {
+            continue;
+        };
+        let dest_path = dest_dir.join(file_name);
+        fs::copy(&path, &dest_path)?;
+        copied_count += 1;
+
+        match file_name.to_string_lossy().as_ref() {
+            "libonnxruntime.dylib" => has_main_dylib = true,
+            "libonnxruntime_providers_shared.dylib" => has_shared_provider = true,
+            _ => {}
+        }
+    }
+
+    if copied_count == 0 {
+        anyhow::bail!(
+            "No .dylib files found in ORT_LIB_LOCATION: {}",
+            src_dir.display()
+        );
+    }
+
+    if !has_main_dylib {
+        anyhow::bail!(
+            "ORT_LIB_LOCATION is missing libonnxruntime.dylib: {}",
+            src_dir.display()
+        );
+    }
+
+    if !has_shared_provider {
+        anyhow::bail!(
+            "ORT_LIB_LOCATION is missing libonnxruntime_providers_shared.dylib: {}",
+            src_dir.display()
+        );
     }
 
     Ok(())
