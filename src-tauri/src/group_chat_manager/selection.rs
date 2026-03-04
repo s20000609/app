@@ -586,6 +586,7 @@ mod tests {
             session: GroupSession {
                 id: "session-1".to_string(),
                 name: "Test".to_string(),
+                memory_type: "manual".to_string(),
                 character_ids: vec![
                     "char-1".to_string(),
                     "char-2".to_string(),
