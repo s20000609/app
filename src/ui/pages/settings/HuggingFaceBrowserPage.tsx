@@ -26,8 +26,14 @@ import { cn, typography, interactive } from "../../design-tokens";
 import { useI18n } from "../../../core/i18n/context";
 import { HfReadmeRenderer } from "./components/HfReadmeRenderer";
 import { InlineDownloadCards } from "./components/DownloadQueueBar";
-import { useDownloadQueue } from "../../../core/downloads/DownloadQueueContext";
+import {
+  useDownloadQueue,
+  type QueuedDownload,
+} from "../../../core/downloads/DownloadQueueContext";
 import { BottomMenu, MenuLabel, MenuDivider } from "../../components/BottomMenu";
+import { toast } from "../../components/toast";
+import { addOrUpdateModel } from "../../../core/storage/repo";
+import { createDefaultAdvancedModelSettings } from "../../../core/storage/schemas";
 
 interface HfSearchResult {
   modelId: string;
@@ -247,6 +253,15 @@ type CompareSelection = {
   filename: string;
   kvType: string;
 };
+type TrackedDownloadSource = "recommended" | "files";
+type TrackedHfDownload = {
+  source: TrackedDownloadSource;
+  modelId: string;
+  filename: string;
+  displayName: string;
+  contextLength: number | null;
+  kvType: string | null;
+};
 
 type ViewState = { kind: "search" } | { kind: "model"; modelId: string };
 
@@ -336,6 +351,11 @@ function formatParams(count: number): string {
 function extractModelShortName(modelId: string): string {
   const parts = modelId.split("/");
   return parts[parts.length - 1] || modelId;
+}
+
+function extractFileDisplayName(filename: string): string {
+  const base = filename.split("/").pop() || filename;
+  return base.replace(/\.gguf$/i, "");
 }
 
 /** Extract a model ID from a HuggingFace URL, or return null if not a HF URL. */
@@ -760,7 +780,7 @@ function DetailReportContent({
 export function HuggingFaceBrowserPage() {
   const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { queueDownload, hasItems: hasDownloads } = useDownloadQueue();
+  const { queue, dismissItem, hasItems: hasDownloads } = useDownloadQueue();
 
   const [avatars, setAvatars] = useState<Record<string, string>>({});
 
@@ -831,6 +851,8 @@ export function HuggingFaceBrowserPage() {
   const compareSyncRafRef = useRef<number | null>(null);
   const compareSyncSourceIdRef = useRef<number | null>(null);
   const compareSyncRatioRef = useRef(0);
+  const trackedDownloadsRef = useRef<Map<string, TrackedHfDownload>>(new Map());
+  const prevQueueRef = useRef<QueuedDownload[]>([]);
 
   useEffect(() => {
     return () => {
@@ -1156,6 +1178,147 @@ export function HuggingFaceBrowserPage() {
     },
     [],
   );
+
+  const queueTrackedDownload = useCallback(async (tracked: TrackedHfDownload) => {
+    try {
+      const queueId = await invoke<string>("hf_queue_download", {
+        modelId: tracked.modelId,
+        filename: tracked.filename,
+      });
+      trackedDownloadsRef.current.set(queueId, tracked);
+    } catch (err: any) {
+      toast.error(
+        "Download failed",
+        typeof err === "string" ? err : err?.message || "Unknown error",
+      );
+    }
+  }, []);
+
+  const queueRecommendedDownload = useCallback(async () => {
+    if (!modelInfo || !recData) return;
+    const selectedFile = recData.files.find((f) => f.filename === recFile) ?? recData.files[0];
+    if (!selectedFile) return;
+
+    const bpv = KV_BPV[recKvType] || 2;
+    const maxGpuContext = maxContextForBpv(
+      selectedFile.size,
+      recData.kvBasePerToken,
+      bpv,
+      recData.availableVram,
+      recData.modelMaxContext,
+    );
+
+    await queueTrackedDownload({
+      source: "recommended",
+      modelId: modelInfo.modelId,
+      filename: selectedFile.filename,
+      displayName:
+        extractFileDisplayName(selectedFile.filename) || extractModelShortName(modelInfo.modelId),
+      contextLength: maxGpuContext > 0 ? maxGpuContext : 8192,
+      kvType: recKvType,
+    });
+  }, [modelInfo, recData, recFile, recKvType, queueTrackedDownload]);
+
+  const queueFilesDownload = useCallback(
+    async (filename: string) => {
+      if (!modelInfo) return;
+      await queueTrackedDownload({
+        source: "files",
+        modelId: modelInfo.modelId,
+        filename,
+        displayName: extractFileDisplayName(filename) || extractModelShortName(modelInfo.modelId),
+        contextLength: null,
+        kvType: null,
+      });
+    },
+    [modelInfo, queueTrackedDownload],
+  );
+
+  const autoCreateModelFromRecommendedDownload = useCallback(
+    async (item: QueuedDownload, tracked: TrackedHfDownload) => {
+      if (!item.resultPath) {
+        toast.error("Model setup failed", `Downloaded ${item.filename}, but file path is missing.`);
+        return;
+      }
+
+      const contextLength =
+        tracked.contextLength != null && tracked.contextLength > 0
+          ? Math.floor(tracked.contextLength)
+          : 8192;
+      const kvType = tracked.kvType || "q8_0";
+      const displayName = tracked.displayName || extractModelShortName(item.modelId);
+
+      try {
+        const defaultAdvanced = createDefaultAdvancedModelSettings();
+        await addOrUpdateModel({
+          name: item.resultPath,
+          providerId: "llamacpp",
+          providerLabel: "llama.cpp (Local)",
+          displayName,
+          inputScopes: ["text"],
+          outputScopes: ["text"],
+          advancedModelSettings: {
+            ...defaultAdvanced,
+            contextLength,
+            llamaKvType: kvType as NonNullable<typeof defaultAdvanced.llamaKvType>,
+          },
+        });
+
+        toast.success(
+          "Model installed",
+          `${displayName} added with ${contextLength.toLocaleString()} ctx and ${kvType.toUpperCase()} KV cache.`,
+        );
+        await dismissItem(item.id);
+      } catch (err: any) {
+        toast.error(
+          "Model setup failed",
+          `Downloaded ${item.filename}, but auto-add failed: ${err?.message || String(err)}`,
+        );
+      }
+    },
+    [dismissItem],
+  );
+
+  useEffect(() => {
+    const prev = prevQueueRef.current;
+
+    for (const item of queue) {
+      const prevItem = prev.find((p) => p.id === item.id);
+      if (!prevItem) continue;
+
+      const tracked = trackedDownloadsRef.current.get(item.id);
+      if (!tracked) continue;
+
+      if (prevItem.status !== "complete" && item.status === "complete") {
+        trackedDownloadsRef.current.delete(item.id);
+
+        if (tracked.source === "recommended") {
+          void autoCreateModelFromRecommendedDownload(item, tracked);
+        } else {
+          toast.success("Download complete", `${item.filename} downloaded.`);
+          void dismissItem(item.id);
+        }
+      }
+
+      if (prevItem.status !== "error" && item.status === "error") {
+        trackedDownloadsRef.current.delete(item.id);
+        toast.error("Download failed", `${item.filename}: ${item.error || "Unknown error"}`);
+      }
+
+      if (prevItem.status !== "cancelled" && item.status === "cancelled") {
+        trackedDownloadsRef.current.delete(item.id);
+      }
+    }
+
+    const activeQueueIds = new Set(queue.map((item) => item.id));
+    for (const queueId of trackedDownloadsRef.current.keys()) {
+      if (!activeQueueIds.has(queueId)) {
+        trackedDownloadsRef.current.delete(queueId);
+      }
+    }
+
+    prevQueueRef.current = queue;
+  }, [queue, autoCreateModelFromRecommendedDownload, dismissItem]);
 
   return (
     <div className="flex h-full flex-col text-fg">
@@ -2012,7 +2175,7 @@ export function HuggingFaceBrowserPage() {
                                       {/* Download recommended */}
                                       {score >= 60 && (
                                         <button
-                                          onClick={() => queueDownload(modelInfo.modelId, recFile)}
+                                          onClick={() => void queueRecommendedDownload()}
                                           className={cn(
                                             "flex w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-400/30 bg-emerald-400/15 py-1.5 text-[11px] font-semibold text-emerald-500",
                                             interactive.transition.default,
@@ -2090,7 +2253,7 @@ export function HuggingFaceBrowserPage() {
                                     </span>
                                   </div>
                                   <button
-                                    onClick={() => queueDownload(modelInfo.modelId, file.filename)}
+                                    onClick={() => void queueFilesDownload(file.filename)}
                                     className={cn(
                                       "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/15 py-1.5 text-[11px] font-semibold text-accent",
                                       interactive.transition.default,
