@@ -974,10 +974,17 @@ jobs:
           if (-not (Test-Path (Join-Path $rocmBin "hipcc.bat")) -and -not (Test-Path (Join-Path $rocmBin "hipcc.exe"))) {
             throw "hipcc not found in ROCm bin path: $rocmBin"
           }
+          $deviceLibFile = Get-ChildItem -Path $rocmRoot -Recurse -File -Filter "ocml.bc" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $deviceLibFile) {
+            throw "Could not find ROCm device library (ocml.bc) under $rocmRoot"
+          }
+          $deviceLibDir = $deviceLibFile.DirectoryName
 
           "ROCM_PATH=$rocmRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "HIP_PATH=$rocmRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "HIP_PLATFORM=amd" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "ROCM_DEVICE_LIB_PATH=$deviceLibDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "HIP_DEVICE_LIB_PATH=$deviceLibDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "CMAKE_PREFIX_PATH=$rocmRoot\lib\cmake" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $rocmBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
@@ -989,6 +996,12 @@ jobs:
             exit 1
           }
           hipcc --version
+          if (-not $env:ROCM_DEVICE_LIB_PATH -or -not (Test-Path (Join-Path $env:ROCM_DEVICE_LIB_PATH "ocml.bc"))) {
+            Write-Error "ROCm device library path invalid: '$env:ROCM_DEVICE_LIB_PATH'"
+            exit 1
+          }
+          Write-Host "ROCM_PATH=$env:ROCM_PATH"
+          Write-Host "ROCM_DEVICE_LIB_PATH=$env:ROCM_DEVICE_LIB_PATH"
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -1061,12 +1074,18 @@ jobs:
           RUSTFLAGS: "--cfg DEV_BUILD -C target-feature=-crt-static"
           CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreadedDLL"
           CMAKE_GENERATOR: "Ninja"
-          CXXFLAGS: "/EHsc"
+          CXXFLAGS: "/EHsc /clang:--rocm-path=${{ env.ROCM_PATH }} /clang:--rocm-device-lib-path=${{ env.ROCM_DEVICE_LIB_PATH }}"
+          CFLAGS: "/clang:--rocm-path=${{ env.ROCM_PATH }} /clang:--rocm-device-lib-path=${{ env.ROCM_DEVICE_LIB_PATH }}"
           CMAKE_C_COMPILER: "clang-cl"
           CMAKE_CXX_COMPILER: "clang-cl"
           CMAKE_HIP_COMPILER: "hipcc"
+          CMAKE_HIP_FLAGS: "--rocm-path=${{ env.ROCM_PATH }} --rocm-device-lib-path=${{ env.ROCM_DEVICE_LIB_PATH }}"
           CMAKE_HIP_PLATFORM: "amd"
           HIP_PLATFORM: "amd"
+          HIP_PATH: ${{ env.HIP_PATH }}
+          ROCM_PATH: ${{ env.ROCM_PATH }}
+          HIP_DEVICE_LIB_PATH: ${{ env.HIP_DEVICE_LIB_PATH }}
+          ROCM_DEVICE_LIB_PATH: ${{ env.ROCM_DEVICE_LIB_PATH }}
           CARGO_TARGET_DIR: target-rocm
         run: bun run tauri build --config dev-config.json --features llama-gpu-rocm
 
