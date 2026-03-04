@@ -50,6 +50,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   prepare_release:
@@ -77,13 +78,12 @@ jobs:
       - name: Build release body (include commits since last Desktop build)
         id: release_body
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           REPO_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
-          CURRENT_RUN="${GITHUB_RUN_NUMBER}"
-          CURRENT_ATTEMPT="${GITHUB_RUN_ATTEMPT}"
+          TAG_PREFIX="desktop-dev"
           PREV_TAG=""
-          BEST_RUN=0
-          BEST_ATTEMPT=0
 
           print_commit_range() {
             local range="$1"
@@ -102,19 +102,59 @@ jobs:
             fi
           }
 
-          while IFS= read -r tag; do
-            if [[ "${tag}" =~ ^desktop-dev-([0-9]+)-([0-9]+)-[0-9a-f]+$ ]]; then
-              tag_run="${BASH_REMATCH[1]}"
-              tag_attempt="${BASH_REMATCH[2]}"
-              if (( tag_run < CURRENT_RUN || (tag_run == CURRENT_RUN && tag_attempt < CURRENT_ATTEMPT) )); then
-                if [[ -z "${PREV_TAG}" ]] || (( tag_run > BEST_RUN || (tag_run == BEST_RUN && tag_attempt > BEST_ATTEMPT) )); then
-                  PREV_TAG="${tag}"
-                  BEST_RUN="${tag_run}"
-                  BEST_ATTEMPT="${tag_attempt}"
-                fi
-              fi
-            fi
-          done < <(git tag --list 'desktop-dev-*')
+          PREV_SUCCESS_RUN_INFO="$(
+            python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          workflow_ref = os.environ["GITHUB_WORKFLOW_REF"]
+          workflow = workflow_ref.split("@", 1)[0].split("/")[-1]
+          branch = os.environ["GITHUB_REF_NAME"]
+          current_run = int(os.environ["GITHUB_RUN_NUMBER"])
+          current_attempt = int(os.environ["GITHUB_RUN_ATTEMPT"])
+          token = os.environ.get("GH_TOKEN", "")
+
+          params = urllib.parse.urlencode({
+              "status": "completed",
+              "event": "workflow_dispatch",
+              "branch": branch,
+              "per_page": 100,
+          })
+          url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?{params}"
+
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+          if token:
+              headers["Authorization"] = f"Bearer {token}"
+
+          req = urllib.request.Request(url, headers=headers)
+          with urllib.request.urlopen(req) as resp:
+              data = json.load(resp)
+
+          best = None
+          for run in data.get("workflow_runs", []):
+              if run.get("conclusion") != "success":
+                  continue
+              run_number = int(run.get("run_number") or 0)
+              run_attempt = int(run.get("run_attempt") or 1)
+              if run_number < current_run or (run_number == current_run and run_attempt < current_attempt):
+                  key = (run_number, run_attempt)
+                  if best is None or key > best:
+                      best = key
+
+          if best is not None:
+              print(f"{best[0]}\t{best[1]}")
+          PY
+          )"
+          if [[ -n "${PREV_SUCCESS_RUN_INFO}" ]]; then
+            IFS=$'\t' read -r PREV_RUN PREV_ATTEMPT <<< "${PREV_SUCCESS_RUN_INFO}"
+            PREV_TAG="$(git tag --list "${TAG_PREFIX}-${PREV_RUN}-${PREV_ATTEMPT}-*" | head -n 1)"
+          fi
 
           BODY_DELIM="BODY_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           {
@@ -144,7 +184,7 @@ jobs:
               fi
             else
               echo "### Changes"
-              echo "- No previous desktop build tag found."
+              echo "- No previous successful Desktop build tag found."
             fi
             echo "${BODY_DELIM}"
           } >> "$GITHUB_OUTPUT"
