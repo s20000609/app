@@ -22,6 +22,10 @@ export {
 
 import { invoke } from "@tauri-apps/api/core";
 
+export async function exportPromptTemplateAsUsc(id: string): Promise<string> {
+  return await invoke<string>("export_prompt_template_as_usc", { id });
+}
+
 export async function renderPromptPreview(
   content: string,
   opts: { characterId: string; sessionId?: string; personaId?: string },

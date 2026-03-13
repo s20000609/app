@@ -336,7 +336,6 @@ export function LibraryPage() {
             <input
               ref={lorebookImportRef}
               type="file"
-              accept=".json,application/json"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

@@ -989,6 +989,27 @@ pub fn lorebook_export(app: tauri::AppHandle, lorebook_id: String) -> Result<Str
 }
 
 #[tauri::command]
+pub fn lorebook_export_as_usc(
+    app: tauri::AppHandle,
+    lorebook_id: String,
+) -> Result<String, String> {
+    let conn = crate::storage_manager::db::open_db(&app)?;
+    let lorebook = get_lorebook(&conn, &lorebook_id)?.ok_or_else(|| {
+        crate::utils::err_msg(module_path!(), line!(), "Lorebook not found for export")
+    })?;
+    let entries = get_lorebook_entries(&conn, &lorebook_id)?;
+    let card = crate::storage_manager::system_cards::create_lorebook_usc(&lorebook, &entries);
+
+    serde_json::to_string_pretty(&card).map_err(|e| {
+        crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Failed to serialize USC lorebook export: {}", e),
+        )
+    })
+}
+
+#[tauri::command]
 pub fn lorebook_import(app: tauri::AppHandle, import_json: String) -> Result<String, String> {
     let parsed: WorldInfoImport = serde_json::from_str(&import_json).map_err(|e| {
         crate::utils::err_msg(

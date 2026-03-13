@@ -23,6 +23,7 @@ import {
   listPromptTemplates,
   deletePromptTemplate,
   createPromptTemplate,
+  exportPromptTemplateAsUsc,
 } from "../../../core/prompts/service";
 import type { SystemPromptTemplate } from "../../../core/storage/schemas";
 import type { SystemPromptEntry } from "../../../core/storage/schemas";
@@ -39,9 +40,10 @@ import {
   isSystemPromptTemplate,
   getPromptTypeLabel,
 } from "../../../core/prompts/constants";
-import { BottomMenu } from "../../components";
+import { BottomMenu, PromptTemplateExportMenu } from "../../components";
 import { toast } from "../../components/toast";
 import { downloadJson, readFileAsText } from "../../../core/storage/personaTransfer";
+import type { PromptTemplateExportFormat } from "../../components/PromptTemplateExportMenu";
 
 type TemplateUsage = {
   characters: number;
@@ -87,6 +89,16 @@ type ExternalPromptExport = {
     order: Array<{ identifier: string; enabled?: boolean }>;
   }>;
 };
+
+function generatePromptTemplateExportFilename(
+  templateName: string,
+  format: PromptTemplateExportFormat,
+) {
+  const safeName = templateName.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
+  const date = new Date().toISOString().split("T")[0];
+  const extension = format === "usc" ? "usc" : "json";
+  return `system_prompts_${safeName || "export"}_${date}.${extension}`;
+}
 
 type PromptOrderEntry = {
   identifier: string;
@@ -375,9 +387,7 @@ function PromptCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-medium text-fg truncate">{template.name}</h3>
-              {isActiveDefault && (
-                <Star className="h-3.5 w-3.5 text-accent fill-accent shrink-0" />
-              )}
+              {isActiveDefault && <Star className="h-3.5 w-3.5 text-accent fill-accent shrink-0" />}
               {isProtected && <Lock className="h-3.5 w-3.5 text-warning shrink-0" />}
             </div>
             <p className="text-xs text-fg/40 mt-0.5">{typeLabel}</p>
@@ -489,6 +499,8 @@ export function SystemPromptsPage() {
   const [templateToDelete, setTemplateToDelete] = useState<SystemPromptTemplate | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exportTarget, setExportTarget] = useState<SystemPromptTemplate | null>(null);
   const [importing, setImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -509,19 +521,30 @@ export function SystemPromptsPage() {
     };
   }, [navigate]);
 
-  async function handleExportTemplate(template: SystemPromptTemplate) {
-    if (exporting) return;
+  async function handleExportTemplate(format: PromptTemplateExportFormat) {
+    if (!exportTarget || exporting) return;
     setExporting(true);
     try {
+      if (format === "usc") {
+        const exportJson = await exportPromptTemplateAsUsc(exportTarget.id);
+        await downloadJson(
+          exportJson,
+          generatePromptTemplateExportFilename(exportTarget.name, format),
+        );
+        setExportMenuOpen(false);
+        setExportTarget(null);
+        return;
+      }
+
       const entries =
-        template.entries && template.entries.length > 0
-          ? template.entries
+        exportTarget.entries && exportTarget.entries.length > 0
+          ? exportTarget.entries
           : [
               {
                 id: "main",
                 name: "Main Prompt",
                 role: "system",
-                content: normalizePromptVariables(template.content),
+                content: normalizePromptVariables(exportTarget.content),
                 enabled: true,
                 injectionPosition: "relative",
                 injectionDepth: 0,
@@ -558,14 +581,12 @@ export function SystemPromptsPage() {
       };
 
       const json = JSON.stringify(exportPayload, null, 2);
-      const safeName = template.name.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
-      const filename = `system_prompts_${safeName || "export"}_${
-        new Date().toISOString().split("T")[0]
-      }.json`;
-      await downloadJson(json, filename);
+      await downloadJson(json, generatePromptTemplateExportFilename(exportTarget.name, format));
+      setExportMenuOpen(false);
+      setExportTarget(null);
     } catch (error) {
       console.error("Failed to export system prompts:", error);
-      alert("Failed to export system prompts. " + String(error));
+      toast.error("Export failed", String(error));
     } finally {
       setExporting(false);
     }
@@ -785,7 +806,6 @@ export function SystemPromptsPage() {
               <input
                 ref={importInputRef}
                 type="file"
-                accept="application/json,.json"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
@@ -860,7 +880,10 @@ export function SystemPromptsPage() {
                     setShowDeleteConfirm(true);
                   }}
                   onDuplicate={() => handleDuplicate(template)}
-                  onExport={() => handleExportTemplate(template)}
+                  onExport={() => {
+                    setExportTarget(template);
+                    setExportMenuOpen(true);
+                  }}
                   onSetDefault={() => handleSetDefault(template.id)}
                 />
               ))}
@@ -868,6 +891,19 @@ export function SystemPromptsPage() {
           )}
         </div>
       </main>
+
+      <PromptTemplateExportMenu
+        isOpen={exportMenuOpen}
+        onClose={() => {
+          if (exporting) return;
+          setExportMenuOpen(false);
+          setExportTarget(null);
+        }}
+        onSelect={(format) => {
+          void handleExportTemplate(format);
+        }}
+        exporting={exporting}
+      />
 
       {/* Delete Confirmation */}
       <BottomMenu

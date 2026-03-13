@@ -14,6 +14,7 @@ pub mod personas;
 pub mod providers;
 pub mod sessions;
 pub mod settings;
+pub mod system_cards;
 
 pub mod usage;
 

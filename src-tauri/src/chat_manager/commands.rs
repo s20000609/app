@@ -3961,6 +3961,104 @@ pub fn get_prompt_template(
 }
 
 #[tauri::command]
+pub fn export_prompt_template_as_usc(app: AppHandle, id: String) -> Result<String, String> {
+    let template =
+        prompts::get_template(&app, &id)?.ok_or_else(|| format!("Template not found: {}", id))?;
+    let card = crate::storage_manager::system_cards::create_system_prompt_template_usc(&template);
+    serde_json::to_string_pretty(&card).map_err(|e| {
+        crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Failed to serialize USC prompt template export: {}", e),
+        )
+    })
+}
+
+#[tauri::command]
+pub fn chat_template_export_as_usc(template_json: String) -> Result<String, String> {
+    let value: Value = serde_json::from_str(&template_json).map_err(|e| {
+        crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Invalid chat template JSON for export: {}", e),
+        )
+    })?;
+
+    let id = value
+        .get("id")
+        .and_then(|item| item.as_str())
+        .ok_or_else(|| {
+            crate::utils::err_msg(module_path!(), line!(), "Chat template id is required")
+        })?
+        .to_string();
+    let name = value
+        .get("name")
+        .and_then(|item| item.as_str())
+        .ok_or_else(|| {
+            crate::utils::err_msg(module_path!(), line!(), "Chat template name is required")
+        })?
+        .to_string();
+    let scene_id = value
+        .get("sceneId")
+        .and_then(|item| item.as_str())
+        .map(|item| item.to_string());
+    let prompt_template_id = value
+        .get("promptTemplateId")
+        .and_then(|item| item.as_str())
+        .map(|item| item.to_string());
+    let created_at = value
+        .get("createdAt")
+        .and_then(|item| item.as_i64())
+        .unwrap_or_else(|| now_millis().unwrap_or(0) as i64);
+
+    let template = crate::sync::models::ChatTemplate {
+        id: id.clone(),
+        character_id: String::new(),
+        name,
+        scene_id,
+        prompt_template_id,
+        created_at,
+    };
+
+    let messages = value
+        .get("messages")
+        .and_then(|item| item.as_array())
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .enumerate()
+        .map(|(idx, message)| crate::sync::models::ChatTemplateMessage {
+            id: message
+                .get("id")
+                .and_then(|item| item.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            template_id: id.clone(),
+            idx: idx as i64,
+            role: message
+                .get("role")
+                .and_then(|item| item.as_str())
+                .unwrap_or("assistant")
+                .to_string(),
+            content: message
+                .get("content")
+                .and_then(|item| item.as_str())
+                .unwrap_or_default()
+                .to_string(),
+        })
+        .collect::<Vec<_>>();
+
+    let card = crate::storage_manager::system_cards::create_chat_template_usc(&template, &messages);
+    serde_json::to_string_pretty(&card).map_err(|e| {
+        crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Failed to serialize USC chat template export: {}", e),
+        )
+    })
+}
+
+#[tauri::command]
 pub fn get_app_default_template_id() -> String {
     prompts::APP_DEFAULT_TEMPLATE_ID.to_string()
 }

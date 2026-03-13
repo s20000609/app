@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map as JsonMap, Value as JsonValue};
 use std::fs;
 use unified_entity_card::{
-    assert_uec, convert_uec_v1_to_v2, create_character_uec, create_persona_uec, downgrade_uec,
-    Uec, UecKind, SCHEMA_VERSION, SCHEMA_VERSION_V2,
+    assert_uec, convert_uec_v1_to_v2, create_character_uec, create_persona_uec, downgrade_uec, Uec,
+    UecKind, SCHEMA_VERSION, SCHEMA_VERSION_V2,
 };
 
 #[cfg(not(target_os = "android"))]
@@ -184,10 +184,7 @@ fn asset_string_to_v2_locator(value: &str) -> JsonValue {
             JsonValue::String("inline_base64".to_string()),
         );
         if !mime_type.is_empty() {
-            locator.insert(
-                "mimeType".into(),
-                JsonValue::String(mime_type.to_string()),
-            );
+            locator.insert("mimeType".into(), JsonValue::String(mime_type.to_string()));
         }
         locator.insert("data".into(), JsonValue::String(data.to_string()));
         return JsonValue::Object(locator);
@@ -195,10 +192,7 @@ fn asset_string_to_v2_locator(value: &str) -> JsonValue {
 
     if value.starts_with("http://") || value.starts_with("https://") {
         let mut locator = JsonMap::new();
-        locator.insert(
-            "type".into(),
-            JsonValue::String("remote_url".to_string()),
-        );
+        locator.insert("type".into(), JsonValue::String("remote_url".to_string()));
         locator.insert("url".into(), JsonValue::String(value.to_string()));
         return JsonValue::Object(locator);
     }
@@ -231,7 +225,10 @@ fn asset_locator_to_string(value: Option<&JsonValue>) -> Option<String> {
 }
 
 fn normalize_v2_asset_fields(card: &mut JsonValue) {
-    let Some(payload) = card.get_mut("payload").and_then(|payload| payload.as_object_mut()) else {
+    let Some(payload) = card
+        .get_mut("payload")
+        .and_then(|payload| payload.as_object_mut())
+    else {
         return;
     };
 
@@ -246,7 +243,10 @@ fn normalize_v2_asset_fields(card: &mut JsonValue) {
 }
 
 fn normalize_legacy_asset_fields(card: &mut JsonValue) {
-    let Some(payload) = card.get_mut("payload").and_then(|payload| payload.as_object_mut()) else {
+    let Some(payload) = card
+        .get_mut("payload")
+        .and_then(|payload| payload.as_object_mut())
+    else {
         return;
     };
 
@@ -560,7 +560,10 @@ fn parse_uec_persona(value: &JsonValue) -> Result<PersonaExportPackage, String> 
         .and_then(|value| value.as_str())
         .unwrap_or_default()
         .to_string();
-    let nickname = payload.get("nickname").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let nickname = payload
+        .get("nickname")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let is_default = payload.get("isDefault").and_then(|v| v.as_bool());
     let avatar_data = asset_locator_to_string(payload.get("avatar"));
     let avatar_crop = parse_avatar_crop(
@@ -3005,7 +3008,10 @@ mod tests {
                 "variants": []
             })]),
         );
-        payload.insert("defaultSceneId".into(), JsonValue::String("scene-1".to_string()));
+        payload.insert(
+            "defaultSceneId".into(),
+            JsonValue::String("scene-1".to_string()),
+        );
         payload.insert("createdAt".into(), JsonValue::from(1));
         payload.insert("updatedAt".into(), JsonValue::from(2));
 
@@ -3017,8 +3023,8 @@ mod tests {
             Some(json!({ "createdAt": 1, "updatedAt": 2, "source": "lettuceai" })),
             None,
         );
-        let value: JsonValue = serde_json::from_str(&stringify_v2_uec(&v1).expect("v2 json"))
-            .expect("valid json");
+        let value: JsonValue =
+            serde_json::from_str(&stringify_v2_uec(&v1).expect("v2 json")).expect("valid json");
         let schema = value
             .get("schema")
             .and_then(|schema| schema.as_object())

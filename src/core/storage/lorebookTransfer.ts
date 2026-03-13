@@ -10,6 +10,15 @@ export async function exportLorebook(lorebookId: string): Promise<string> {
   }
 }
 
+export async function exportLorebookAsUsc(lorebookId: string): Promise<string> {
+  try {
+    return await invoke<string>("lorebook_export_as_usc", { lorebookId });
+  } catch (error) {
+    console.error("[exportLorebookAsUsc] Failed to export lorebook:", error);
+    throw new Error(typeof error === "string" ? error : "Failed to export lorebook as USC");
+  }
+}
+
 function filenameToLorebookName(filename: string): string {
   const trimmed = filename.trim();
   if (!trimmed) return "";
@@ -79,4 +88,14 @@ export function generateLorebookExportFilename(lorebookName: string): string {
   const safeName = lorebookName.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
   const timestamp = new Date().toISOString().split("T")[0];
   return `lorebook_${safeName || "export"}_${timestamp}.json`;
+}
+
+export function generateLorebookExportFilenameWithFormat(
+  lorebookName: string,
+  format: "legacy_json" | "usc",
+): string {
+  const safeName = lorebookName.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
+  const timestamp = new Date().toISOString().split("T")[0];
+  const extension = format === "usc" ? "usc" : "json";
+  return `lorebook_${safeName || "export"}_${timestamp}.${extension}`;
 }

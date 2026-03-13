@@ -574,7 +574,6 @@ export function CreateMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () =
             <input
               ref={lorebookImportInputRef}
               type="file"
-              accept=".json,application/json"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

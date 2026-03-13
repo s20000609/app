@@ -1,11 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, MessageSquare, Trash2, MoreVertical, Loader2 } from "lucide-react";
+import { MessageSquare, Trash2, MoreVertical, Loader2, Download } from "lucide-react";
 import { listCharacters, saveCharacter } from "../../../core/storage/repo";
-import type { Character } from "../../../core/storage/schemas";
-import { BottomMenu, MenuButton } from "../../components/BottomMenu";
+import type { Character, ChatTemplate } from "../../../core/storage/schemas";
+import { BottomMenu, ChatTemplateExportMenu, MenuButton } from "../../components";
 import { useI18n } from "../../../core/i18n/context";
+import { toast } from "../../components/toast";
+import {
+  exportChatTemplateAsUsc,
+  generateChatTemplateExportFilename,
+  importChatTemplate,
+  serializeChatTemplateExport,
+} from "../../../core/storage/chatTemplateTransfer";
+import { downloadJson, readFileAsText } from "../../../core/storage/personaTransfer";
+import type { ChatTemplateExportFormat } from "../../components/ChatTemplateExportMenu";
 
 export default function ChatTemplateListPage() {
   const { characterId } = useParams<{ characterId: string }>();
@@ -14,6 +23,11 @@ export default function ChatTemplateListPage() {
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuTemplateId, setMenuTemplateId] = useState<string | null>(null);
+  const [exportTarget, setExportTarget] = useState<ChatTemplate | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadCharacter = useCallback(async () => {
     if (!characterId) return;
@@ -29,6 +43,18 @@ export default function ChatTemplateListPage() {
   useEffect(() => {
     loadCharacter();
   }, [loadCharacter]);
+
+  useEffect(() => {
+    const handleAdd = () => navigate(`/settings/characters/${characterId}/templates/new`);
+    window.addEventListener("templates:add", handleAdd);
+    return () => window.removeEventListener("templates:add", handleAdd);
+  }, [characterId, navigate]);
+
+  useEffect(() => {
+    const handleImport = () => importInputRef.current?.click();
+    window.addEventListener("templates:import", handleImport);
+    return () => window.removeEventListener("templates:import", handleImport);
+  }, [importInputRef]);
 
   const templates = character?.chatTemplates ?? [];
 
@@ -46,6 +72,58 @@ export default function ChatTemplateListPage() {
     [character, templates],
   );
 
+  const handleExport = useCallback(
+    async (format: ChatTemplateExportFormat) => {
+      if (!exportTarget || exporting) return;
+      try {
+        setExporting(true);
+        const exportJson =
+          format === "usc"
+            ? await exportChatTemplateAsUsc(exportTarget)
+            : serializeChatTemplateExport(exportTarget);
+        await downloadJson(
+          exportJson,
+          generateChatTemplateExportFilename(exportTarget.name, format),
+        );
+        setShowExportMenu(false);
+        setExportTarget(null);
+      } catch (error) {
+        console.error("Failed to export chat template:", error);
+        toast.error("Export failed", String(error));
+      } finally {
+        setExporting(false);
+      }
+    },
+    [exportTarget, exporting],
+  );
+
+  const handleImportFile = useCallback(
+    async (file: File) => {
+      if (!character || importing) return;
+      try {
+        setImporting(true);
+        const raw = await readFileAsText(file);
+        const imported = importChatTemplate(raw);
+        const updated = {
+          ...character,
+          chatTemplates: [...templates, imported],
+        };
+        await saveCharacter(updated);
+        setCharacter(updated);
+        toast.success("Imported", `Added "${imported.name}".`);
+      } catch (error) {
+        console.error("Failed to import chat template:", error);
+        toast.error("Import failed", String(error));
+      } finally {
+        setImporting(false);
+        if (importInputRef.current) {
+          importInputRef.current.value = "";
+        }
+      }
+    },
+    [character, importing, templates, importInputRef],
+  );
+
   const menuTemplate = templates.find((t) => t.id === menuTemplateId);
 
   if (loading) {
@@ -58,7 +136,9 @@ export default function ChatTemplateListPage() {
 
   if (!character) {
     return (
-      <div className="flex h-full items-center justify-center text-fg/50">{t("characters.templates.characterNotFound")}</div>
+      <div className="flex h-full items-center justify-center text-fg/50">
+        {t("characters.templates.characterNotFound")}
+      </div>
     );
   }
 
@@ -74,34 +154,34 @@ export default function ChatTemplateListPage() {
           <p className="text-xs text-fg/50">
             {t("characters.templates.templateCount", { count: templates.length })}
           </p>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate(`/settings/characters/${characterId}/templates/new`)}
-            className="flex items-center gap-1.5 rounded-lg border border-accent/50 bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition active:bg-accent/30"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t("characters.templates.newTemplate")}
-          </motion.button>
         </div>
       )}
+
+      <input
+        ref={(node) => {
+          importInputRef.current = node;
+        }}
+        type="file"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            void handleImportFile(file);
+          }
+        }}
+      />
 
       {templates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-3 rounded-2xl border border-fg/10 bg-fg/5 p-4">
             <MessageSquare className="h-8 w-8 text-fg/30" />
           </div>
-          <p className="text-sm font-medium text-fg/60">{t("characters.templates.noTemplatesYet")}</p>
+          <p className="text-sm font-medium text-fg/60">
+            {t("characters.templates.noTemplatesYet")}
+          </p>
           <p className="mt-1 max-w-xs text-xs text-fg/40">
             {t("characters.templates.explanation", { name: character.name })}
           </p>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate(`/settings/characters/${characterId}/templates/new`)}
-            className="mt-4 flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/20 px-4 py-2 text-sm font-medium text-accent transition active:bg-accent/30"
-          >
-            <Plus className="h-4 w-4" />
-            {t("characters.templates.createTemplate")}
-          </motion.button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -165,13 +245,39 @@ export default function ChatTemplateListPage() {
         onClose={() => setMenuTemplateId(null)}
         title={menuTemplate?.name ?? "Template"}
       >
-        <MenuButton
-          icon={<Trash2 className="h-4 w-4" />}
-          title={t("characters.templates.deleteTemplate")}
-          color="from-rose-500 to-red-600"
-          onClick={() => menuTemplateId && handleDelete(menuTemplateId)}
-        />
+        <div className="space-y-3">
+          <MenuButton
+            icon={<Download className="h-4 w-4" />}
+            title={t("common.buttons.export")}
+            color="from-emerald-500 to-emerald-600"
+            onClick={() => {
+              if (!menuTemplate) return;
+              setExportTarget(menuTemplate);
+              setMenuTemplateId(null);
+              setShowExportMenu(true);
+            }}
+          />
+          <MenuButton
+            icon={<Trash2 className="h-4 w-4" />}
+            title={t("characters.templates.deleteTemplate")}
+            color="from-rose-500 to-red-600"
+            onClick={() => menuTemplateId && handleDelete(menuTemplateId)}
+          />
+        </div>
       </BottomMenu>
+
+      <ChatTemplateExportMenu
+        isOpen={showExportMenu}
+        onClose={() => {
+          if (exporting) return;
+          setShowExportMenu(false);
+          setExportTarget(null);
+        }}
+        onSelect={(format) => {
+          void handleExport(format);
+        }}
+        exporting={exporting}
+      />
     </motion.div>
   );
 }

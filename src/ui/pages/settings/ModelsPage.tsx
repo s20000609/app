@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Check,
@@ -11,6 +11,7 @@ import {
   Download,
 } from "lucide-react";
 import { BottomMenu, MenuButton } from "../../components/BottomMenu";
+import { ModelExportMenu } from "../../components";
 import { confirmBottomMenu } from "../../components/ConfirmBottomMenu";
 import { getProviderIcon } from "../../../core/utils/providerIcons";
 import { useModelsController } from "./hooks/useModelsController";
@@ -18,6 +19,17 @@ import { useNavigationManager, Routes } from "../../navigation";
 import { cn } from "../../design-tokens";
 import { useI18n } from "../../../core/i18n/context";
 import { ModelsDownloadIndicator } from "./components/ModelsDownloadIndicator";
+import { toast } from "../../components/toast";
+import { downloadJson, readFileAsText } from "../../../core/storage/lorebookTransfer";
+import {
+  exportModelAsUsc,
+  generateModelExportFilename,
+  importModel,
+  serializeModelExport,
+} from "../../../core/storage/modelTransfer";
+import { addOrUpdateModel } from "../../../core/storage/repo";
+import type { Model } from "../../../core/storage/schemas";
+import type { ModelExportFormat } from "../../components/ModelExportMenu";
 
 type SortMode = "alphabetical" | "provider";
 const SORT_STORAGE_KEY = "lettuce.models.sortMode";
@@ -25,7 +37,11 @@ const SORT_STORAGE_KEY = "lettuce.models.sortMode";
 export function ModelsPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [selectedModel, setSelectedModel] = useState<any | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+  const [exportTarget, setExportTarget] = useState<Model | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     if (typeof window === "undefined") return "alphabetical";
     const stored = window.localStorage.getItem(SORT_STORAGE_KEY);
@@ -75,6 +91,12 @@ export function ModelsPage() {
   }, [toNewModel]);
 
   useEffect(() => {
+    const listener = () => importInputRef.current?.click();
+    window.addEventListener("models:import", listener);
+    return () => window.removeEventListener("models:import", listener);
+  }, []);
+
+  useEffect(() => {
     const globalWindow = window as any;
     globalWindow.__openModelsSort = () => setShowSortMenu(true);
     const listener = () => setShowSortMenu(true);
@@ -93,12 +115,50 @@ export function ModelsPage() {
   }, [sortMode]);
 
   const getProviderLabel = useMemo(
-    () => (model: any) => {
+    () => (model: Model) => {
       const providerInfo = providers.find((p) => p.providerId === model.providerId);
       return model.providerLabel || providerInfo?.label || model.providerId;
     },
     [providers],
   );
+
+  const handleExportModel = async (format: ModelExportFormat) => {
+    if (!exportTarget || exporting) return;
+    try {
+      setExporting(true);
+      const exportJson =
+        format === "usc"
+          ? await exportModelAsUsc(exportTarget)
+          : serializeModelExport(exportTarget);
+      await downloadJson(
+        exportJson,
+        generateModelExportFilename(exportTarget.displayName || exportTarget.name, format),
+      );
+      setShowExportMenu(false);
+      setExportTarget(null);
+    } catch (error) {
+      console.error("Failed to export model:", error);
+      toast.error("Export failed", String(error));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportModel = async (file: File) => {
+    try {
+      const raw = await readFileAsText(file);
+      const importedModel = importModel(raw);
+      await addOrUpdateModel(importedModel);
+      toast.success("Imported successfully", `Model "${importedModel.displayName}" was imported.`);
+    } catch (error) {
+      console.error("Failed to import model:", error);
+      toast.error("Import failed", String(error));
+    } finally {
+      if (importInputRef.current) {
+        importInputRef.current.value = "";
+      }
+    }
+  };
 
   const sortedModels = useMemo(() => {
     const list = [...models];
@@ -147,6 +207,18 @@ export function ModelsPage() {
 
   return (
     <div className="flex h-full flex-col">
+      <input
+        ref={importInputRef}
+        type="file"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            void handleImportModel(file);
+          }
+          event.currentTarget.value = "";
+        }}
+      />
       {/* List (TopNav handles title/back) */}
       <div className="flex-1 overflow-y-auto mx-3 py-3 space-y-3">
         {models.length === 0 && <EmptyState onCreate={() => toNewModel()} />}
@@ -285,6 +357,18 @@ export function ModelsPage() {
             />
 
             <MenuButton
+              icon={Download}
+              title="Export"
+              description="Save this model profile"
+              onClick={() => {
+                setExportTarget(selectedModel);
+                setSelectedModel(null);
+                setShowExportMenu(true);
+              }}
+              color="from-emerald-500 to-emerald-600"
+            />
+
+            <MenuButton
               icon={Trash2}
               title="Delete"
               description="Remove this model permanently"
@@ -304,6 +388,19 @@ export function ModelsPage() {
           </div>
         )}
       </BottomMenu>
+
+      <ModelExportMenu
+        isOpen={showExportMenu}
+        onClose={() => {
+          if (exporting) return;
+          setShowExportMenu(false);
+          setExportTarget(null);
+        }}
+        onSelect={(format) => {
+          void handleExportModel(format);
+        }}
+        exporting={exporting}
+      />
 
       <BottomMenu isOpen={showSortMenu} onClose={() => setShowSortMenu(false)} title="Sort Models">
         <div className="space-y-3">

@@ -12,6 +12,7 @@ import {
   LayoutList,
   LayoutGrid,
   Grid3X3,
+  Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { typography, interactive, cn } from "../../design-tokens";
@@ -186,9 +187,17 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
     // Only show + on models list page, not on edit pages (/settings/models/xxx)
     if (basePath === "/settings/models" && !hasAdvancedView) return true;
     if (basePath === "/settings/prompts") return true;
+    if (/^\/settings\/characters\/[^/]+\/templates$/.test(basePath)) return true;
     if (basePath.includes("/lorebook")) return true;
     return false;
   }, [basePath, hasAdvancedView]);
+
+  const showImportButton = useMemo(
+    () =>
+      basePath === "/settings/models" ||
+      /^\/settings\/characters\/[^/]+\/templates$/.test(basePath),
+    [basePath],
+  );
 
   // Map paths to docs keys for contextual help
   const docsKeyForPath = useMemo(() => {
@@ -393,6 +402,10 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
       window.dispatchEvent(new CustomEvent("prompts:add"));
       return;
     }
+    if (/^\/settings\/characters\/[^/]+\/templates$/.test(basePath)) {
+      window.dispatchEvent(new CustomEvent("templates:add"));
+      return;
+    }
     if (basePath.includes("/lorebook")) {
       window.dispatchEvent(new CustomEvent("lorebook:add"));
       return;
@@ -421,6 +434,16 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
       } else {
         window.dispatchEvent(new CustomEvent("usage:filters"));
       }
+    }
+  };
+
+  const handleImportClick = () => {
+    if (basePath === "/settings/models") {
+      window.dispatchEvent(new CustomEvent("models:import"));
+      return;
+    }
+    if (/^\/settings\/characters\/[^/]+\/templates$/.test(basePath)) {
+      window.dispatchEvent(new CustomEvent("templates:import"));
     }
   };
 
@@ -534,6 +557,20 @@ export function TopNav({ currentPath, onBackOverride, titleOverride, rightAction
               aria-label={t("topNav.help")}
             >
               <HelpCircle size={20} strokeWidth={2.5} className="text-fg/50" />
+            </button>
+          )}
+          {showImportButton && (
+            <button
+              onClick={handleImportClick}
+              className={cn(
+                "flex items-center px-[0.6em] py-[0.3em] justify-center rounded-full",
+                "text-fg/70 hover:text-fg hover:bg-fg/10",
+                interactive.transition.fast,
+                interactive.active.scale,
+              )}
+              aria-label={t("common.buttons.import")}
+            >
+              <Upload size={20} strokeWidth={2.5} className="text-fg" />
             </button>
           )}
           {showAddButton && (

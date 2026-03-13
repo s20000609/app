@@ -10,7 +10,6 @@ import {
   GripVertical,
   X,
   Download,
-  Upload,
   Loader2,
 } from "lucide-react";
 import { motion, type PanInfo, useDragControls } from "framer-motion";
@@ -26,15 +25,16 @@ import {
 } from "../../../core/storage/repo";
 import {
   exportLorebook,
-  importLorebook,
+  exportLorebookAsUsc,
   downloadJson,
-  readFileAsText,
-  generateLorebookExportFilename,
+  generateLorebookExportFilenameWithFormat,
 } from "../../../core/storage/lorebookTransfer";
-import { BottomMenu, MenuButton } from "../../components";
+import { BottomMenu, LorebookExportMenu, MenuButton } from "../../components";
 import { confirmBottomMenu } from "../../components/ConfirmBottomMenu";
 import { TopNav } from "../../components/App";
 import { useI18n } from "../../../core/i18n/context";
+import { toast } from "../../components/toast";
+import type { LorebookExportFormat } from "../../components/LorebookExportMenu";
 
 const DRAG_HOLD_MS = 450;
 
@@ -485,8 +485,7 @@ export function StandaloneLorebookEditor() {
   const [newName, setNewName] = useState("");
   const [isCreatingEntry, setIsCreatingEntry] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -605,35 +604,24 @@ export function StandaloneLorebookEditor() {
     }
   };
 
-  const handleExportLorebook = async () => {
+  const handleExportLorebook = async (format: LorebookExportFormat) => {
     if (!lorebook || isExporting) return;
     try {
       setIsExporting(true);
-      const exportJson = await exportLorebook(lorebook.id);
-      await downloadJson(exportJson, generateLorebookExportFilename(lorebook.name));
+      const exportJson =
+        format === "usc"
+          ? await exportLorebookAsUsc(lorebook.id)
+          : await exportLorebook(lorebook.id);
+      await downloadJson(
+        exportJson,
+        generateLorebookExportFilenameWithFormat(lorebook.name, format),
+      );
+      setShowExportMenu(false);
     } catch (error) {
       console.error("Failed to export lorebook:", error);
-      alert("Failed to export lorebook. " + String(error));
+      toast.error("Export failed", String(error));
     } finally {
       setIsExporting(false);
-    }
-  };
-
-  const handleImportLorebook = async (file: File) => {
-    if (isImporting) return;
-    try {
-      setIsImporting(true);
-      const raw = await readFileAsText(file);
-      const imported = await importLorebook(raw, file.name);
-      navigate(`/library/lorebooks/${imported.id}`);
-    } catch (error) {
-      console.error("Failed to import lorebook:", error);
-      alert("Failed to import lorebook. " + String(error));
-    } finally {
-      setIsImporting(false);
-      if (importInputRef.current) {
-        importInputRef.current.value = "";
-      }
     }
   };
 
@@ -710,19 +698,7 @@ export function StandaloneLorebookEditor() {
         rightAction={
           <div className="flex items-center gap-1">
             <button
-              onClick={() => importInputRef.current?.click()}
-              disabled={isImporting}
-              className="flex items-center px-[0.6em] py-[0.3em] justify-center rounded-full text-fg/70 hover:text-fg hover:bg-fg/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Import lorebook"
-            >
-              {isImporting ? (
-                <Loader2 size={18} className="animate-spin text-fg" />
-              ) : (
-                <Upload size={18} className="text-fg" />
-              )}
-            </button>
-            <button
-              onClick={handleExportLorebook}
+              onClick={() => setShowExportMenu(true)}
               disabled={isExporting}
               className="flex items-center px-[0.6em] py-[0.3em] justify-center rounded-full text-fg/70 hover:text-fg hover:bg-fg/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Export lorebook"
@@ -733,20 +709,19 @@ export function StandaloneLorebookEditor() {
                 <Download size={18} className="text-fg" />
               )}
             </button>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".json,application/json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleImportLorebook(file);
-                }
-              }}
-            />
           </div>
         }
+      />
+      <LorebookExportMenu
+        isOpen={showExportMenu}
+        onClose={() => {
+          if (isExporting) return;
+          setShowExportMenu(false);
+        }}
+        onSelect={(format) => {
+          void handleExportLorebook(format);
+        }}
+        exporting={isExporting}
       />
       <div className="flex h-full flex-col text-fg/80 overflow-hidden pb-6 pt-[calc(72px+env(safe-area-inset-top))]">
         {/* Search */}

@@ -874,7 +874,10 @@ fn build_turn_guidance(
     };
 
     let mut extra_guidance = String::new();
-    if tool_names.iter().any(|name| name == "set_character_definition") {
+    if tool_names
+        .iter()
+        .any(|name| name == "set_character_definition")
+    {
         extra_guidance.push_str(" When writing a character definition, use plain prose or short labeled sections. Focus on stable traits, voice, motives, background, and boundaries. Do not format it as JSON, XML, or a dialogue transcript.");
     }
     if tool_names
@@ -1122,8 +1125,10 @@ fn normalize_tool_arguments(
             insert_string_if_missing(&mut normalized, "model_id", inferred_model_id);
         }
         "set_system_prompt" => {
-            let inferred_prompt_id =
-                first_string_argument(&normalized, &["id", "system_prompt_id", "prompt_template_id"]);
+            let inferred_prompt_id = first_string_argument(
+                &normalized,
+                &["id", "system_prompt_id", "prompt_template_id"],
+            );
             insert_string_if_missing(&mut normalized, "prompt_id", inferred_prompt_id);
         }
         "use_uploaded_image_as_avatar" | "use_uploaded_image_as_chat_background" => {

@@ -190,3 +190,24 @@ pub fn model_delete(app: tauri::AppHandle, id: String) -> Result<(), String> {
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
     Ok(())
 }
+
+#[tauri::command]
+pub fn model_export_as_usc(model_json: String) -> Result<String, String> {
+    let model: crate::chat_manager::types::Model =
+        serde_json::from_str(&model_json).map_err(|e| {
+            crate::utils::err_msg(
+                module_path!(),
+                line!(),
+                format!("Invalid model JSON for export: {}", e),
+            )
+        })?;
+    let card = crate::storage_manager::system_cards::create_model_profile_usc(&model);
+
+    serde_json::to_string_pretty(&card).map_err(|e| {
+        crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Failed to serialize USC model export: {}", e),
+        )
+    })
+}
