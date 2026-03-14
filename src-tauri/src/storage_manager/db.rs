@@ -809,6 +809,8 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
         sync_head_cols.insert(col_name);
     }
 
+    let mut reset_sync_state = false;
+
     if !sync_head_cols.contains("payload_schema") {
         conn.execute(
             "ALTER TABLE sync_entity_heads ADD COLUMN payload_schema INTEGER NOT NULL DEFAULT 1",
@@ -829,6 +831,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
             [],
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        reset_sync_state = true;
     }
     if !sync_head_cols.contains("source_created_at") {
         conn.execute(
@@ -836,6 +839,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
             [],
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        reset_sync_state = true;
     }
     if !sync_head_cols.contains("source_change_id") {
         conn.execute(
@@ -843,6 +847,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
             [],
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        reset_sync_state = true;
     }
 
     let mut stmt_sync_changes = conn
@@ -868,6 +873,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
             [],
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        reset_sync_state = true;
     }
     if !sync_change_cols.contains("source_created_at") {
         conn.execute(
@@ -875,6 +881,7 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
             [],
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        reset_sync_state = true;
     }
     if !sync_change_cols.contains("source_change_id") {
         conn.execute(
@@ -882,6 +889,16 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
             [],
         )
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        reset_sync_state = true;
+    }
+
+    if reset_sync_state {
+        conn.execute("DELETE FROM sync_changes", [])
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        conn.execute("DELETE FROM sync_entity_heads", [])
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        conn.execute("DELETE FROM sync_peer_cursors", [])
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
     }
 
     // Migrations: add reasoning_tokens and image_tokens to usage_records if missing
