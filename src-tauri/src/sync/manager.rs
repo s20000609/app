@@ -5,6 +5,7 @@ use chacha20poly1305::{
 use futures::{SinkExt, StreamExt};
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::net::{TcpListener, TcpStream};
@@ -17,6 +18,18 @@ use crate::sync::protocol::{ChangeOp, P2PMessage, SyncDomain};
 use crate::utils::{log_error, log_info, log_warn};
 
 const PROTOCOL_VERSION: u32 = 7;
+
+struct PendingAssetFile {
+    path: String,
+    content_hash: String,
+}
+
+struct PendingAssetBatch {
+    changes: Vec<crate::sync::protocol::ChangeRecord>,
+    expected_files: HashMap<String, PendingAssetFile>,
+    received_entity_ids: HashSet<String>,
+    last_change_id: i64,
+}
 
 fn derive_key(pin: &str, salt: &[u8]) -> [u8; 32] {
     let mut hasher = blake3::Hasher::new_derive_key("lettuce_sync_v1");
@@ -533,6 +546,11 @@ async fn handle_advertise_cursors(
 
         if cursor.domain == SyncDomain::Assets {
             send_asset_change_contents(app, framed, &changes).await?;
+            let last_change_id = changes.last().map(|change| change.change_id).unwrap_or(0);
+            framed
+                .send(P2PMessage::AssetBatchComplete { last_change_id })
+                .await
+                .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
         }
     }
 
@@ -770,6 +788,8 @@ async fn run_passenger_session(
         )
         .await;
 
+    let mut pending_asset_batch: Option<PendingAssetBatch> = None;
+
     // Client Loop
     loop {
         tokio::select! {
@@ -783,11 +803,38 @@ async fn run_passenger_session(
                         log_info(&app, "sync_passenger", format!("Received {} changes for {:?}", changes.len(), domain));
                         let last_change_id = changes.last().map(|change| change.change_id).unwrap_or(0);
                         if domain == SyncDomain::Assets {
-                            for change in &changes {
-                                if change.op == ChangeOp::Delete {
-                                    let _ = remove_asset_path(&app, &change.entity_id);
-                                }
+                            if pending_asset_batch.is_some() {
+                                return Err(crate::utils::err_msg(
+                                    module_path!(),
+                                    line!(),
+                                    "Received a new asset batch before the previous batch completed",
+                                ));
                             }
+
+                            let mut expected_files = HashMap::new();
+                            for change in &changes {
+                                if change.op != ChangeOp::Upsert {
+                                    continue;
+                                }
+
+                                let asset: sync_db::AssetRecord = bincode::deserialize(&change.payload)
+                                    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+                                expected_files.insert(
+                                    change.entity_id.clone(),
+                                    PendingAssetFile {
+                                        path: asset.path,
+                                        content_hash: asset.content_hash,
+                                    },
+                                );
+                            }
+
+                            pending_asset_batch = Some(PendingAssetBatch {
+                                changes,
+                                expected_files,
+                                received_entity_ids: HashSet::new(),
+                                last_change_id,
+                            });
+                            continue;
                         }
                         if let Err(e) = sync_db::apply_change_batch(&mut conn, domain, &changes) {
                             log_error(&app, "sync_passenger", format!("Failed to apply domain {:?}: {}", domain, e));
@@ -802,13 +849,105 @@ async fn run_passenger_session(
                             progress: None,
                         }).await;
                     }
-                    Some(Ok(P2PMessage::AssetContent { path, content, .. })) => {
+                    Some(Ok(P2PMessage::AssetContent { entity_id, path, content_hash, content })) => {
                         log_info(&app, "sync_passenger", format!("Received asset content: {}", path));
-                        if let Err(e) = write_asset_path(&app, &path, &content).await {
-                            log_error(&app, "sync_passenger", format!("Failed to write asset {}: {}", path, e));
+                        let pending_batch = pending_asset_batch.as_mut().ok_or_else(|| {
+                            crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!("Received unexpected asset content for {}", path),
+                            )
+                        })?;
+                        let pending_file = pending_batch.expected_files.get(&entity_id).ok_or_else(|| {
+                            crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!("Received asset content for unknown entity {}", entity_id),
+                            )
+                        })?;
+                        if pending_file.path != path {
+                            return Err(crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!(
+                                    "Asset path mismatch for {}: expected {}, got {}",
+                                    entity_id, pending_file.path, path
+                                ),
+                            ));
+                        }
+                        if pending_file.content_hash != content_hash {
+                            return Err(crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!(
+                                    "Asset hash metadata mismatch for {}: expected {}, got {}",
+                                    entity_id, pending_file.content_hash, content_hash
+                                ),
+                            ));
+                        }
+                        let actual_hash = blake3::hash(&content).to_hex().to_string();
+                        if actual_hash != content_hash {
+                            return Err(crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!(
+                                    "Received corrupted asset content for {}: expected {}, got {}",
+                                    entity_id, content_hash, actual_hash
+                                ),
+                            ));
+                        }
+                        write_asset_path(&app, &path, &content).await?;
+                        pending_batch.received_entity_ids.insert(entity_id);
+                    }
+                    Some(Ok(P2PMessage::AssetBatchComplete { last_change_id })) => {
+                        let pending_batch = pending_asset_batch.take().ok_or_else(|| {
+                            crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                "Received AssetBatchComplete without an active asset batch",
+                            )
+                        })?;
+                        if pending_batch.last_change_id != last_change_id {
+                            return Err(crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!(
+                                    "Asset batch completion mismatch: expected {}, got {}",
+                                    pending_batch.last_change_id, last_change_id
+                                ),
+                            ));
+                        }
+                        let missing_assets = pending_batch
+                            .expected_files
+                            .keys()
+                            .filter(|entity_id| !pending_batch.received_entity_ids.contains(*entity_id))
+                            .cloned()
+                            .collect::<Vec<_>>();
+                        if !missing_assets.is_empty() {
+                            return Err(crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                format!("Asset batch incomplete, missing entities: {}", missing_assets.join(", ")),
+                            ));
+                        }
+                        for change in &pending_batch.changes {
+                            if change.op == ChangeOp::Delete {
+                                remove_asset_path(&app, &change.entity_id)?;
+                            }
+                        }
+                        sync_db::apply_change_batch(&mut conn, SyncDomain::Assets, &pending_batch.changes)?;
+                        if last_change_id > 0 {
+                            sync_db::record_peer_cursor(&conn, &driver_device_id, SyncDomain::Assets, last_change_id)?;
                         }
                     }
                     Some(Ok(P2PMessage::SyncComplete)) => {
+                        if pending_asset_batch.is_some() {
+                            return Err(crate::utils::err_msg(
+                                module_path!(),
+                                line!(),
+                                "Sync completed while an asset batch was still pending",
+                            ));
+                        }
                         log_info(&app, "sync_passenger", "Received SyncComplete");
                         state.set_status(&app, SyncStatus::SyncCompleted).await;
                         break;
@@ -976,11 +1115,22 @@ async fn send_asset_change_contents(
         let content = tokio::fs::read(&absolute_path)
             .await
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+        let actual_hash = blake3::hash(&content).to_hex().to_string();
+        if actual_hash != asset.content_hash {
+            return Err(crate::utils::err_msg(
+                module_path!(),
+                line!(),
+                format!(
+                    "Asset {} changed during sync preparation; expected hash {}, found {}",
+                    asset.path, asset.content_hash, actual_hash
+                ),
+            ));
+        }
         framed
             .send(P2PMessage::AssetContent {
                 entity_id: change.entity_id.clone(),
                 path: asset.path,
-                content_hash: asset.content_hash,
+                content_hash: actual_hash,
                 content,
             })
             .await

@@ -81,6 +81,9 @@ pub enum P2PMessage {
         content_hash: String,
         content: Vec<u8>,
     },
+    AssetBatchComplete {
+        last_change_id: i64,
+    },
 
     // Control
     SyncComplete,
