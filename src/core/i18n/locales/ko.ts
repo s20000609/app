@@ -125,6 +125,10 @@ export const koMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}분 전",
       hoursAgo: "{{hours}}시간 전",
       daysAgo: "{{days}}일 전",
+      today: "오늘",
+      yesterday: "어제",
+      last7Days: "최근 7일",
+      older: "이전",
     },
   },
 

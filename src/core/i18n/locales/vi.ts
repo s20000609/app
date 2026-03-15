@@ -125,6 +125,10 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}} phút trước",
       hoursAgo: "{{hours}} giờ trước",
       daysAgo: "{{days}} ngày trước",
+      today: "Hôm nay",
+      yesterday: "Hôm qua",
+      last7Days: "7 ngày qua",
+      older: "Cũ hơn",
     },
   },
 

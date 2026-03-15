@@ -125,6 +125,10 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}m geleden",
       hoursAgo: "{{hours}}u geleden",
       daysAgo: "{{days}}d geleden",
+      today: "Vandaag",
+      yesterday: "Gisteren",
+      last7Days: "Afgelopen 7 dagen",
+      older: "Ouder",
     },
   },
 

@@ -125,6 +125,10 @@ export const idMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}} menit lalu",
       hoursAgo: "{{hours}} jam lalu",
       daysAgo: "{{days}} hari lalu",
+      today: "Hari ini",
+      yesterday: "Kemarin",
+      last7Days: "7 Hari Terakhir",
+      older: "Terdahulu",
     },
   },
 

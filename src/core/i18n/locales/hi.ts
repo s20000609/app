@@ -125,6 +125,10 @@ export const hiMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}} मिनट पहले",
       hoursAgo: "{{hours}} घंटे पहले",
       daysAgo: "{{days}} दिन पहले",
+      today: "आज",
+      yesterday: "कल",
+      last7Days: "पिछले 7 दिन",
+      older: "पुराने",
     },
   },
 

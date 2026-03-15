@@ -125,6 +125,10 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}分前",
       hoursAgo: "{{hours}}時間前",
       daysAgo: "{{days}}日前",
+      today: "今日",
+      yesterday: "昨日",
+      last7Days: "過去7日間",
+      older: "それ以前",
     },
   },
 

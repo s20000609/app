@@ -125,6 +125,10 @@ export const frMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "il y a {{minutes}}min",
       hoursAgo: "il y a {{hours}}h",
       daysAgo: "il y a {{days}}j",
+      today: "Aujourd'hui",
+      yesterday: "Hier",
+      last7Days: "7 derniers jours",
+      older: "Plus anciens",
     },
   },
 

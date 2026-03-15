@@ -125,6 +125,10 @@ export const itMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}m fa",
       hoursAgo: "{{hours}}h fa",
       daysAgo: "{{days}}g fa",
+      today: "Oggi",
+      yesterday: "Ieri",
+      last7Days: "Ultimi 7 giorni",
+      older: "Meno recenti",
     },
   },
 

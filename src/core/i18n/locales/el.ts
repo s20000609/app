@@ -125,6 +125,10 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}λ πριν",
       hoursAgo: "{{hours}}ώ πριν",
       daysAgo: "{{days}}μ πριν",
+      today: "Σήμερα",
+      yesterday: "Χθες",
+      last7Days: "Τελευταίες 7 ημέρες",
+      older: "Παλαιότερα",
     },
   },
 

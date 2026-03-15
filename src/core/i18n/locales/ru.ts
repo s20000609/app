@@ -125,6 +125,10 @@ export const ruMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}м назад",
       hoursAgo: "{{hours}}ч назад",
       daysAgo: "{{days}}д назад",
+      today: "Сегодня",
+      yesterday: "Вчера",
+      last7Days: "Последние 7 дней",
+      older: "Ранее",
     },
   },
 

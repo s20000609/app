@@ -125,6 +125,10 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}} 分鐘前",
       hoursAgo: "{{hours}} 小時前",
       daysAgo: "{{days}} 天前",
+      today: "今天",
+      yesterday: "昨天",
+      last7Days: "過去 7 天",
+      older: "更早",
     },
   },
 

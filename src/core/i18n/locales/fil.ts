@@ -125,6 +125,10 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       minutesAgo: "{{minutes}}m na ang nakalipas",
       hoursAgo: "{{hours}}h na ang nakalipas",
       daysAgo: "{{days}}d na ang nakalipas",
+      today: "Ngayon",
+      yesterday: "Kahapon",
+      last7Days: "Huling 7 Araw",
+      older: "Mas Luma",
     },
   },
 
