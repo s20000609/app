@@ -240,6 +240,16 @@ export function useChatSessionController({
             }
           }
 
+          // Don't restore draft if it matches the last user message (it was probably already sent)
+          if (savedDraft) {
+            const lastUserMessage = [...orderedMessages]
+              .reverse()
+              .find((m) => m.role === "user");
+            if (lastUserMessage && lastUserMessage.content.trim() === savedDraft.trim()) {
+              savedDraft = "";
+            }
+          }
+
           recordSessionTimestamp(normalizedSession.updatedAt);
           dispatch({
             type: "BATCH",

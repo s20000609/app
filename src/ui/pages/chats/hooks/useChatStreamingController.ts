@@ -140,6 +140,7 @@ export function useChatStreamingController({
           { type: "SET_ACTIVE_REQUEST_ID", payload: requestId },
           { type: "SET_MESSAGES", payload: optimisticMessages },
           { type: "CLEAR_PENDING_ATTACHMENTS" },
+          { type: "CLEAR_DRAFT" },
         ],
       });
       applyLiveChatAction(currentSessionId, state, {
@@ -149,6 +150,7 @@ export function useChatStreamingController({
           { type: "SET_ACTIVE_REQUEST_ID", payload: requestId },
           { type: "SET_MESSAGES", payload: optimisticMessages },
           { type: "SET_ERROR", payload: null },
+          { type: "CLEAR_DRAFT" },
         ],
       });
 
@@ -219,9 +221,6 @@ export function useChatStreamingController({
           requestId,
           attachments: messageAttachments.length > 0 ? messageAttachments : undefined,
         });
-
-        dispatch({ type: "CLEAR_DRAFT" });
-        applyLiveChatAction(currentSessionId, state, { type: "CLEAR_DRAFT" });
 
         const replaced = messagesRef.current.map((msg) => {
           if (msg.id === userPlaceholder.id) return result.userMessage;
