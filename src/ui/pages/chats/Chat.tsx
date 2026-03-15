@@ -53,6 +53,7 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { playAccessibilitySound } from "../../../core/utils/accessibilityAudio";
 import { replacePlaceholders } from "../../../core/utils/placeholders";
 import { splitThinkTags } from "../../../core/utils/thinkTags";
+import { getPlatform } from "../../../core/utils/platform";
 import {
   ChatHeader,
   ChatFooter,
@@ -74,6 +75,7 @@ const SCROLL_THRESHOLD = 10; // pixels of movement to cancel long press
 const AUTOLOAD_TOP_THRESHOLD_PX = 120;
 const STICKY_BOTTOM_THRESHOLD_PX = 80;
 const MAX_AUDIO_CACHE_ENTRIES = 50;
+const MOBILE_KEYBOARD_THRESHOLD_PX = 120;
 
 export function ChatConversationPage() {
   const { characterId } = useParams<{ characterId: string }>();
@@ -104,6 +106,7 @@ export function ChatConversationPage() {
   const [groupBranchCreating, setGroupBranchCreating] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
   const [supportsImageInput, setSupportsImageInput] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const audioCacheRef = useRef<{
     providers: AudioProvider[] | null;
     userVoices: UserVoice[] | null;
@@ -148,6 +151,7 @@ export function ChatConversationPage() {
   const [helpMeReplyEnabled, setHelpMeReplyEnabled] = useState(true);
   const [shouldTriggerFileInput, setShouldTriggerFileInput] = useState(false);
   const [personas, setPersonas] = useState<Persona[]>([]);
+  const isMobile = useMemo(() => getPlatform().type === "mobile", []);
   const helpMeReplyRequestIdRef = useRef<string | null>(null);
   const helpMeReplyUnlistenRef = useRef<UnlistenFn | null>(null);
   const helpMeReplyLoadingTimeoutRef = useRef<number | null>(null);
@@ -1241,6 +1245,60 @@ export function ChatConversationPage() {
     container.scrollTo({ top: container.scrollHeight, behavior });
   }, []);
 
+  useEffect(() => {
+    if (!isMobile) {
+      setKeyboardInset(0);
+      return;
+    }
+
+    const visualViewport = window.visualViewport;
+    let focusTimer: number | null = null;
+
+    const updateKeyboardInset = () => {
+      const baseHeight = window.innerHeight;
+      const viewportHeight = visualViewport?.height ?? baseHeight;
+      const viewportOffsetTop = visualViewport?.offsetTop ?? 0;
+      const rawInset = Math.max(0, baseHeight - viewportHeight - viewportOffsetTop);
+      const nextInset = rawInset > MOBILE_KEYBOARD_THRESHOLD_PX ? Math.round(rawInset) : 0;
+
+      setKeyboardInset((prev) => (prev === nextInset ? prev : nextInset));
+
+      window.requestAnimationFrame(() => {
+        updateIsAtBottom();
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLTextAreaElement && isAtBottomRef.current) {
+          scrollToBottom("auto");
+        }
+      });
+    };
+
+    const handleFocusChange = () => {
+      updateKeyboardInset();
+      if (focusTimer !== null) {
+        window.clearTimeout(focusTimer);
+      }
+      focusTimer = window.setTimeout(updateKeyboardInset, 180);
+    };
+
+    updateKeyboardInset();
+    visualViewport?.addEventListener("resize", updateKeyboardInset);
+    visualViewport?.addEventListener("scroll", updateKeyboardInset);
+    window.addEventListener("resize", updateKeyboardInset);
+    document.addEventListener("focusin", handleFocusChange);
+    document.addEventListener("focusout", handleFocusChange);
+
+    return () => {
+      if (focusTimer !== null) {
+        window.clearTimeout(focusTimer);
+      }
+      visualViewport?.removeEventListener("resize", updateKeyboardInset);
+      visualViewport?.removeEventListener("scroll", updateKeyboardInset);
+      window.removeEventListener("resize", updateKeyboardInset);
+      document.removeEventListener("focusin", handleFocusChange);
+      document.removeEventListener("focusout", handleFocusChange);
+    };
+  }, [isMobile, scrollToBottom, updateIsAtBottom]);
+
   const handleContextMenu = useCallback(
     (message: StoredMessage) => (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -1474,6 +1532,9 @@ export function ChatConversationPage() {
     return <EmptyState title={t("chats.characterNotFound")} />;
   }
 
+  const footerBottomOffset = `calc(env(safe-area-inset-bottom) + ${keyboardInset}px)`;
+  const scrollButtonBottomOffset = `calc(env(safe-area-inset-bottom) + ${keyboardInset}px + 88px)`;
+
   return (
     <div
       className={cn("flex h-screen flex-col overflow-hidden", !backgroundImageData && "bg-surface")}
@@ -1672,11 +1733,11 @@ export function ChatConversationPage() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className={cn(
               "fixed right-3 z-30 flex h-11 w-11 items-center justify-center",
-              "bottom-[calc(env(safe-area-inset-bottom)+88px)]",
               "border border-white/15 bg-black/40 text-white/80 shadow-lg backdrop-blur-sm",
               "hover:bg-black/55 active:scale-95",
               radius.full,
             )}
+            style={{ bottom: scrollButtonBottomOffset }}
           >
             <ChevronDown size={18} />
           </motion.button>
@@ -1684,7 +1745,7 @@ export function ChatConversationPage() {
       </AnimatePresence>
 
       {/* Footer */}
-      <div className="relative z-10 pb-[calc(env(safe-area-inset-bottom))]">
+      <div className="relative z-10" style={{ paddingBottom: footerBottomOffset }}>
         <ChatFooter
           draft={draft}
           setDraft={setDraft}
