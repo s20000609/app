@@ -1594,9 +1594,10 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Secondary",
       warning: "Babala",
       textColors: "Text Colors",
+      messageTextHex: "Kulay ng inline quote",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Kulay ng block quote",
     },
     backgroundTransparency: {
       label: "Background at Transparency",

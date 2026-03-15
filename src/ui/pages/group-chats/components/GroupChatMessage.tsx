@@ -124,7 +124,12 @@ const MessageAvatar = React.memo(function MessageAvatar({
         )}
       >
         {personaAvatar ? (
-          <AvatarImage src={personaAvatar} alt={t("groupChats.message.userAlt")} crop={persona?.avatarCrop} applyCrop />
+          <AvatarImage
+            src={personaAvatar}
+            alt={t("groupChats.message.userAlt")}
+            crop={persona?.avatarCrop}
+            applyCrop
+          />
         ) : (
           <User size={iconSize} className="text-fg/60" />
         )}
@@ -258,7 +263,9 @@ const ThinkingSection = React.memo(function ThinkingSection({
         </motion.div>
         <span className="flex items-center gap-1.5">
           {isStreaming && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fg/60" />}
-          <span className="font-medium">{isStreaming ? thinkingText : t("groupChats.message.thoughtProcess")}</span>
+          <span className="font-medium">
+            {isStreaming ? thinkingText : t("groupChats.message.thoughtProcess")}
+          </span>
         </span>
       </button>
 
@@ -661,11 +668,19 @@ function GroupChatMessageInner({
               content={processedContent}
               className="text-inherit select-none"
               onImageClick={onImageClick}
-              textColors={chatAppearance?.plainTextColorHex || chatAppearance?.italicTextColorHex || chatAppearance?.quotedTextColorHex ? {
-                plain: chatAppearance.plainTextColorHex,
-                italic: chatAppearance.italicTextColorHex,
-                quoted: chatAppearance.quotedTextColorHex,
-              } : undefined}
+              textColors={
+                chatAppearance?.messageTextColorHex ||
+                chatAppearance?.plainTextColorHex ||
+                chatAppearance?.italicTextColorHex ||
+                chatAppearance?.quotedTextColorHex
+                  ? {
+                      texts: chatAppearance.messageTextColorHex ?? chatAppearance.plainTextColorHex,
+                      plain: chatAppearance.plainTextColorHex,
+                      italic: chatAppearance.italicTextColorHex,
+                      quoted: chatAppearance.quotedTextColorHex,
+                    }
+                  : undefined
+              }
             />
           </>
         )}

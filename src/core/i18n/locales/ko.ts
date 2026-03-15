@@ -1551,9 +1551,10 @@ export const koMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "보조",
       warning: "경고",
       textColors: "Text Colors",
+      messageTextHex: "인라인 인용 색상",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "블록 인용 색상",
     },
     backgroundTransparency: {
       label: "배경 및 투명도",

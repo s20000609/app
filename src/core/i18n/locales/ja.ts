@@ -1560,9 +1560,10 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "セカンダリ",
       warning: "警告",
       textColors: "Text Colors",
+      messageTextHex: "インライン引用の色",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "ブロック引用の色",
     },
     backgroundTransparency: {
       label: "背景と透明度",

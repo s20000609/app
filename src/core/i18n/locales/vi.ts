@@ -1558,9 +1558,10 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Phụ",
       warning: "Cảnh báo",
       textColors: "Text Colors",
+      messageTextHex: "Màu trích dẫn nội dòng",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Màu trích dẫn khối",
     },
     backgroundTransparency: {
       label: "Nền & Trong suốt",

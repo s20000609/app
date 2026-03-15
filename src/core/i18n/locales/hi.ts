@@ -1561,9 +1561,10 @@ export const hiMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "सेकंडरी",
       warning: "चेतावनी",
       textColors: "Text Colors",
+      messageTextHex: "इनलाइन उद्धरण रंग",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "ब्लॉक उद्धरण रंग",
     },
     backgroundTransparency: {
       label: "पृष्ठभूमि और पारदर्शिता",

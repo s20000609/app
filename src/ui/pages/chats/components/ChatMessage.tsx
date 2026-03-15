@@ -661,10 +661,12 @@ function ChatMessageInner({
               className="text-inherit select-none"
               onImageClick={onImageClick}
               textColors={
+                chatAppearance?.messageTextColorHex ||
                 chatAppearance?.plainTextColorHex ||
                 chatAppearance?.italicTextColorHex ||
                 chatAppearance?.quotedTextColorHex
                   ? {
+                      texts: chatAppearance.messageTextColorHex ?? chatAppearance.plainTextColorHex,
                       plain: chatAppearance.plainTextColorHex,
                       italic: chatAppearance.italicTextColorHex,
                       quoted: chatAppearance.quotedTextColorHex,

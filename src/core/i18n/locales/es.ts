@@ -1575,9 +1575,10 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Secundario",
       warning: "Advertencia",
       textColors: "Text Colors",
+      messageTextHex: "Color de cita en línea",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Color de cita en bloque",
     },
     backgroundTransparency: {
       label: "Fondo y transparencia",

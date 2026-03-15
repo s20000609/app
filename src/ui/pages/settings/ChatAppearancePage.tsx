@@ -422,6 +422,7 @@ function LivePreview({
           settings.textMode,
         );
   const textColors = {
+    texts: settings.messageTextColorHex ?? settings.plainTextColorHex ?? "currentColor",
     plain: settings.plainTextColorHex ?? "currentColor",
     italic: settings.italicTextColorHex ?? "currentColor",
     quoted: settings.quotedTextColorHex ?? "currentColor",
@@ -998,6 +999,13 @@ export function ChatAppearancePage() {
         </h2>
         <div className="space-y-4 rounded-xl border border-fg/10 bg-fg/5 px-4 py-3">
           <HexColorControl
+            label={t("chatAppearance.colors.messageTextHex")}
+            value={effectiveSettings.messageTextColorHex}
+            onChange={(v) => updateField("messageTextColorHex", v)}
+            overridden={isOverridden("messageTextColorHex")}
+            onReset={mode === "character" ? () => resetField("messageTextColorHex") : undefined}
+          />
+          <HexColorControl
             label={t("chatAppearance.colors.plainTextHex")}
             value={effectiveSettings.plainTextColorHex}
             onChange={(v) => updateField("plainTextColorHex", v)}
@@ -1139,7 +1147,9 @@ export function ChatAppearancePage() {
                   )}
                 >
                   <Eye size={11} />
-                  {livePreview ? t("chatAppearance.preview.live") : t("chatAppearance.preview.generic")}
+                  {livePreview
+                    ? t("chatAppearance.preview.live")
+                    : t("chatAppearance.preview.generic")}
                 </button>
               )}
             </div>

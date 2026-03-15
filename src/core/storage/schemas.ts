@@ -1975,6 +1975,7 @@ export const ChatAppearanceSettingsSchema = z.object({
   assistantBubbleColorHex: z.string().optional(),
 
   // Text colors (inline hex overrides per text style)
+  messageTextColorHex: z.string().optional(),
   plainTextColorHex: z.string().optional(),
   italicTextColorHex: z.string().optional(),
   quotedTextColorHex: z.string().optional(),
@@ -2006,6 +2007,7 @@ export function createDefaultChatAppearanceSettings(): ChatAppearanceSettings {
     assistantBubbleColor: "neutral",
     userBubbleColorHex: undefined,
     assistantBubbleColorHex: undefined,
+    messageTextColorHex: undefined,
     plainTextColorHex: undefined,
     italicTextColorHex: undefined,
     quotedTextColorHex: undefined,

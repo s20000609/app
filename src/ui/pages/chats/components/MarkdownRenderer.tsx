@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import DOMPurify from "dompurify";
 
 type TextColors = {
+  texts?: string;
   plain?: string;
   italic?: string;
   quoted?: string;
@@ -27,7 +28,7 @@ function sanitizeUrl(url: string): string | null {
 
 // Pre-compiled regex patterns - avoid recreation on each render/call
 const INLINE_PATTERN =
-  /(<img\s[^>]*>|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|`[^`]+`|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|\([^)]+\)|!\[[^\]]*\]\([^)]+\))/i;
+  /(<img\s[^>]*>|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|`[^`]+`|"[^"\n]+"|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|\([^)]+\)|!\[[^\]]*\]\([^)]+\))/i;
 const CRLF_PATTERN = /\r\n/g;
 const HEADING_PATTERN = /^(#{1,6})\s+(.*)$/;
 const QUOTE_PATTERN = /^>\s?/;
@@ -140,6 +141,13 @@ function parseInline(
         <code key={key} className="rounded bg-black/40 px-1 py-0.5">
           {token.slice(1, -1)}
         </code>,
+      );
+    } else if (token[0] === '"') {
+      const inner = token.slice(1, -1);
+      nodes.push(
+        <span key={key} style={textColors?.texts ? { color: textColors.texts } : undefined}>
+          "{parseInline(inner, key, onImageClick, textColors)}"
+        </span>,
       );
     } else if (token[0] === "[" && token.includes("](")) {
       // Link: [label](url)

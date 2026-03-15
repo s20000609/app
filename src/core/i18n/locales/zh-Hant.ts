@@ -1536,9 +1536,10 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "次要",
       warning: "警告",
       textColors: "Text Colors",
+      messageTextHex: "行內引用顏色",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "區塊引用顏色",
     },
     backgroundTransparency: {
       label: "背景與透明度",

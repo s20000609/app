@@ -1562,9 +1562,10 @@ export const ruMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Вторичный",
       warning: "Предупреждение",
       textColors: "Text Colors",
+      messageTextHex: "Цвет встроенной цитаты",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Цвет блочной цитаты",
     },
     backgroundTransparency: {
       label: "Фон и прозрачность",

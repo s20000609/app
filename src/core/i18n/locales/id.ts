@@ -1562,9 +1562,10 @@ export const idMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Sekunder",
       warning: "Peringatan",
       textColors: "Text Colors",
+      messageTextHex: "Warna kutipan inline",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Warna kutipan blok",
     },
     backgroundTransparency: {
       label: "Latar Belakang & Transparansi",

@@ -1582,9 +1582,10 @@ export const frMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Secondaire",
       warning: "Avertissement",
       textColors: "Text Colors",
+      messageTextHex: "Couleur des citations en ligne",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Couleur des citations en bloc",
     },
     backgroundTransparency: {
       label: "Arrière-plan et transparence",

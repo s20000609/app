@@ -1575,9 +1575,10 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       secondary: "Δευτερεύον",
       warning: "Προειδοποίηση",
       textColors: "Text Colors",
+      messageTextHex: "Χρώμα ενσωματωμένης παράθεσης",
       plainTextHex: "Plain Text Color",
       italicTextHex: "Italic Text Color",
-      quotedTextHex: "Quoted Text Color",
+      quotedTextHex: "Χρώμα παράθεσης μπλοκ",
     },
     backgroundTransparency: {
       label: "Φόντο & Διαφάνεια",
