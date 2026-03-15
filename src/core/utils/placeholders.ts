@@ -1,15 +1,10 @@
-export function replacePlaceholders(
-  text: string,
-  charName: string,
-  personaName: string
-): string {
+export function replacePlaceholders(text: string, charName: string, personaName: string): string {
   if (!text) return text;
-  return text
-    .split("{{char}}")
-    .join(charName ?? "")
-    .split("{{persona}}")
-    .join(personaName ?? "")
-    .split("{{user}}")
-    .join(personaName ?? "");
-}
+  const safeCharName = charName ?? "";
+  const safePersonaName = personaName ?? "";
 
+  return text
+    .replace(/\{\{\s*char(?:\.name)?\s*\}\}/g, safeCharName)
+    .replace(/\{\{\s*persona(?:\.name)?\s*\}\}/g, safePersonaName)
+    .replace(/\{\{\s*user(?:\.name)?\s*\}\}/g, safePersonaName);
+}

@@ -10,6 +10,7 @@ import { AvatarImage } from "../../../components/AvatarImage";
 import { useAvatar } from "../../../hooks/useAvatar";
 import { useSessionAttachments } from "../../../hooks/useSessionAttachment";
 import { useI18n } from "../../../../core/i18n/context";
+import { replacePlaceholders } from "../../../../core/utils/placeholders";
 
 interface VariantState {
   total: number;
@@ -252,7 +253,9 @@ const ThinkingSection = React.memo(function ThinkingSection({
         </motion.div>
         <span className="flex items-center gap-1.5">
           {isStreaming && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/60" />}
-          <span className="font-medium">{isStreaming ? thinkingText : t("chats.message.thoughtProcess")}</span>
+          <span className="font-medium">
+            {isStreaming ? thinkingText : t("chats.message.thoughtProcess")}
+          </span>
         </span>
       </button>
 
@@ -382,7 +385,12 @@ function ChatMessageInner({
     isStartingSceneMessage,
   ]);
 
-  const playText = displayContent ?? message.content;
+  const effectiveCharName = swapPlaces ? (persona?.title ?? "") : (character?.name ?? "");
+  const effectivePersonaName = swapPlaces
+    ? (character?.name ?? "User")
+    : (persona?.title ?? "User");
+  const resolvedDisplayContent =
+    displayContent ?? replacePlaceholders(message.content, effectiveCharName, effectivePersonaName);
   const voiceConfig = character?.voiceConfig;
   const hasVoiceAssignment =
     voiceConfig?.source === "user"
@@ -394,7 +402,7 @@ function ChatMessageInner({
     (computed.isAssistant || computed.isScene) &&
     !computed.isPlaceholder &&
     hasVoiceAssignment &&
-    playText.trim().length > 0;
+    resolvedDisplayContent.trim().length > 0;
   const isAudioLoading = audioStatus === "loading";
   const isAudioPlaying = audioStatus === "playing";
 
@@ -413,7 +421,7 @@ function ChatMessageInner({
       }
       if (!onPlayAudio) return;
       try {
-        await onPlayAudio(message, playText);
+        await onPlayAudio(message, resolvedDisplayContent);
       } catch (error) {
         console.error("Failed to play message audio:", error);
       }
@@ -426,7 +434,7 @@ function ChatMessageInner({
       onCancelAudio,
       onPlayAudio,
       onStopAudio,
-      playText,
+      resolvedDisplayContent,
     ],
   );
 
@@ -612,7 +620,10 @@ function ChatMessageInner({
                     )}
                     onClick={() =>
                       attachment.data &&
-                      onImageClick?.(attachment.data, attachment.filename || t("chats.message.attachedImage"))
+                      onImageClick?.(
+                        attachment.data,
+                        attachment.filename || t("chats.message.attachedImage"),
+                      )
                     }
                   >
                     {attachment.data ? (
@@ -646,14 +657,20 @@ function ChatMessageInner({
 
             <MarkdownRenderer
               key={message.id + ":" + computed.selectedVariantIndex}
-              content={displayContent ?? message.content}
+              content={resolvedDisplayContent}
               className="text-inherit select-none"
               onImageClick={onImageClick}
-              textColors={chatAppearance?.plainTextColorHex || chatAppearance?.italicTextColorHex || chatAppearance?.quotedTextColorHex ? {
-                plain: chatAppearance.plainTextColorHex,
-                italic: chatAppearance.italicTextColorHex,
-                quoted: chatAppearance.quotedTextColorHex,
-              } : undefined}
+              textColors={
+                chatAppearance?.plainTextColorHex ||
+                chatAppearance?.italicTextColorHex ||
+                chatAppearance?.quotedTextColorHex
+                  ? {
+                      plain: chatAppearance.plainTextColorHex,
+                      italic: chatAppearance.italicTextColorHex,
+                      quoted: chatAppearance.quotedTextColorHex,
+                    }
+                  : undefined
+              }
             />
           </>
         )}
@@ -671,7 +688,9 @@ function ChatMessageInner({
             transition={{ duration: 0.2, delay: 0.15 }}
           >
             <span className="text-white">
-              {isStartingSceneMessage ? t("chats.message.sceneLabel") : t("chats.message.variantLabel")}{" "}
+              {isStartingSceneMessage
+                ? t("chats.message.sceneLabel")
+                : t("chats.message.variantLabel")}{" "}
               {computed.selectedVariantIndex >= 0 ? computed.selectedVariantIndex + 1 : 1}
               {computed.totalVariants > 0 ? ` / ${computed.totalVariants}` : ""}
             </span>
@@ -791,7 +810,11 @@ export const ChatMessage = React.memo(ChatMessageInner, (prev, next) => {
 function TypingIndicator() {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-1" aria-label={t("chats.message.assistantIsTyping")} aria-live="polite">
+    <div
+      className="flex items-center gap-1"
+      aria-label={t("chats.message.assistantIsTyping")}
+      aria-live="polite"
+    >
       <span className="typing-dot" />
       <span className="typing-dot" style={{ animationDelay: "0.2s" }} />
       <span className="typing-dot" style={{ animationDelay: "0.4s" }} />
