@@ -1638,7 +1638,11 @@ fn rollback_failed_chat_completion(
 }
 
 fn cleanup_message_attachments(app: &AppHandle, message: &StoredMessage) {
-    for attachment in &message.attachments {
+    cleanup_attachments(app, &message.attachments, "chat_completion");
+}
+
+fn cleanup_attachments(app: &AppHandle, attachments: &[ImageAttachment], scope: &str) {
+    for attachment in attachments {
         let Some(storage_path) = &attachment.storage_path else {
             continue;
         };
@@ -1648,7 +1652,7 @@ fn cleanup_message_attachments(app: &AppHandle, message: &StoredMessage) {
             Err(err) => {
                 log_error(
                     app,
-                    "chat_completion",
+                    scope,
                     format!(
                         "failed to resolve storage root while cleaning attachment {}: {}",
                         storage_path, err
@@ -1665,21 +1669,23 @@ fn cleanup_message_attachments(app: &AppHandle, message: &StoredMessage) {
         if let Err(err) = fs::remove_file(&full_path) {
             log_error(
                 app,
-                "chat_completion",
-                format!(
-                    "failed to remove failed-message attachment {}: {}",
-                    storage_path, err
-                ),
+                scope,
+                format!("failed to remove attachment {}: {}", storage_path, err),
             );
             continue;
         }
 
-        log_info(
-            app,
-            "chat_completion",
-            format!("removed failed-message attachment {}", storage_path),
-        );
+        log_info(app, scope, format!("removed attachment {}", storage_path));
     }
+}
+
+fn take_aborted_request(app: &AppHandle, request_id: Option<&str>) -> bool {
+    let Some(request_id) = request_id else {
+        return false;
+    };
+
+    let registry = app.state::<crate::abort_manager::AbortRegistry>();
+    registry.take_aborted(request_id)
 }
 
 fn role_swap_enabled(flag: Option<bool>) -> bool {
@@ -2476,6 +2482,18 @@ pub async fn chat_completion(
         }
     };
 
+    if take_aborted_request(&app, request_id.as_deref()) {
+        return rollback_failed_chat_completion(
+            &app,
+            &mut session,
+            &user_message_id,
+            previous_updated_at,
+            true,
+            false,
+            "Request aborted by user".to_string(),
+        );
+    }
+
     // Extract assistant text and any image outputs.
     // Some multimodal models stream image data URLs via SSE; we must not treat those as text.
     let images_from_sse = match api_response.data() {
@@ -2615,6 +2633,19 @@ pub async fn chat_completion(
         assistant_generated_attachments,
     )?;
 
+    if take_aborted_request(&app, request_id.as_deref()) {
+        cleanup_attachments(&app, &persisted_assistant_attachments, "chat_completion");
+        return rollback_failed_chat_completion(
+            &app,
+            &mut session,
+            &user_message_id,
+            previous_updated_at,
+            true,
+            false,
+            "Request aborted by user".to_string(),
+        );
+    }
+
     let assistant_message = StoredMessage {
         id: assistant_message_id,
         role: "assistant".into(),
@@ -2647,6 +2678,18 @@ pub async fn chat_completion(
 
     session.messages.push(assistant_message.clone());
     session.updated_at = now_millis()?;
+    if take_aborted_request(&app, request_id.as_deref()) {
+        cleanup_attachments(&app, &assistant_message.attachments, "chat_completion");
+        return rollback_failed_chat_completion(
+            &app,
+            &mut session,
+            &user_message_id,
+            previous_updated_at,
+            true,
+            false,
+            "Request aborted by user".to_string(),
+        );
+    }
     save_session(&app, &session)?;
 
     log_info(
@@ -3253,6 +3296,10 @@ pub async fn chat_regenerate(
         None => return Err(last_error),
     };
 
+    if take_aborted_request(&app, request_id.as_deref()) {
+        return Err("Request aborted by user".to_string());
+    }
+
     let images_from_sse = match api_response.data() {
         Value::String(s) if s.contains("data:") => {
             super::sse::accumulate_image_data_urls_from_sse(s)
@@ -3339,6 +3386,12 @@ pub async fn chat_regenerate(
         "assistant",
         assistant_generated_attachments,
     )?;
+    let cleanup_assistant_attachments = persisted_assistant_attachments.clone();
+
+    if take_aborted_request(&app, request_id.as_deref()) {
+        cleanup_attachments(&app, &persisted_assistant_attachments, "chat_regenerate");
+        return Err("Request aborted by user".to_string());
+    }
 
     let assistant_clone = {
         let assistant_message = session
@@ -3373,6 +3426,10 @@ pub async fn chat_regenerate(
     };
 
     session.updated_at = now_millis()?;
+    if take_aborted_request(&app, request_id.as_deref()) {
+        cleanup_attachments(&app, &cleanup_assistant_attachments, "chat_regenerate");
+        return Err("Request aborted by user".to_string());
+    }
     save_session(&app, &session)?;
 
     emit_debug(
@@ -3894,6 +3951,10 @@ pub async fn chat_continue(
         None => return Err(last_error),
     };
 
+    if take_aborted_request(&app, request_id.as_deref()) {
+        return Err("Request aborted by user".to_string());
+    }
+
     let images_from_sse = match api_response.data() {
         Value::String(s) if s.contains("data:") => {
             super::sse::accumulate_image_data_urls_from_sse(s)
@@ -4000,6 +4061,11 @@ pub async fn chat_continue(
         assistant_generated_attachments,
     )?;
 
+    if take_aborted_request(&app, request_id.as_deref()) {
+        cleanup_attachments(&app, &persisted_assistant_attachments, "chat_continue");
+        return Err("Request aborted by user".to_string());
+    }
+
     let assistant_message = StoredMessage {
         id: assistant_message_id,
         role: "assistant".into(),
@@ -4032,6 +4098,10 @@ pub async fn chat_continue(
 
     session.messages.push(assistant_message.clone());
     session.updated_at = now_millis()?;
+    if take_aborted_request(&app, request_id.as_deref()) {
+        cleanup_attachments(&app, &assistant_message.attachments, "chat_continue");
+        return Err("Request aborted by user".to_string());
+    }
     save_session(&app, &session)?;
 
     emit_debug(

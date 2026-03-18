@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use tokio::sync::oneshot;
 
@@ -19,15 +19,21 @@ impl AbortHandle {
     }
 }
 
+#[derive(Default)]
+struct AbortRegistryState {
+    handles: HashMap<String, AbortHandle>,
+    aborted: HashSet<String>,
+}
+
 #[derive(Clone)]
 pub struct AbortRegistry {
-    inner: Arc<Mutex<HashMap<String, AbortHandle>>>,
+    inner: Arc<Mutex<AbortRegistryState>>,
 }
 
 impl AbortRegistry {
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(HashMap::new())),
+            inner: Arc::new(Mutex::new(AbortRegistryState::default())),
         }
     }
 
@@ -35,24 +41,21 @@ impl AbortRegistry {
         let (tx, rx) = oneshot::channel();
         let handle = AbortHandle::new(tx);
 
-        if let Ok(mut map) = self.inner.lock() {
-            map.insert(request_id, handle);
+        if let Ok(mut state) = self.inner.lock() {
+            state.aborted.remove(&request_id);
+            state.handles.insert(request_id, handle);
         }
 
         rx
     }
 
     pub fn abort(&self, request_id: &str) -> Result<(), String> {
-        if let Ok(mut map) = self.inner.lock() {
-            if let Some(mut handle) = map.remove(request_id) {
+        if let Ok(mut state) = self.inner.lock() {
+            state.aborted.insert(request_id.to_string());
+            if let Some(mut handle) = state.handles.remove(request_id) {
                 handle.abort();
-                Ok(())
-            } else {
-                Err(format!(
-                    "Request {} not found or already completed",
-                    request_id
-                ))
             }
+            Ok(())
         } else {
             Err(crate::utils::err_msg(
                 module_path!(),
@@ -63,14 +66,24 @@ impl AbortRegistry {
     }
 
     pub fn unregister(&self, request_id: &str) {
-        if let Ok(mut map) = self.inner.lock() {
-            map.remove(request_id);
+        if let Ok(mut state) = self.inner.lock() {
+            state.handles.remove(request_id);
+        }
+    }
+
+    pub fn take_aborted(&self, request_id: &str) -> bool {
+        if let Ok(mut state) = self.inner.lock() {
+            state.aborted.remove(request_id)
+        } else {
+            false
         }
     }
 
     pub fn abort_all(&self) {
-        if let Ok(mut map) = self.inner.lock() {
-            for (_, mut handle) in map.drain() {
+        if let Ok(mut state) = self.inner.lock() {
+            let pending: Vec<(String, AbortHandle)> = state.handles.drain().collect();
+            for (request_id, mut handle) in pending {
+                state.aborted.insert(request_id);
                 handle.abort();
             }
         }
@@ -78,8 +91,8 @@ impl AbortRegistry {
 
     #[allow(dead_code)]
     pub fn is_registered(&self, request_id: &str) -> bool {
-        if let Ok(map) = self.inner.lock() {
-            map.contains_key(request_id)
+        if let Ok(state) = self.inner.lock() {
+            state.handles.contains_key(request_id)
         } else {
             false
         }
