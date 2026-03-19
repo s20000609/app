@@ -1,12 +1,87 @@
 import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Toaster } from "sonner";
 
+import { WelcomePage, OnboardingPage } from "./ui/pages/onboarding";
+import { WhereToFindPage } from "./ui/pages/onboarding/WhereToFind";
+import { SettingsPage } from "./ui/pages/settings/Settings";
+import { ProvidersPage } from "./ui/pages/settings/ProvidersPage";
+import { ModelsPage } from "./ui/pages/settings/ModelsPage";
+import { EditModelPage } from "./ui/pages/settings/EditModelPage";
+import { HuggingFaceBrowserPage } from "./ui/pages/settings/HuggingFaceBrowserPage";
+import { ImageGenerationPage } from "./ui/pages/settings/ImageGenerationPage";
+import { SystemPromptsPage } from "./ui/pages/settings/SystemPromptsPage";
+import { EditPromptTemplate } from "./ui/pages/settings/EditPromptTemplate";
+import { SecurityPage } from "./ui/pages/settings/SecurityPage";
+import { ResetPage } from "./ui/pages/settings/ResetPage";
+import { BackupRestorePage } from "./ui/pages/settings/BackupRestorePage";
+import { ConvertPage } from "./ui/pages/settings/ConvertPage";
+import { UsagePage } from "./ui/pages/settings/UsagePage";
+import { UsageActivityPage } from "./ui/pages/settings/UsageActivityPage";
+import { AccessibilityPage } from "./ui/pages/settings/AccessibilityPage";
+import { ColorCustomizationPage } from "./ui/pages/settings/ColorCustomizationPage";
+import { ChatAppearancePage } from "./ui/pages/settings/ChatAppearancePage";
+import { LogsPage } from "./ui/pages/settings/LogsPage";
+import { CharactersPage } from "./ui/pages/settings/CharactersPage";
+import { DeveloperPage } from "./ui/pages/settings/DeveloperPage";
+import { ChangelogPage } from "./ui/pages/settings/ChangelogPage";
+import { AdvancedPage } from "./ui/pages/settings/AdvancedPage";
+import { CreationHelperPage as AICreationHelperPage } from "./ui/pages/settings/CreationHelperPage";
+import { HelpMeReplyPage } from "./ui/pages/settings/HelpMeReplyPage";
+import { VoicesPage } from "./ui/pages/settings/VoicesPage";
+import { DynamicMemoryPage } from "./ui/pages/settings/DynamicMemoryPage";
+import { EmbeddingDownloadPage } from "./ui/pages/settings/EmbeddingDownloadPage";
+import { EmbeddingTestPage } from "./ui/pages/settings/EmbeddingTestPage";
+import {
+  ChatPage,
+  ChatConversationPage,
+  ChatSettingsPage,
+  ChatHistoryPage,
+  ChatMemoriesPage,
+  SearchMessagesPage,
+  ChatLayout,
+} from "./ui/pages/chats";
 import { ThemeProvider } from "./core/theme/ThemeContext";
 import { toast } from "./ui/components/toast";
 import { DownloadQueueProvider } from "./core/downloads/DownloadQueueContext";
+import {
+  CreateCharacterPage,
+  EditCharacterPage,
+  LorebookEditor,
+  CreationHelperPage,
+} from "./ui/pages/characters";
+import { CreatePersonaPage, PersonasPage, EditPersonaPage } from "./ui/pages/personas";
+import ChatTemplateListPage from "./ui/pages/characters/ChatTemplateListPage";
+import ChatTemplateEditorPage from "./ui/pages/characters/ChatTemplateEditorPage";
+import { SearchPage } from "./ui/pages/search";
+import { LibraryPage } from "./ui/pages/library/LibraryPage";
+import { StandaloneLorebookEditor } from "./ui/pages/library/StandaloneLorebookEditor";
+import { SyncPage } from "./ui/pages/sync/SyncPage";
+import {
+  DiscoveryPage,
+  DiscoverySearchPage,
+  DiscoveryCardDetailPage,
+  DiscoveryBrowsePage,
+} from "./ui/pages/discovery";
+import {
+  GroupChatsListPage,
+  GroupChatCreatePage,
+  GroupChatLayout,
+  GroupChatPage,
+  GroupSettingsPage,
+  GroupChatSettingsPage,
+  GroupChatHistoryPage,
+  GroupChatMemoriesPage,
+} from "./ui/pages/group-chats";
+import {
+  EngineHomePage,
+  EngineSetupWizard,
+  EngineCharacterCreate,
+  EngineChatPage,
+  EngineProvidersConfigPage,
+  EngineSettingsConfigPage,
+} from "./ui/pages/engine";
 
 import { CreateMenu, Tooltip, useFirstTimeTooltip } from "./ui/components";
 import { V1UpgradeToast } from "./ui/components/V1UpgradeToast";
@@ -22,232 +97,6 @@ import { getPlatform } from "./core/utils/platform";
 import { I18nProvider } from "./core/i18n/context";
 
 const chatLog = logManager({ component: "Chat" });
-
-function lazyNamed<TModule extends Record<string, unknown>, TKey extends keyof TModule>(
-  loader: () => Promise<TModule>,
-  key: TKey,
-) {
-  return lazy(async () => {
-    const module = await loader();
-    return { default: module[key] as ComponentType };
-  });
-}
-
-const WelcomePage = lazyNamed(() => import("./ui/pages/onboarding/Welcome"), "WelcomePage");
-const OnboardingPage = lazyNamed(
-  () => import("./ui/pages/onboarding/OnboardingPage"),
-  "OnboardingPage",
-);
-const WhereToFindPage = lazyNamed(
-  () => import("./ui/pages/onboarding/WhereToFind"),
-  "WhereToFindPage",
-);
-const SearchPage = lazyNamed(() => import("./ui/pages/search/SearchPage"), "SearchPage");
-const DiscoveryPage = lazyNamed(
-  () => import("./ui/pages/discovery/DiscoveryPage"),
-  "DiscoveryPage",
-);
-const DiscoverySearchPage = lazyNamed(
-  () => import("./ui/pages/discovery/DiscoverySearchPage"),
-  "DiscoverySearchPage",
-);
-const DiscoveryBrowsePage = lazyNamed(
-  () => import("./ui/pages/discovery/DiscoveryBrowsePage"),
-  "DiscoveryBrowsePage",
-);
-const DiscoveryCardDetailPage = lazyNamed(
-  () => import("./ui/pages/discovery/DiscoveryCardDetailPage"),
-  "DiscoveryCardDetailPage",
-);
-const LibraryPage = lazyNamed(() => import("./ui/pages/library/LibraryPage"), "LibraryPage");
-const StandaloneLorebookEditor = lazyNamed(
-  () => import("./ui/pages/library/StandaloneLorebookEditor"),
-  "StandaloneLorebookEditor",
-);
-const SettingsPage = lazyNamed(() => import("./ui/pages/settings/Settings"), "SettingsPage");
-const ProvidersPage = lazyNamed(() => import("./ui/pages/settings/ProvidersPage"), "ProvidersPage");
-const ModelsPage = lazyNamed(() => import("./ui/pages/settings/ModelsPage"), "ModelsPage");
-const EditModelPage = lazyNamed(() => import("./ui/pages/settings/EditModelPage"), "EditModelPage");
-const HuggingFaceBrowserPage = lazyNamed(
-  () => import("./ui/pages/settings/HuggingFaceBrowserPage"),
-  "HuggingFaceBrowserPage",
-);
-const VoicesPage = lazyNamed(() => import("./ui/pages/settings/VoicesPage"), "VoicesPage");
-const ImageGenerationPage = lazyNamed(
-  () => import("./ui/pages/settings/ImageGenerationPage"),
-  "ImageGenerationPage",
-);
-const SystemPromptsPage = lazyNamed(
-  () => import("./ui/pages/settings/SystemPromptsPage"),
-  "SystemPromptsPage",
-);
-const EditPromptTemplate = lazyNamed(
-  () => import("./ui/pages/settings/EditPromptTemplate"),
-  "EditPromptTemplate",
-);
-const SecurityPage = lazyNamed(() => import("./ui/pages/settings/SecurityPage"), "SecurityPage");
-const UsagePage = lazyNamed(() => import("./ui/pages/settings/UsagePage"), "UsagePage");
-const UsageActivityPage = lazyNamed(
-  () => import("./ui/pages/settings/UsageActivityPage"),
-  "UsageActivityPage",
-);
-const AccessibilityPage = lazyNamed(
-  () => import("./ui/pages/settings/AccessibilityPage"),
-  "AccessibilityPage",
-);
-const ColorCustomizationPage = lazyNamed(
-  () => import("./ui/pages/settings/ColorCustomizationPage"),
-  "ColorCustomizationPage",
-);
-const ChatAppearancePage = lazyNamed(
-  () => import("./ui/pages/settings/ChatAppearancePage"),
-  "ChatAppearancePage",
-);
-const LogsPage = lazyNamed(() => import("./ui/pages/settings/LogsPage"), "LogsPage");
-const AdvancedPage = lazyNamed(() => import("./ui/pages/settings/AdvancedPage"), "AdvancedPage");
-const DynamicMemoryPage = lazyNamed(
-  () => import("./ui/pages/settings/DynamicMemoryPage"),
-  "DynamicMemoryPage",
-);
-const AICreationHelperPage = lazyNamed(
-  () => import("./ui/pages/settings/CreationHelperPage"),
-  "CreationHelperPage",
-);
-const HelpMeReplyPage = lazyNamed(
-  () => import("./ui/pages/settings/HelpMeReplyPage"),
-  "HelpMeReplyPage",
-);
-const EmbeddingDownloadPage = lazyNamed(
-  () => import("./ui/pages/settings/EmbeddingDownloadPage"),
-  "EmbeddingDownloadPage",
-);
-const EmbeddingTestPage = lazyNamed(
-  () => import("./ui/pages/settings/EmbeddingTestPage"),
-  "EmbeddingTestPage",
-);
-const ChangelogPage = lazyNamed(() => import("./ui/pages/settings/ChangelogPage"), "ChangelogPage");
-const DeveloperPage = lazyNamed(() => import("./ui/pages/settings/DeveloperPage"), "DeveloperPage");
-const ResetPage = lazyNamed(() => import("./ui/pages/settings/ResetPage"), "ResetPage");
-const BackupRestorePage = lazyNamed(
-  () => import("./ui/pages/settings/BackupRestorePage"),
-  "BackupRestorePage",
-);
-const ConvertPage = lazyNamed(() => import("./ui/pages/settings/ConvertPage"), "ConvertPage");
-const SyncPage = lazyNamed(() => import("./ui/pages/sync/SyncPage"), "SyncPage");
-const EngineHomePage = lazyNamed(
-  () => import("./ui/pages/engine/EngineHomePage"),
-  "EngineHomePage",
-);
-const EngineSetupWizard = lazyNamed(
-  () => import("./ui/pages/engine/EngineSetupWizard"),
-  "EngineSetupWizard",
-);
-const EngineProvidersConfigPage = lazyNamed(
-  () => import("./ui/pages/engine/EngineProvidersConfigPage"),
-  "EngineProvidersConfigPage",
-);
-const EngineSettingsConfigPage = lazyNamed(
-  () => import("./ui/pages/engine/EngineSettingsConfigPage"),
-  "EngineSettingsConfigPage",
-);
-const EngineCharacterCreate = lazyNamed(
-  () => import("./ui/pages/engine/EngineCharacterCreate"),
-  "EngineCharacterCreate",
-);
-const EngineChatPage = lazyNamed(
-  () => import("./ui/pages/engine/EngineChatPage"),
-  "EngineChatPage",
-);
-const ChatPage = lazyNamed(() => import("./ui/pages/chats/Chats"), "ChatPage");
-const ChatLayout = lazyNamed(() => import("./ui/pages/chats/ChatLayout"), "ChatLayout");
-const ChatConversationPage = lazyNamed(
-  () => import("./ui/pages/chats/Chat"),
-  "ChatConversationPage",
-);
-const ChatSettingsPage = lazyNamed(
-  () => import("./ui/pages/chats/ChatSettings"),
-  "ChatSettingsPage",
-);
-const SearchMessagesPage = lazyNamed(
-  () => import("./ui/pages/chats/SearchMessagesPage"),
-  "SearchMessagesPage",
-);
-const ChatHistoryPage = lazyNamed(() => import("./ui/pages/chats/ChatHistory"), "ChatHistoryPage");
-const ChatMemoriesPage = lazyNamed(
-  () => import("./ui/pages/chats/ChatMemories"),
-  "ChatMemoriesPage",
-);
-const CreateCharacterPage = lazyNamed(
-  () => import("./ui/pages/characters/CreateCharacter"),
-  "CreateCharacterPage",
-);
-const CreationHelperPage = lazyNamed(
-  () => import("./ui/pages/characters/CreationHelperPage"),
-  "CreationHelperPage",
-);
-const CharactersPage = lazyNamed(
-  () => import("./ui/pages/settings/CharactersPage"),
-  "CharactersPage",
-);
-const EditCharacterPage = lazyNamed(
-  () => import("./ui/pages/characters/EditCharacter"),
-  "EditCharacterPage",
-);
-const LorebookEditor = lazyNamed(
-  () => import("./ui/pages/characters/LorebookEditor"),
-  "LorebookEditor",
-);
-const ChatTemplateListPage = lazy(() => import("./ui/pages/characters/ChatTemplateListPage"));
-const ChatTemplateEditorPage = lazy(() => import("./ui/pages/characters/ChatTemplateEditorPage"));
-const CreatePersonaPage = lazyNamed(
-  () => import("./ui/pages/personas/CreatePersona"),
-  "CreatePersonaPage",
-);
-const PersonasPage = lazyNamed(() => import("./ui/pages/settings/PersonasPage"), "PersonasPage");
-const EditPersonaPage = lazyNamed(
-  () => import("./ui/pages/personas/EditPersona"),
-  "EditPersonaPage",
-);
-const GroupChatsListPage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatsListPage"),
-  "GroupChatsListPage",
-);
-const GroupChatHistoryPage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatHistoryPage"),
-  "GroupChatHistoryPage",
-);
-const GroupChatCreatePage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatCreatePage"),
-  "GroupChatCreatePage",
-);
-const GroupSettingsPage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupSettingsPage"),
-  "GroupSettingsPage",
-);
-const GroupChatLayout = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatLayout"),
-  "GroupChatLayout",
-);
-const GroupChatPage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatPage"),
-  "GroupChatPage",
-);
-const GroupChatSettingsPage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatSettingsPage"),
-  "GroupChatSettingsPage",
-);
-const GroupChatMemoriesPage = lazyNamed(
-  () => import("./ui/pages/group-chats/GroupChatMemoriesPage"),
-  "GroupChatMemoriesPage",
-);
-
-function RouteLoadingFallback() {
-  return (
-    <div className="flex min-h-[40vh] items-center justify-center px-4 text-sm text-fg/55">
-      Loading...
-    </div>
-  );
-}
 
 function App() {
   const platform = useMemo(() => getPlatform(), []);
@@ -793,122 +642,108 @@ function AppContent() {
                 : "h-full app-text-scope"
             }
           >
-            <Suspense fallback={<RouteLoadingFallback />}>
-              <Routes>
-                <Route path="/" element={<OnboardingCheck />} />
-                <Route path="/welcome" element={<WelcomePage />} />
-                <Route path="/onboarding/provider" element={<OnboardingPage />} />
-                <Route path="/onboarding/models" element={<OnboardingPage />} />
-                <Route path="/onboarding/memory" element={<OnboardingPage />} />
-                <Route path="/wheretofind" element={<WhereToFindPage />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/discover" element={<DiscoveryPage />} />
-                <Route path="/discover/search" element={<DiscoverySearchPage />} />
-                <Route path="/discover/browse" element={<DiscoveryBrowsePage />} />
-                <Route path="/discover/card/:path" element={<DiscoveryCardDetailPage />} />
-                <Route path="/library" element={<LibraryPage />} />
-                <Route
-                  path="/library/lorebooks/:lorebookId"
-                  element={<StandaloneLorebookEditor />}
-                />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/settings/providers" element={<ProvidersPage />} />
-                <Route path="/settings/models" element={<ModelsPage />} />
-                <Route path="/settings/models/new" element={<EditModelPage />} />
-                <Route path="/settings/models/browse" element={<HuggingFaceBrowserPage />} />
-                <Route path="/settings/models/:modelId" element={<EditModelPage />} />
-                <Route path="/settings/voices" element={<VoicesPage />} />
-                <Route path="/settings/image-generation" element={<ImageGenerationPage />} />
-                <Route path="/settings/prompts" element={<SystemPromptsPage />} />
-                <Route path="/settings/prompts/new" element={<EditPromptTemplate />} />
-                <Route path="/settings/prompts/:id" element={<EditPromptTemplate />} />
-                <Route path="/settings/security" element={<SecurityPage />} />
-                <Route path="/settings/usage" element={<UsagePage />} />
-                <Route path="/settings/usage/activity" element={<UsageActivityPage />} />
-                <Route path="/settings/accessibility" element={<AccessibilityPage />} />
-                <Route path="/settings/accessibility/colors" element={<ColorCustomizationPage />} />
-                <Route path="/settings/accessibility/chat" element={<ChatAppearancePage />} />
-                <Route path="/settings/logs" element={<LogsPage />} />
-                <Route path="/settings/advanced" element={<AdvancedPage />} />
-                <Route path="/settings/advanced/memory" element={<DynamicMemoryPage />} />
-                <Route
-                  path="/settings/advanced/creation-helper"
-                  element={<AICreationHelperPage />}
-                />
-                <Route path="/settings/advanced/help-me-reply" element={<HelpMeReplyPage />} />
-                <Route path="/settings/embedding-download" element={<EmbeddingDownloadPage />} />
-                <Route path="/settings/embedding-test" element={<EmbeddingTestPage />} />
-                <Route path="/settings/changelog" element={<ChangelogPage />} />
-                <Route path="/settings/developer" element={<DeveloperPage />} />
-                <Route path="/settings/reset" element={<ResetPage />} />
-                <Route path="/settings/backup" element={<BackupRestorePage />} />
-                <Route path="/settings/convert" element={<ConvertPage />} />
-                <Route path="/settings/sync" element={<SyncPage />} />
-                <Route path="/settings/engine/:credentialId" element={<EngineHomePage />} />
-                <Route
-                  path="/settings/engine/:credentialId/setup"
-                  element={<EngineSetupWizard />}
-                />
-                <Route
-                  path="/settings/engine/:credentialId/providers"
-                  element={<EngineProvidersConfigPage />}
-                />
-                <Route
-                  path="/settings/engine/:credentialId/settings"
-                  element={<EngineSettingsConfigPage />}
-                />
-                <Route
-                  path="/settings/engine/:credentialId/character/new"
-                  element={<EngineCharacterCreate />}
-                />
-                <Route path="/engine-chat/:credentialId/:slug" element={<EngineChatPage />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/chat/:characterId" element={<ChatLayout />}>
-                  <Route index element={<ChatConversationPage />} />
-                  <Route path="settings" element={<ChatSettingsPage />} />
-                </Route>
-                <Route path="/chat/:characterId/search" element={<SearchMessagesPage />} />
-                <Route path="/chat/:characterId/history" element={<ChatHistoryPage />} />
-                <Route path="/chat/:characterId/memories" element={<ChatMemoriesPage />} />
-                <Route path="/create/character" element={<CreateCharacterPage />} />
-                <Route path="/create/character/helper" element={<CreationHelperPage />} />
-                <Route path="/settings/characters" element={<CharactersPage />} />
-                <Route
-                  path="/settings/characters/:characterId/edit"
-                  element={<EditCharacterPage />}
-                />
-                <Route
-                  path="/settings/characters/:characterId/lorebook"
-                  element={<LorebookEditor />}
-                />
-                <Route path="/group-chats/groups/:groupId/lorebook" element={<LorebookEditor />} />
-                <Route
-                  path="/settings/characters/:characterId/templates"
-                  element={<ChatTemplateListPage />}
-                />
-                <Route
-                  path="/settings/characters/:characterId/templates/:templateId"
-                  element={<ChatTemplateEditorPage />}
-                />
-                <Route path="/create/persona" element={<CreatePersonaPage />} />
-                <Route path="/personas" element={<PersonasPage />} />
-                <Route path="/settings/personas" element={<PersonasPage />} />
-                <Route path="/settings/personas/:personaId/edit" element={<EditPersonaPage />} />
-                <Route path="/group-chats" element={<GroupChatsListPage />} />
-                <Route path="/group-chats/history" element={<GroupChatHistoryPage />} />
-                <Route path="/group-chats/new" element={<GroupChatCreatePage />} />
-                <Route
-                  path="/group-chats/groups/:groupId/settings"
-                  element={<GroupSettingsPage />}
-                />
-                <Route path="/group-chats/:groupSessionId" element={<GroupChatLayout />}>
-                  <Route index element={<GroupChatPage />} />
-                  <Route path="settings" element={<GroupChatSettingsPage />} />
-                  <Route path="lorebook" element={<LorebookEditor />} />
-                  <Route path="memories" element={<GroupChatMemoriesPage />} />
-                </Route>
-              </Routes>
-            </Suspense>
+            <Routes>
+              <Route path="/" element={<OnboardingCheck />} />
+              <Route path="/welcome" element={<WelcomePage />} />
+              <Route path="/onboarding/provider" element={<OnboardingPage />} />
+              <Route path="/onboarding/models" element={<OnboardingPage />} />
+              <Route path="/onboarding/memory" element={<OnboardingPage />} />
+              <Route path="/wheretofind" element={<WhereToFindPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/discover" element={<DiscoveryPage />} />
+              <Route path="/discover/search" element={<DiscoverySearchPage />} />
+              <Route path="/discover/browse" element={<DiscoveryBrowsePage />} />
+              <Route path="/discover/card/:path" element={<DiscoveryCardDetailPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/library/lorebooks/:lorebookId" element={<StandaloneLorebookEditor />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/providers" element={<ProvidersPage />} />
+              <Route path="/settings/models" element={<ModelsPage />} />
+              <Route path="/settings/models/new" element={<EditModelPage />} />
+              <Route path="/settings/models/browse" element={<HuggingFaceBrowserPage />} />
+              <Route path="/settings/models/:modelId" element={<EditModelPage />} />
+              <Route path="/settings/voices" element={<VoicesPage />} />
+              <Route path="/settings/image-generation" element={<ImageGenerationPage />} />
+              <Route path="/settings/prompts" element={<SystemPromptsPage />} />
+              <Route path="/settings/prompts/new" element={<EditPromptTemplate />} />
+              <Route path="/settings/prompts/:id" element={<EditPromptTemplate />} />
+              <Route path="/settings/security" element={<SecurityPage />} />
+              <Route path="/settings/usage" element={<UsagePage />} />
+              <Route path="/settings/usage/activity" element={<UsageActivityPage />} />
+              <Route path="/settings/accessibility" element={<AccessibilityPage />} />
+              <Route path="/settings/accessibility/colors" element={<ColorCustomizationPage />} />
+              <Route path="/settings/accessibility/chat" element={<ChatAppearancePage />} />
+              <Route path="/settings/logs" element={<LogsPage />} />
+              <Route path="/settings/advanced" element={<AdvancedPage />} />
+              <Route path="/settings/advanced/memory" element={<DynamicMemoryPage />} />
+              <Route path="/settings/advanced/creation-helper" element={<AICreationHelperPage />} />
+              <Route path="/settings/advanced/help-me-reply" element={<HelpMeReplyPage />} />
+              <Route path="/settings/embedding-download" element={<EmbeddingDownloadPage />} />
+              <Route path="/settings/embedding-test" element={<EmbeddingTestPage />} />
+              <Route path="/settings/changelog" element={<ChangelogPage />} />
+              <Route path="/settings/developer" element={<DeveloperPage />} />
+              <Route path="/settings/reset" element={<ResetPage />} />
+              <Route path="/settings/backup" element={<BackupRestorePage />} />
+              <Route path="/settings/convert" element={<ConvertPage />} />
+              <Route path="/settings/sync" element={<SyncPage />} />
+              <Route path="/settings/engine/:credentialId" element={<EngineHomePage />} />
+              <Route path="/settings/engine/:credentialId/setup" element={<EngineSetupWizard />} />
+              <Route
+                path="/settings/engine/:credentialId/providers"
+                element={<EngineProvidersConfigPage />}
+              />
+              <Route
+                path="/settings/engine/:credentialId/settings"
+                element={<EngineSettingsConfigPage />}
+              />
+              <Route
+                path="/settings/engine/:credentialId/character/new"
+                element={<EngineCharacterCreate />}
+              />
+              <Route path="/engine-chat/:credentialId/:slug" element={<EngineChatPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat/:characterId" element={<ChatLayout />}>
+                <Route index element={<ChatConversationPage />} />
+                <Route path="settings" element={<ChatSettingsPage />} />
+              </Route>
+              <Route path="/chat/:characterId/search" element={<SearchMessagesPage />} />
+              <Route path="/chat/:characterId/history" element={<ChatHistoryPage />} />
+              <Route path="/chat/:characterId/memories" element={<ChatMemoriesPage />} />
+              <Route path="/create/character" element={<CreateCharacterPage />} />
+              <Route path="/create/character/helper" element={<CreationHelperPage />} />
+              <Route path="/settings/characters" element={<CharactersPage />} />
+              <Route
+                path="/settings/characters/:characterId/edit"
+                element={<EditCharacterPage />}
+              />
+              <Route
+                path="/settings/characters/:characterId/lorebook"
+                element={<LorebookEditor />}
+              />
+              <Route path="/group-chats/groups/:groupId/lorebook" element={<LorebookEditor />} />
+              <Route
+                path="/settings/characters/:characterId/templates"
+                element={<ChatTemplateListPage />}
+              />
+              <Route
+                path="/settings/characters/:characterId/templates/:templateId"
+                element={<ChatTemplateEditorPage />}
+              />
+              <Route path="/create/persona" element={<CreatePersonaPage />} />
+              <Route path="/personas" element={<PersonasPage />} />
+              <Route path="/settings/personas" element={<PersonasPage />} />
+              <Route path="/settings/personas/:personaId/edit" element={<EditPersonaPage />} />
+              <Route path="/group-chats" element={<GroupChatsListPage />} />
+              <Route path="/group-chats/history" element={<GroupChatHistoryPage />} />
+              <Route path="/group-chats/new" element={<GroupChatCreatePage />} />
+              <Route path="/group-chats/groups/:groupId/settings" element={<GroupSettingsPage />} />
+              <Route path="/group-chats/:groupSessionId" element={<GroupChatLayout />}>
+                <Route index element={<GroupChatPage />} />
+                <Route path="settings" element={<GroupChatSettingsPage />} />
+                <Route path="lorebook" element={<LorebookEditor />} />
+                <Route path="memories" element={<GroupChatMemoriesPage />} />
+              </Route>
+            </Routes>
           </motion.div>
         </main>
 
