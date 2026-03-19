@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef } from "react";
 import { type as getPlatform } from "@tauri-apps/plugin-os";
 import { impactFeedback } from "@tauri-apps/plugin-haptics";
 
-import { addChatMessageAttachment } from "../../../../core/chat/manager";
+import {
+  addChatMessageAttachment,
+  generateSceneImageForMessage,
+} from "../../../../core/chat/manager";
 import {
   generateImage,
   resolveGeneratedImageUrl,
@@ -13,6 +16,7 @@ import {
 import type { GeneratedImage } from "../../../../core/image-generation";
 import { readSettings, SETTINGS_UPDATED_EVENT } from "../../../../core/storage/repo";
 import type { ImageAttachment, Session, StoredMessage } from "../../../../core/storage/schemas";
+import { toast } from "../../../components/toast";
 import type { ChatControllerModuleContext } from "./chatControllerShared";
 
 const IMAGE_DIRECTIVE_RE = /<<image:(\{[\s\S]*?\})>>/g;
@@ -40,7 +44,12 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
   useEffect(() => {
     platformRef.current = getPlatform();
 
+    const resetCachedConfigs = () => {
+      imageGenConfigRef.current = null;
+    };
+
     const updateHapticsState = async () => {
+      resetCachedConfigs();
       try {
         const settings = await readSettings();
         const acc = settings.advancedSettings?.accessibility;
@@ -193,8 +202,18 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
     return { width, height };
   }, []);
 
+  const getErrorMessage = useCallback((error: unknown) => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "string") return error;
+    if (error && typeof error === "object" && "message" in error) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === "string" && message.trim()) return message;
+    }
+    return "Unknown error";
+  }, []);
+
   const runInChatImageGeneration = useCallback(
-    async (assistantMessageId: string) => {
+    async (assistantMessageId: string, options?: { scenePrompt?: string | null }) => {
       if (!state.session || !state.character) return;
       if (processedImageDirectiveMessagesRef.current.has(assistantMessageId)) return;
 
@@ -204,15 +223,18 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
       if (!currentMessage) return;
 
       const { cleanContent, directives } = parseImageDirectives(currentMessage.content);
-      if (directives.length === 0) return;
+      const scenePrompt = options?.scenePrompt?.trim() ?? "";
+      if (directives.length === 0 && !scenePrompt) return;
 
-      const config = await resolveDefaultImageGenConfig();
-      if (!config) return;
+      const config = directives.length > 0 ? await resolveDefaultImageGenConfig() : null;
+      const runnableDirectives = config ? directives : [];
+
+      if (runnableDirectives.length === 0 && !scenePrompt) return;
 
       processedImageDirectiveMessagesRef.current.add(assistantMessageId);
 
       const placeholderAttachments: ImageAttachment[] = [];
-      for (const directive of directives) {
+      for (const directive of runnableDirectives) {
         const count = Math.max(1, Math.min(4, directive.n ?? 1));
         const dimensions = parseSize(directive.size) ?? parseSize("1024x1024");
         for (let index = 0; index < count; index++) {
@@ -224,6 +246,18 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
             height: dimensions?.height,
           });
         }
+      }
+      const scenePlaceholder = scenePrompt
+        ? {
+            id: crypto.randomUUID(),
+            data: "",
+            mimeType: "image/webp",
+            width: 1024,
+            height: 1024,
+          }
+        : null;
+      if (scenePlaceholder) {
+        placeholderAttachments.push(scenePlaceholder);
       }
 
       const updatedMessage: StoredMessage = {
@@ -259,10 +293,10 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
 
       for (
         let directiveIndex = 0, placeholderIndex = 0;
-        directiveIndex < directives.length;
+        directiveIndex < runnableDirectives.length;
         directiveIndex++
       ) {
-        const directive = directives[directiveIndex];
+        const directive = runnableDirectives[directiveIndex];
         const count = Math.max(1, Math.min(4, directive.n ?? 1));
         const placeholdersForDirective = placeholderAttachments.slice(
           placeholderIndex,
@@ -272,9 +306,9 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
 
         const request: ImageGenerationRequest = {
           prompt: directive.prompt,
-          model: config.modelName,
-          providerId: config.providerId,
-          credentialId: config.credentialId,
+          model: config!.modelName,
+          providerId: config!.providerId,
+          credentialId: config!.credentialId,
           size: directive.size ?? "1024x1024",
           n: count,
           quality: directive.quality,
@@ -300,6 +334,7 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
               attachmentId: placeholderId,
               base64Data: dataUrl,
               mimeType: info.mimeType,
+              filename: directive.prompt,
               width: info.width,
               height: info.height,
             });
@@ -352,10 +387,66 @@ export function useChatEnhancementsController({ context }: UseChatEnhancementsCo
           }
         }
       }
+
+      if (scenePrompt && scenePlaceholder) {
+        try {
+          const updated = await generateSceneImageForMessage({
+            sessionId: state.session.id,
+            messageId: assistantMessageId,
+            attachmentId: scenePlaceholder.id,
+            scenePrompt,
+          });
+
+          const nextMessages = messagesRef.current.map((message) =>
+            message.id === updated.id ? updated : message,
+          );
+          messagesRef.current = nextMessages;
+          dispatch({ type: "SET_MESSAGES", payload: nextMessages });
+        } catch (error) {
+          const latestMessage = messagesRef.current.find(
+            (message) => message.id === assistantMessageId,
+          );
+          if (latestMessage) {
+            const cleanedMessage: StoredMessage = {
+              ...latestMessage,
+              attachments: (latestMessage.attachments ?? []).filter(
+                (attachment) => attachment.id !== scenePlaceholder.id,
+              ),
+            };
+            const nextMessages = messagesRef.current.map((message) =>
+              message.id === cleanedMessage.id ? cleanedMessage : message,
+            );
+            messagesRef.current = nextMessages;
+
+            const nextSession: Session = {
+              ...state.session,
+              messages: nextMessages,
+              updatedAt: Date.now(),
+            };
+
+            dispatch({
+              type: "BATCH",
+              actions: [
+                { type: "SET_MESSAGES", payload: nextMessages },
+                { type: "SET_SESSION", payload: nextSession },
+              ],
+            });
+
+            try {
+              await persistSession(nextSession);
+            } catch {
+              // leave cleaned UI state in memory if persistence fails
+            }
+          }
+
+          toast.error("Scene generation failed", getErrorMessage(error));
+        }
+      }
     },
     [
       dataUrlFromGeneratedImage,
       dispatch,
+      getErrorMessage,
       imageInfoFromDataUrl,
       messagesRef,
       parseImageDirectives,

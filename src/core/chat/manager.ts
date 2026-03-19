@@ -160,3 +160,19 @@ export async function addChatMessageAttachment(params: {
     },
   });
 }
+
+export async function generateSceneImageForMessage(params: {
+  sessionId: string;
+  messageId: string;
+  attachmentId: string;
+  scenePrompt: string;
+}): Promise<StoredMessage> {
+  return invoke<StoredMessage>("chat_generate_scene_image", {
+    args: {
+      sessionId: params.sessionId,
+      messageId: params.messageId,
+      attachmentId: params.attachmentId,
+      scenePrompt: params.scenePrompt,
+    },
+  });
+}

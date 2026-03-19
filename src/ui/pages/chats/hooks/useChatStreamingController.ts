@@ -16,6 +16,12 @@ import {
 } from "../../../../core/utils/thinkTags";
 import { type ChatControllerPagingContext, isStartingSceneMessage } from "./chatControllerShared";
 import { applyLiveChatAction, getLiveChatState, setLiveChatState } from "./chatLiveState";
+import {
+  consumeSceneDirectiveDelta,
+  createSceneDirectiveStreamState,
+  finalizeSceneDirectiveStream,
+  sanitizeAssistantSceneDirective,
+} from "./sceneImageProtocol";
 
 const INITIAL_MESSAGE_LIMIT = 50;
 
@@ -102,7 +108,10 @@ function createPlaceholderMessage(
 
 interface UseChatStreamingControllerArgs {
   context: ChatControllerPagingContext;
-  runInChatImageGeneration: (assistantMessageId: string) => Promise<void> | void;
+  runInChatImageGeneration: (
+    assistantMessageId: string,
+    options?: { scenePrompt?: string | null },
+  ) => Promise<void> | void;
   reloadSessionStateFromStorage: (sessionId: string) => Promise<void>;
   triggerTypingHaptic: () => Promise<void>;
 }
@@ -113,7 +122,7 @@ export function useChatStreamingController({
   reloadSessionStateFromStorage,
   triggerTypingHaptic,
 }: UseChatStreamingControllerArgs) {
-  const { state, dispatch, messagesRef, hasMoreMessagesBeforeRef } = context;
+  const { state, dispatch, messagesRef, hasMoreMessagesBeforeRef, persistSession } = context;
 
   const requestOwnsSession = useCallback((sessionId: string, requestId: string) => {
     return getLiveChatState(sessionId)?.activeRequestId === requestId;
@@ -159,6 +168,7 @@ export function useChatStreamingController({
       let unlistenNormalized: UnlistenFn | null = null;
       const streamBatcher = createStreamBatcher(dispatch);
       const thinkState = createThinkStreamState();
+      const sceneDirectiveState = createSceneDirectiveStreamState();
 
       try {
         unlistenNormalized = await listen<any>(`api-normalized://${requestId}`, (event) => {
@@ -174,11 +184,17 @@ export function useChatStreamingController({
                 String(payload.data.text),
               );
               if (content) {
-                streamBatcher.update(assistantPlaceholder.id, content);
-                applyLiveChatAction(currentSessionId, state, {
-                  type: "UPDATE_MESSAGE_CONTENT",
-                  payload: { messageId: assistantPlaceholder.id, content },
-                });
+                const sceneContent = consumeSceneDirectiveDelta(
+                  sceneDirectiveState,
+                  content,
+                ).content;
+                if (sceneContent) {
+                  streamBatcher.update(assistantPlaceholder.id, sceneContent);
+                  applyLiveChatAction(currentSessionId, state, {
+                    type: "UPDATE_MESSAGE_CONTENT",
+                    payload: { messageId: assistantPlaceholder.id, content: sceneContent },
+                  });
+                }
               }
               if (reasoning) {
                 dispatch({
@@ -231,9 +247,17 @@ export function useChatStreamingController({
           return;
         }
 
+        const { cleanContent, scenePrompt } = sanitizeAssistantSceneDirective(
+          result.assistantMessage.content,
+        );
+        const finalAssistantMessage =
+          cleanContent === result.assistantMessage.content
+            ? result.assistantMessage
+            : { ...result.assistantMessage, content: cleanContent };
+
         const replaced = messagesRef.current.map((msg) => {
           if (msg.id === userPlaceholder.id) return result.userMessage;
-          if (msg.id === assistantPlaceholder.id) return result.assistantMessage;
+          if (msg.id === assistantPlaceholder.id) return finalAssistantMessage;
           return msg;
         });
         messagesRef.current = replaced;
@@ -250,7 +274,7 @@ export function useChatStreamingController({
             { type: "SET_MESSAGES", payload: replaced },
             {
               type: "TRANSFER_REASONING",
-              payload: { fromId: assistantPlaceholder.id, toId: result.assistantMessage.id },
+              payload: { fromId: assistantPlaceholder.id, toId: finalAssistantMessage.id },
             },
           ],
         });
@@ -261,19 +285,30 @@ export function useChatStreamingController({
             { type: "SET_MESSAGES", payload: replaced },
             {
               type: "TRANSFER_REASONING",
-              payload: { fromId: assistantPlaceholder.id, toId: result.assistantMessage.id },
+              payload: { fromId: assistantPlaceholder.id, toId: finalAssistantMessage.id },
             },
           ],
         });
-        if (result.assistantMessage.reasoning) {
-          dispatch({ type: "CLEAR_STREAMING_REASONING", payload: result.assistantMessage.id });
+        if (finalAssistantMessage.reasoning) {
+          dispatch({ type: "CLEAR_STREAMING_REASONING", payload: finalAssistantMessage.id });
           applyLiveChatAction(currentSessionId, state, {
             type: "CLEAR_STREAMING_REASONING",
-            payload: result.assistantMessage.id,
+            payload: finalAssistantMessage.id,
           });
         }
 
-        void runInChatImageGeneration(result.assistantMessage.id);
+        if (finalAssistantMessage.content !== result.assistantMessage.content) {
+          try {
+            await persistSession(updatedSession);
+          } catch (persistErr) {
+            console.warn(
+              "ChatStreamingController: failed to persist cleaned assistant message",
+              persistErr,
+            );
+          }
+        }
+
+        void runInChatImageGeneration(finalAssistantMessage.id, { scenePrompt });
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         console.error("ChatStreamingController: send failed", err);
@@ -307,14 +342,17 @@ export function useChatStreamingController({
 
         const tail = finalizeThinkStream(thinkState);
         if (tail.content) {
-          dispatch({
-            type: "UPDATE_MESSAGE_CONTENT",
-            payload: { messageId: assistantPlaceholder.id, content: tail.content },
-          });
-          applyLiveChatAction(currentSessionId, state, {
-            type: "UPDATE_MESSAGE_CONTENT",
-            payload: { messageId: assistantPlaceholder.id, content: tail.content },
-          });
+          const tailContent = consumeSceneDirectiveDelta(sceneDirectiveState, tail.content).content;
+          if (tailContent) {
+            dispatch({
+              type: "UPDATE_MESSAGE_CONTENT",
+              payload: { messageId: assistantPlaceholder.id, content: tailContent },
+            });
+            applyLiveChatAction(currentSessionId, state, {
+              type: "UPDATE_MESSAGE_CONTENT",
+              payload: { messageId: assistantPlaceholder.id, content: tailContent },
+            });
+          }
         }
         if (tail.reasoning) {
           dispatch({
@@ -324,6 +362,17 @@ export function useChatStreamingController({
           applyLiveChatAction(currentSessionId, state, {
             type: "UPDATE_MESSAGE_REASONING",
             payload: { messageId: assistantPlaceholder.id, reasoning: tail.reasoning },
+          });
+        }
+        const sceneTail = finalizeSceneDirectiveStream(sceneDirectiveState);
+        if (sceneTail.content) {
+          dispatch({
+            type: "UPDATE_MESSAGE_CONTENT",
+            payload: { messageId: assistantPlaceholder.id, content: sceneTail.content },
+          });
+          applyLiveChatAction(currentSessionId, state, {
+            type: "UPDATE_MESSAGE_CONTENT",
+            payload: { messageId: assistantPlaceholder.id, content: sceneTail.content },
           });
         }
         streamBatcher.cancel();
@@ -341,6 +390,7 @@ export function useChatStreamingController({
     [
       dispatch,
       messagesRef,
+      persistSession,
       requestOwnsSession,
       reloadSessionStateFromStorage,
       runInChatImageGeneration,
@@ -380,6 +430,7 @@ export function useChatStreamingController({
       let unlistenNormalized: UnlistenFn | null = null;
       const streamBatcher = createStreamBatcher(dispatch);
       const thinkState = createThinkStreamState();
+      const sceneDirectiveState = createSceneDirectiveStreamState();
 
       try {
         unlistenNormalized = await listen<any>(`api-normalized://${requestId}`, (event) => {
@@ -395,11 +446,17 @@ export function useChatStreamingController({
                 String(payload.data.text),
               );
               if (content) {
-                streamBatcher.update(assistantPlaceholder.id, content);
-                applyLiveChatAction(currentSessionId, state, {
-                  type: "UPDATE_MESSAGE_CONTENT",
-                  payload: { messageId: assistantPlaceholder.id, content },
-                });
+                const sceneContent = consumeSceneDirectiveDelta(
+                  sceneDirectiveState,
+                  content,
+                ).content;
+                if (sceneContent) {
+                  streamBatcher.update(assistantPlaceholder.id, sceneContent);
+                  applyLiveChatAction(currentSessionId, state, {
+                    type: "UPDATE_MESSAGE_CONTENT",
+                    payload: { messageId: assistantPlaceholder.id, content: sceneContent },
+                  });
+                }
               }
               if (reasoning) {
                 dispatch({
@@ -450,8 +507,16 @@ export function useChatStreamingController({
           return;
         }
 
+        const { cleanContent, scenePrompt } = sanitizeAssistantSceneDirective(
+          result.assistantMessage.content,
+        );
+        const finalAssistantMessage =
+          cleanContent === result.assistantMessage.content
+            ? result.assistantMessage
+            : { ...result.assistantMessage, content: cleanContent };
+
         const replaced = messagesRef.current.map((msg) =>
-          msg.id === assistantPlaceholder.id ? result.assistantMessage : msg,
+          msg.id === assistantPlaceholder.id ? finalAssistantMessage : msg,
         );
         messagesRef.current = replaced;
         const updatedSession = {
@@ -467,7 +532,7 @@ export function useChatStreamingController({
             { type: "SET_MESSAGES", payload: replaced },
             {
               type: "TRANSFER_REASONING",
-              payload: { fromId: assistantPlaceholder.id, toId: result.assistantMessage.id },
+              payload: { fromId: assistantPlaceholder.id, toId: finalAssistantMessage.id },
             },
           ],
         });
@@ -478,19 +543,30 @@ export function useChatStreamingController({
             { type: "SET_MESSAGES", payload: replaced },
             {
               type: "TRANSFER_REASONING",
-              payload: { fromId: assistantPlaceholder.id, toId: result.assistantMessage.id },
+              payload: { fromId: assistantPlaceholder.id, toId: finalAssistantMessage.id },
             },
           ],
         });
-        if (result.assistantMessage.reasoning) {
-          dispatch({ type: "CLEAR_STREAMING_REASONING", payload: result.assistantMessage.id });
+        if (finalAssistantMessage.reasoning) {
+          dispatch({ type: "CLEAR_STREAMING_REASONING", payload: finalAssistantMessage.id });
           applyLiveChatAction(currentSessionId, state, {
             type: "CLEAR_STREAMING_REASONING",
-            payload: result.assistantMessage.id,
+            payload: finalAssistantMessage.id,
           });
         }
 
-        void runInChatImageGeneration(result.assistantMessage.id);
+        if (finalAssistantMessage.content !== result.assistantMessage.content) {
+          try {
+            await persistSession(updatedSession);
+          } catch (persistErr) {
+            console.warn(
+              "ChatStreamingController: failed to persist cleaned continued message",
+              persistErr,
+            );
+          }
+        }
+
+        void runInChatImageGeneration(finalAssistantMessage.id, { scenePrompt });
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         console.error("ChatStreamingController: continue failed", err);
@@ -522,14 +598,17 @@ export function useChatStreamingController({
 
         const tail = finalizeThinkStream(thinkState);
         if (tail.content) {
-          dispatch({
-            type: "UPDATE_MESSAGE_CONTENT",
-            payload: { messageId: assistantPlaceholder.id, content: tail.content },
-          });
-          applyLiveChatAction(currentSessionId, state, {
-            type: "UPDATE_MESSAGE_CONTENT",
-            payload: { messageId: assistantPlaceholder.id, content: tail.content },
-          });
+          const tailContent = consumeSceneDirectiveDelta(sceneDirectiveState, tail.content).content;
+          if (tailContent) {
+            dispatch({
+              type: "UPDATE_MESSAGE_CONTENT",
+              payload: { messageId: assistantPlaceholder.id, content: tailContent },
+            });
+            applyLiveChatAction(currentSessionId, state, {
+              type: "UPDATE_MESSAGE_CONTENT",
+              payload: { messageId: assistantPlaceholder.id, content: tailContent },
+            });
+          }
         }
         if (tail.reasoning) {
           dispatch({
@@ -539,6 +618,17 @@ export function useChatStreamingController({
           applyLiveChatAction(currentSessionId, state, {
             type: "UPDATE_MESSAGE_REASONING",
             payload: { messageId: assistantPlaceholder.id, reasoning: tail.reasoning },
+          });
+        }
+        const sceneTail = finalizeSceneDirectiveStream(sceneDirectiveState);
+        if (sceneTail.content) {
+          dispatch({
+            type: "UPDATE_MESSAGE_CONTENT",
+            payload: { messageId: assistantPlaceholder.id, content: sceneTail.content },
+          });
+          applyLiveChatAction(currentSessionId, state, {
+            type: "UPDATE_MESSAGE_CONTENT",
+            payload: { messageId: assistantPlaceholder.id, content: sceneTail.content },
           });
         }
         streamBatcher.cancel();
@@ -556,6 +646,7 @@ export function useChatStreamingController({
     [
       dispatch,
       messagesRef,
+      persistSession,
       requestOwnsSession,
       runInChatImageGeneration,
       state,
@@ -589,7 +680,7 @@ export function useChatStreamingController({
       let unlistenNormalized: UnlistenFn | null = null;
       const regeneratingMessages = state.messages.map((candidate) =>
         candidate.id === message.id
-          ? { ...candidate, content: "", reasoning: undefined }
+          ? { ...candidate, content: "", reasoning: undefined, attachments: [] }
           : candidate,
       );
 
@@ -621,6 +712,7 @@ export function useChatStreamingController({
 
       const streamBatcher = createStreamBatcher(dispatch);
       const thinkState = createThinkStreamState();
+      const sceneDirectiveState = createSceneDirectiveStreamState();
 
       try {
         unlistenNormalized = await listen<any>(`api-normalized://${requestId}`, (event) => {
@@ -636,11 +728,17 @@ export function useChatStreamingController({
                 String(payload.data.text),
               );
               if (content) {
-                streamBatcher.update(message.id, content);
-                applyLiveChatAction(currentSessionId, state, {
-                  type: "UPDATE_MESSAGE_CONTENT",
-                  payload: { messageId: message.id, content },
-                });
+                const sceneContent = consumeSceneDirectiveDelta(
+                  sceneDirectiveState,
+                  content,
+                ).content;
+                if (sceneContent) {
+                  streamBatcher.update(message.id, sceneContent);
+                  applyLiveChatAction(currentSessionId, state, {
+                    type: "UPDATE_MESSAGE_CONTENT",
+                    payload: { messageId: message.id, content: sceneContent },
+                  });
+                }
               }
               if (reasoning) {
                 dispatch({
@@ -690,8 +788,16 @@ export function useChatStreamingController({
           return;
         }
 
+        const { cleanContent, scenePrompt } = sanitizeAssistantSceneDirective(
+          result.assistantMessage.content,
+        );
+        const finalAssistantMessage =
+          cleanContent === result.assistantMessage.content
+            ? result.assistantMessage
+            : { ...result.assistantMessage, content: cleanContent };
+
         const replaced = messagesRef.current.map((candidate) =>
-          candidate.id === message.id ? result.assistantMessage : candidate,
+          candidate.id === message.id ? finalAssistantMessage : candidate,
         );
         messagesRef.current = replaced;
         const updatedSession = {
@@ -714,20 +820,31 @@ export function useChatStreamingController({
             { type: "SET_MESSAGES", payload: replaced },
           ],
         });
-        if (result.assistantMessage.reasoning) {
-          dispatch({ type: "CLEAR_STREAMING_REASONING", payload: result.assistantMessage.id });
+        if (finalAssistantMessage.reasoning) {
+          dispatch({ type: "CLEAR_STREAMING_REASONING", payload: finalAssistantMessage.id });
           applyLiveChatAction(currentSessionId, state, {
             type: "CLEAR_STREAMING_REASONING",
-            payload: result.assistantMessage.id,
+            payload: finalAssistantMessage.id,
           });
         }
 
-        void runInChatImageGeneration(result.assistantMessage.id);
+        if (finalAssistantMessage.content !== result.assistantMessage.content) {
+          try {
+            await persistSession(updatedSession);
+          } catch (persistErr) {
+            console.warn(
+              "ChatStreamingController: failed to persist cleaned regenerated message",
+              persistErr,
+            );
+          }
+        }
+
+        void runInChatImageGeneration(finalAssistantMessage.id, { scenePrompt });
 
         if (state.messageAction?.message.id === message.id) {
           dispatch({
             type: "SET_MESSAGE_ACTION",
-            payload: { message: result.assistantMessage, mode: state.messageAction.mode },
+            payload: { message: finalAssistantMessage, mode: state.messageAction.mode },
           });
         }
       } catch (err) {
@@ -777,14 +894,17 @@ export function useChatStreamingController({
 
         const tail = finalizeThinkStream(thinkState);
         if (tail.content) {
-          dispatch({
-            type: "UPDATE_MESSAGE_CONTENT",
-            payload: { messageId: message.id, content: tail.content },
-          });
-          applyLiveChatAction(currentSessionId, state, {
-            type: "UPDATE_MESSAGE_CONTENT",
-            payload: { messageId: message.id, content: tail.content },
-          });
+          const tailContent = consumeSceneDirectiveDelta(sceneDirectiveState, tail.content).content;
+          if (tailContent) {
+            dispatch({
+              type: "UPDATE_MESSAGE_CONTENT",
+              payload: { messageId: message.id, content: tailContent },
+            });
+            applyLiveChatAction(currentSessionId, state, {
+              type: "UPDATE_MESSAGE_CONTENT",
+              payload: { messageId: message.id, content: tailContent },
+            });
+          }
         }
         if (tail.reasoning) {
           dispatch({
@@ -794,6 +914,17 @@ export function useChatStreamingController({
           applyLiveChatAction(currentSessionId, state, {
             type: "UPDATE_MESSAGE_REASONING",
             payload: { messageId: message.id, reasoning: tail.reasoning },
+          });
+        }
+        const sceneTail = finalizeSceneDirectiveStream(sceneDirectiveState);
+        if (sceneTail.content) {
+          dispatch({
+            type: "UPDATE_MESSAGE_CONTENT",
+            payload: { messageId: message.id, content: sceneTail.content },
+          });
+          applyLiveChatAction(currentSessionId, state, {
+            type: "UPDATE_MESSAGE_CONTENT",
+            payload: { messageId: message.id, content: sceneTail.content },
           });
         }
         streamBatcher.cancel();
@@ -814,6 +945,7 @@ export function useChatStreamingController({
       hasMoreMessagesBeforeRef,
       isStartingSceneMessage,
       messagesRef,
+      persistSession,
       requestOwnsSession,
       runInChatImageGeneration,
       state,

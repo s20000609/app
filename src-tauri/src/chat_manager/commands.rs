@@ -10,8 +10,10 @@ use crate::api::{api_request, ApiRequest, ApiResponse};
 use crate::chat_manager::storage::{get_base_prompt, PromptType};
 use crate::dynamic_memory_run_manager::{DynamicMemoryCancellationToken, DynamicMemoryRunManager};
 use crate::embedding_model;
+use crate::image_generator::types::ImageGenerationRequest;
 use crate::storage_manager::db::open_db;
 use crate::storage_manager::legacy::storage_root;
+use crate::storage_manager::media::{storage_load_avatar, storage_read_image_data};
 use crate::utils::{emit_toast, log_error, log_info, log_warn, now_millis};
 
 use super::dynamic_memory::{
@@ -41,9 +43,10 @@ use super::storage::{
 use super::tooling::{parse_tool_calls, ToolCall, ToolChoice, ToolConfig, ToolDefinition};
 use super::types::{
     Character, ChatAddMessageAttachmentArgs, ChatCompletionArgs, ChatContinueArgs,
-    ChatRegenerateArgs, ChatTurnResult, ContinueResult, MemoryEmbedding, MemoryRetrievalStrategy,
-    Model, Persona, PromptEntryPosition, PromptScope, ProviderCredential, RegenerateResult,
-    Session, Settings, StoredMessage, SystemPromptEntry, SystemPromptTemplate,
+    ChatGenerateSceneImageArgs, ChatRegenerateArgs, ChatTurnResult, ContinueResult,
+    MemoryEmbedding, MemoryRetrievalStrategy, Model, Persona, PromptEntryPosition, PromptScope,
+    ProviderCredential, RegenerateResult, Session, Settings, StoredMessage, SystemPromptEntry,
+    SystemPromptTemplate,
 };
 use crate::storage_manager::sessions::{
     messages_upsert_batch, session_conversation_count, session_upsert_meta,
@@ -3263,6 +3266,7 @@ pub async fn chat_regenerate(
             .messages
             .get_mut(target_index)
             .ok_or_else(|| "Assistant message not accessible".to_string())?;
+        let previous_attachments = assistant_message.attachments.clone();
 
         assistant_message.content = text.clone();
         assistant_message.usage = usage.clone();
@@ -3284,11 +3288,10 @@ pub async fn chat_regenerate(
                 .collect();
         }
         assistant_message.used_lorebook_entries = used_lorebook_entries.clone();
-        if !persisted_assistant_attachments.is_empty() {
-            assistant_message.attachments = persisted_assistant_attachments;
-        }
-        assistant_message.clone()
+        assistant_message.attachments = persisted_assistant_attachments;
+        (assistant_message.clone(), previous_attachments)
     };
+    let (assistant_clone, previous_attachments) = assistant_clone;
 
     session.updated_at = now_millis()?;
     if take_aborted_request(&app, request_id.as_deref()) {
@@ -3296,6 +3299,7 @@ pub async fn chat_regenerate(
         return Err("Request aborted by user".to_string());
     }
     save_session(&app, &session)?;
+    cleanup_attachments(&app, &previous_attachments, "chat_regenerate");
 
     emit_debug(
         &app,
@@ -6675,6 +6679,193 @@ fn emit_fallback_retry_toast(app: &AppHandle, shown: &mut bool) {
     *shown = true;
 }
 
+fn resolve_image_generation_target<'a>(
+    settings: &'a Settings,
+    preferred_model_id: Option<&str>,
+) -> Result<(&'a Model, &'a ProviderCredential), String> {
+    if let Some(model_id) = preferred_model_id.filter(|id| !id.trim().is_empty()) {
+        let (model, provider_cred) = find_model_and_credential(settings, model_id)
+            .ok_or_else(|| "Configured scene generation model could not be resolved".to_string())?;
+        let supports_image_output = model
+            .output_scopes
+            .iter()
+            .any(|scope| scope.eq_ignore_ascii_case("image"));
+        if !supports_image_output {
+            return Err(
+                "Configured scene generation model does not support image output".to_string(),
+            );
+        }
+        return Ok((model, provider_cred));
+    }
+
+    settings
+        .models
+        .iter()
+        .find_map(|model| {
+            let supports_image_output = model
+                .output_scopes
+                .iter()
+                .any(|scope| scope.eq_ignore_ascii_case("image"));
+            if !supports_image_output {
+                return None;
+            }
+            let provider_cred = resolve_provider_credential_for_model(settings, model)?;
+            Some((model, provider_cred))
+        })
+        .ok_or_else(|| "No image generation model is configured".to_string())
+}
+
+fn resolve_avatar_reference_data(
+    app: &AppHandle,
+    entity_prefix: &str,
+    entity_id: &str,
+    avatar_path: Option<&str>,
+) -> Option<String> {
+    let prefixed_entity_id = format!("{}-{}", entity_prefix, entity_id);
+
+    storage_load_avatar(
+        app.clone(),
+        prefixed_entity_id.clone(),
+        "avatar_base.webp".to_string(),
+    )
+    .ok()
+    .or_else(|| {
+        let filename = avatar_path?.trim();
+        if filename.is_empty() || filename.eq_ignore_ascii_case("avatar_base.webp") {
+            return None;
+        }
+        storage_load_avatar(app.clone(), prefixed_entity_id, filename.to_string()).ok()
+    })
+}
+
+fn build_scene_reference_images(
+    app: &AppHandle,
+    character: &Character,
+    persona: Option<&Persona>,
+) -> (Vec<String>, bool, bool) {
+    let mut images = Vec::new();
+    let mut has_character_reference = false;
+    let mut has_persona_reference = false;
+
+    if let Some(character_image) = resolve_avatar_reference_data(
+        app,
+        "character",
+        &character.id,
+        character.avatar_path.as_deref(),
+    ) {
+        images.push(character_image);
+        has_character_reference = true;
+    }
+
+    if let Some(persona) = persona {
+        if let Some(persona_image) = resolve_avatar_reference_data(
+            app,
+            "persona",
+            &persona.id,
+            persona.avatar_path.as_deref(),
+        ) {
+            images.push(persona_image);
+            has_persona_reference = true;
+        }
+    }
+    (images, has_character_reference, has_persona_reference)
+}
+
+fn build_scene_generation_request(
+    scene_prompt: &str,
+    model: &Model,
+    provider_cred: &ProviderCredential,
+    character: &Character,
+    persona: Option<&Persona>,
+    input_images: Vec<String>,
+    has_character_reference: bool,
+    has_persona_reference: bool,
+) -> ImageGenerationRequest {
+    let mut prompt_sections = Vec::new();
+
+    if has_character_reference || has_persona_reference {
+        let mut reference_lines = Vec::new();
+        if has_character_reference {
+            reference_lines.push(format!(
+                "The {} attached image is the character reference for {}. Use it only for that character.",
+                if has_persona_reference { "first" } else { "only" },
+                character.name
+            ));
+        }
+        if has_persona_reference {
+            let persona_name = persona
+                .and_then(|value| value.nickname.as_deref())
+                .filter(|value| !value.trim().is_empty())
+                .unwrap_or_else(|| {
+                    persona
+                        .map(|value| value.title.as_str())
+                        .unwrap_or("the persona")
+                });
+            reference_lines.push(format!(
+                "The {} attached image is the persona reference for {}. Use it only for that persona.",
+                if has_character_reference { "second" } else { "only" },
+                persona_name
+            ));
+        }
+        reference_lines.push(
+            "Do not swap, merge, or borrow identity-defining features between reference images."
+                .to_string(),
+        );
+        reference_lines.push(
+            "If only one reference image is attached, do not invent the missing person from it."
+                .to_string(),
+        );
+        prompt_sections.push(reference_lines.join("\n"));
+    }
+
+    prompt_sections.push(scene_prompt.trim().to_string());
+
+    ImageGenerationRequest {
+        prompt: prompt_sections.join("\n\n"),
+        model: model.name.clone(),
+        provider_id: model.provider_id.clone(),
+        credential_id: provider_cred.id.clone(),
+        input_images: if input_images.is_empty() {
+            None
+        } else {
+            Some(input_images)
+        },
+        size: Some("1024x1024".to_string()),
+        quality: None,
+        style: None,
+        n: Some(1),
+    }
+}
+
+async fn generate_scene_image_with_retry(
+    app: &AppHandle,
+    request: ImageGenerationRequest,
+    max_attempts: usize,
+) -> Result<crate::image_generator::types::ImageGenerationResponse, String> {
+    let mut last_error: Option<String> = None;
+
+    for attempt in 1..=max_attempts.max(1) {
+        match crate::image_generator::commands::generate_image(app.clone(), request.clone()).await {
+            Ok(response) if !response.images.is_empty() => return Ok(response),
+            Ok(_) => {
+                let error = "No images found in response".to_string();
+                if attempt >= max_attempts {
+                    return Err(error);
+                }
+                last_error = Some(error);
+            }
+            Err(error) => {
+                if !error.to_ascii_lowercase().contains("no image") || attempt >= max_attempts {
+                    return Err(error);
+                }
+                last_error = Some(error);
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| "No images found in response".to_string()))
+}
+
 #[tauri::command]
 pub async fn chat_add_message_attachment(
     app: AppHandle,
@@ -6756,6 +6947,142 @@ pub async fn chat_add_message_attachment(
     let payload = serde_json::to_string(&vec![updated_message.clone()])
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
     messages_upsert_batch(app.clone(), session_id, payload)?;
+
+    Ok(updated_message)
+}
+
+#[tauri::command]
+pub async fn chat_generate_scene_image(
+    app: AppHandle,
+    args: ChatGenerateSceneImageArgs,
+) -> Result<StoredMessage, String> {
+    let ChatGenerateSceneImageArgs {
+        session_id,
+        message_id,
+        attachment_id,
+        scene_prompt,
+    } = args;
+
+    if scene_prompt.trim().is_empty() {
+        return Err("scenePrompt cannot be empty".to_string());
+    }
+
+    let mut session = super::storage::load_session(&app, &session_id)?
+        .ok_or_else(|| "Session not found".to_string())?;
+
+    let target_index = session
+        .messages
+        .iter()
+        .position(|message| message.id == message_id)
+        .ok_or_else(|| "Message not found in loaded session window".to_string())?;
+
+    let settings = super::storage::load_settings(&app)?;
+    let (model, provider_cred) = resolve_image_generation_target(
+        &settings,
+        settings
+            .advanced_settings
+            .as_ref()
+            .and_then(|advanced| advanced.scene_generation_model_id.as_deref()),
+    )?;
+
+    let characters = super::storage::load_characters(&app)?;
+    let character = characters
+        .iter()
+        .find(|value| value.id == session.character_id)
+        .ok_or_else(|| "Session character not found".to_string())?;
+
+    let personas = super::storage::load_personas(&app)?;
+    let persona = if session.persona_disabled {
+        None
+    } else {
+        session
+            .persona_id
+            .as_deref()
+            .and_then(|persona_id| personas.iter().find(|value| value.id == persona_id))
+    };
+
+    let (input_images, has_character_reference, has_persona_reference) =
+        build_scene_reference_images(&app, character, persona);
+    let request = build_scene_generation_request(
+        &scene_prompt,
+        model,
+        provider_cred,
+        character,
+        persona,
+        input_images,
+        has_character_reference,
+        has_persona_reference,
+    );
+    let response = generate_scene_image_with_retry(&app, request, 3).await?;
+    let generated = response
+        .images
+        .into_iter()
+        .next()
+        .ok_or_else(|| "No images found in response".to_string())?;
+    let generated_data = storage_read_image_data(&app, &generated.asset_id)?;
+
+    let persisted_attachments = persist_attachments(
+        &app,
+        &session.character_id,
+        &session.id,
+        &message_id,
+        "assistant",
+        vec![ImageAttachment {
+            id: attachment_id.clone(),
+            data: generated_data,
+            mime_type: generated.mime_type,
+            filename: Some(scene_prompt),
+            width: generated.width,
+            height: generated.height,
+            storage_path: None,
+        }],
+    )?;
+
+    let persisted_attachment = persisted_attachments
+        .into_iter()
+        .next()
+        .ok_or_else(|| "Failed to persist generated scene attachment".to_string())?;
+    let cleanup_attachment = persisted_attachment.clone();
+
+    let updated_message = {
+        let target = &mut session.messages[target_index];
+        if let Some(existing) = target
+            .attachments
+            .iter_mut()
+            .find(|attachment| attachment.id == attachment_id)
+        {
+            *existing = persisted_attachment;
+        } else {
+            target.attachments.push(persisted_attachment);
+        }
+        target.clone()
+    };
+
+    session.updated_at = now_millis()?;
+
+    let mut meta = session.clone();
+    meta.messages = Vec::new();
+    let meta_json = serde_json::to_string(&meta)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    if let Err(err) = session_upsert_meta(app.clone(), meta_json) {
+        cleanup_attachments(
+            &app,
+            std::slice::from_ref(&cleanup_attachment),
+            "chat_generate_scene_image",
+        );
+        return Err(err);
+    }
+
+    let payload = serde_json::to_string(&vec![updated_message.clone()])
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    if let Err(err) = messages_upsert_batch(app.clone(), session_id, payload) {
+        cleanup_attachments(
+            &app,
+            std::slice::from_ref(&cleanup_attachment),
+            "chat_generate_scene_image",
+        );
+        return Err(err);
+    }
 
     Ok(updated_message)
 }

@@ -69,6 +69,7 @@ import { Image, RefreshCw, Sparkles, Check, PenLine, Lock } from "lucide-react";
 import { radius, cn } from "../../design-tokens";
 import { useI18n } from "../../../core/i18n/context";
 import { PersonaSelector } from "../group-chats/components/settings";
+import { sanitizeAssistantSceneDirective } from "./hooks/sceneImageProtocol";
 
 const LONG_PRESS_DELAY = 450;
 const SCROLL_THRESHOLD = 10; // pixels of movement to cancel long press
@@ -159,6 +160,26 @@ export function ChatConversationPage() {
   const handleImageClick = useCallback((src: string, alt: string) => {
     setSelectedImage({ src, alt });
   }, []);
+
+  const selectedImagePrompt = useMemo(() => {
+    const value = selectedImage?.alt?.trim();
+    if (!value) return null;
+    if (value === t("chats.message.attachedImage")) return null;
+    return value;
+  }, [selectedImage, t]);
+
+  useEffect(() => {
+    if (!selectedImage) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedImage(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedImage]);
 
   useEffect(() => {
     if (showCharacterSelector || showGroupCharacterSelector) {
@@ -1649,7 +1670,8 @@ export function ChatConversationPage() {
                 ? (character?.name ?? "")
                 : (chatController.persona?.title ?? "");
               const parsed = splitThinkTags(sourceContent);
-              const displayContent = replacePlaceholders(parsed.content, charName, personaName);
+              const sanitizedContent = sanitizeAssistantSceneDirective(parsed.content).cleanContent;
+              const displayContent = replacePlaceholders(sanitizedContent, charName, personaName);
               const combinedReasoning = [message.reasoning ?? "", parsed.reasoning]
                 .filter(Boolean)
                 .join("\n");
@@ -2052,16 +2074,44 @@ export function ChatConversationPage() {
             >
               <X size={24} />
             </motion.button>
-            <motion.img
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
-              src={selectedImage.src}
-              alt={selectedImage.alt}
-              className="max-h-[90vh] max-w-[90vw] object-contain"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.22 }}
+              className="relative z-10 flex max-h-[92vh] w-full max-w-[min(94vw,1380px)] flex-col items-center gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:items-stretch lg:gap-6"
               onClick={(e) => e.stopPropagation()}
-            />
+            >
+              {selectedImagePrompt && (
+                <motion.div
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.18, delay: 0.04 }}
+                  className="w-full max-w-3xl rounded-[32px] border border-white/12 bg-white/[0.045] p-3 backdrop-blur-xl lg:order-none lg:flex lg:h-full lg:max-w-none lg:flex-col lg:rounded-[38px] lg:border-white/10 lg:bg-white/[0.03] lg:p-4"
+                >
+                  <div className="rounded-[18px] border border-white/10 bg-black/35 px-4 py-3 lg:flex lg:h-full lg:flex-col lg:rounded-[24px] lg:border-white/8 lg:bg-black/30 lg:px-5 lg:py-5">
+                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45 lg:mb-4 lg:text-[10px] lg:tracking-[0.28em]">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300/80" />
+                      Image Prompt
+                    </div>
+                    <p className="max-h-[18vh] overflow-y-auto pr-1 text-sm leading-relaxed text-white/82 lg:max-h-none lg:flex-1 lg:pr-2 lg:text-[15px] lg:leading-7">
+                      {selectedImagePrompt}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              <motion.img
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                src={selectedImage.src}
+                alt={selectedImage.alt}
+                className="max-h-[78vh] max-w-full rounded-[28px] object-contain shadow-[0_30px_80px_rgba(0,0,0,0.45)] lg:justify-self-center lg:max-h-[90vh] lg:max-w-[min(100%,920px)]"
+              />
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -584,6 +584,8 @@ pub struct Persona {
     pub description: String,
     pub nickname: Option<String>,
     #[serde(default)]
+    pub avatar_path: Option<String>,
+    #[serde(default)]
     pub is_default: bool,
     pub created_at: u64,
     pub updated_at: u64,
@@ -701,6 +703,19 @@ pub struct ChatAddMessageAttachmentArgs {
     pub width: Option<u32>,
     #[serde(default)]
     pub height: Option<u32>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatGenerateSceneImageArgs {
+    #[serde(alias = "sessionId")]
+    pub session_id: String,
+    #[serde(alias = "messageId")]
+    pub message_id: String,
+    #[serde(alias = "attachmentId")]
+    pub attachment_id: String,
+    #[serde(alias = "scenePrompt")]
+    pub scene_prompt: String,
 }
 
 #[derive(Serialize)]
