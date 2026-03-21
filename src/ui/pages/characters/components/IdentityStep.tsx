@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Camera, Image, Upload, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { X, Camera, Image, Upload, Sparkles, Loader2, AlertCircle, FolderOpen } from "lucide-react";
 import { typography, radius, spacing, interactive, shadows, cn } from "../../../design-tokens";
 import { AvatarPicker } from "../../../components/AvatarPicker";
-import { DesignReferenceEditor } from "../../../components/DesignReferenceEditor";
 import type { AvatarCrop } from "../../../../core/storage/schemas";
 import { useI18n } from "../../../../core/i18n/context";
 
@@ -15,13 +14,10 @@ interface IdentityStepProps {
   onAvatarCropChange?: (value: AvatarCrop | null) => void;
   avatarRoundPath?: string | null;
   onAvatarRoundChange?: (value: string | null) => void;
-  designDescription: string;
-  onDesignDescriptionChange: (value: string) => void;
-  designReferenceImageIds: string[];
-  onDesignReferenceImageIdsChange: (value: string[]) => void;
   backgroundImagePath: string;
   onBackgroundImageChange: (value: string) => void;
   onBackgroundImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onChooseBackgroundFromLibrary: () => void;
   disableAvatarGradient: boolean;
   onDisableAvatarGradientChange: (value: boolean) => void;
   onContinue: () => void;
@@ -40,13 +36,10 @@ export function IdentityStep({
   onAvatarCropChange,
   avatarRoundPath,
   onAvatarRoundChange,
-  designDescription,
-  onDesignDescriptionChange,
-  designReferenceImageIds,
-  onDesignReferenceImageIdsChange,
   backgroundImagePath,
   onBackgroundImageChange,
   onBackgroundImageUpload,
+  onChooseBackgroundFromLibrary,
   disableAvatarGradient,
   onDisableAvatarGradientChange,
   onContinue,
@@ -226,16 +219,6 @@ export function IdentityStep({
             )}
           </AnimatePresence>
 
-          {/* Background Image (Optional) */}
-          <DesignReferenceEditor
-            designDescription={designDescription}
-            onDesignDescriptionChange={onDesignDescriptionChange}
-            referenceImages={designReferenceImageIds}
-            onReferenceImagesChange={onDesignReferenceImageIdsChange}
-            title="Design references"
-            description="Add a few stable visual references plus one design note for face, build, outfit cues, and style."
-          />
-
           <div className={spacing.field}>
             <label
               className={cn(
@@ -287,13 +270,7 @@ export function IdentityStep({
                   </button>
                 </div>
               ) : (
-                <label
-                  className={cn(
-                    "flex h-24 cursor-pointer flex-col items-center justify-center gap-2",
-                    interactive.transition.default,
-                    "active:bg-fg/5",
-                  )}
-                >
+                <div className={cn("flex h-24 flex-col items-center justify-center gap-2")}>
                   <div
                     className={cn(
                       "flex h-8 w-8 items-center justify-center border border-fg/10 bg-fg/5",
@@ -304,16 +281,44 @@ export function IdentityStep({
                   </div>
                   <div className="text-center">
                     <p className={cn(typography.bodySmall.size, "text-fg/70")}>Add Background</p>
-                    <p className={cn(typography.caption.size, "text-fg/40")}>Tap to select image</p>
+                    <p className={cn(typography.caption.size, "text-fg/40")}>
+                      Upload one or pick from library
+                    </p>
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={onBackgroundImageUpload}
-                    className="hidden"
-                  />
-                </label>
+                </div>
               )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center justify-center gap-2 border bg-surface-el/20 px-3 py-3 text-sm text-fg/75 backdrop-blur-xl",
+                  radius.md,
+                  interactive.transition.default,
+                  "border-fg/10 hover:bg-surface-el/30",
+                )}
+              >
+                <Upload size={14} />
+                Upload image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onBackgroundImageUpload}
+                  className="hidden"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={onChooseBackgroundFromLibrary}
+                className={cn(
+                  "flex items-center justify-center gap-2 border bg-surface-el/20 px-3 py-3 text-sm text-fg/75 backdrop-blur-xl",
+                  radius.md,
+                  interactive.transition.default,
+                  "border-fg/10 hover:bg-surface-el/30",
+                )}
+              >
+                <FolderOpen size={14} />
+                Choose from library
+              </button>
             </div>
             <p className={cn(typography.bodySmall.size, "text-fg/40")}>
               Optional background image for chat conversations

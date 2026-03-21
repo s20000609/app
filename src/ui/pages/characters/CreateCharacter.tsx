@@ -19,12 +19,51 @@ import {
   type CachedVoice,
   type UserVoice,
 } from "../../../core/storage/audioProviders";
+import { convertFilePathToDataUrl } from "../../../core/storage/images";
+import {
+  buildBackgroundLibrarySelectionKey,
+  type BackgroundLibrarySelectionPayload,
+} from "../../components/AvatarPicker/librarySelection";
+
+const CREATE_CHARACTER_DRAFT_KEY = "create-character-draft";
+
+function loadCreateCharacterDraft(locationState: unknown) {
+  if (
+    locationState &&
+    typeof locationState === "object" &&
+    "draftCharacter" in locationState &&
+    (locationState as { draftCharacter?: unknown }).draftCharacter
+  ) {
+    return (locationState as { draftCharacter: unknown }).draftCharacter;
+  }
+
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const raw = sessionStorage.getItem(CREATE_CHARACTER_DRAFT_KEY);
+  if (!raw) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error("Failed to parse create character draft:", error);
+    sessionStorage.removeItem(CREATE_CHARACTER_DRAFT_KEY);
+    return undefined;
+  }
+}
 
 export function CreateCharacterPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
-  const { state, actions, computed } = useCharacterForm(location.state?.draftCharacter);
+  const initialDraft = React.useMemo(
+    () => loadCreateCharacterDraft(location.state),
+    [location.state],
+  );
+  const { state, actions, computed } = useCharacterForm(initialDraft);
 
   const [audioProviders, setAudioProviders] = React.useState<AudioProvider[]>([]);
   const [userVoices, setUserVoices] = React.useState<UserVoice[]>([]);
@@ -32,6 +71,7 @@ export function CreateCharacterPage() {
   const [loadingVoices, setLoadingVoices] = React.useState(false);
   const [voiceError, setVoiceError] = React.useState<string | null>(null);
   const [hasLoadedVoices, setHasLoadedVoices] = React.useState(false);
+  const returnPath = `${location.pathname}${location.search}`;
 
   const loadVoices = React.useCallback(async () => {
     setLoadingVoices(true);
@@ -76,6 +116,115 @@ export function CreateCharacterPage() {
     void loadVoices();
   }, [state.step, hasLoadedVoices, loadVoices]);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const draft = {
+      step: state.step,
+      name: state.name,
+      avatarPath: state.avatarPath,
+      avatarCrop: state.avatarCrop,
+      avatarRoundPath: state.avatarRoundPath,
+      backgroundImagePath: state.backgroundImagePath,
+      definition: state.definition,
+      description: state.description,
+      nickname: state.nickname,
+      creator: state.creator,
+      creatorNotes: state.creatorNotes,
+      creatorNotesMultilingual: state.creatorNotesMultilingualText.trim()
+        ? (() => {
+            try {
+              return JSON.parse(state.creatorNotesMultilingualText);
+            } catch {
+              return undefined;
+            }
+          })()
+        : undefined,
+      tags: state.tagsText
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      characterBook: state.importedCharacterBook,
+      defaultModelId: state.selectedModelId,
+      fallbackModelId: state.selectedFallbackModelId,
+      promptTemplateId: state.systemPromptTemplateId,
+      memoryType: state.memoryType,
+      disableAvatarGradient: state.disableAvatarGradient,
+      voiceConfig: state.voiceConfig,
+      voiceAutoplay: state.voiceAutoplay,
+      scenes: state.scenes,
+      defaultSceneId: state.defaultSceneId,
+    };
+
+    sessionStorage.setItem(CREATE_CHARACTER_DRAFT_KEY, JSON.stringify(draft));
+  }, [
+    state.step,
+    state.name,
+    state.avatarPath,
+    state.avatarCrop,
+    state.avatarRoundPath,
+    state.backgroundImagePath,
+    state.definition,
+    state.description,
+    state.nickname,
+    state.creator,
+    state.creatorNotes,
+    state.creatorNotesMultilingualText,
+    state.tagsText,
+    state.importedCharacterBook,
+    state.selectedModelId,
+    state.selectedFallbackModelId,
+    state.systemPromptTemplateId,
+    state.memoryType,
+    state.disableAvatarGradient,
+    state.voiceConfig,
+    state.voiceAutoplay,
+    state.scenes,
+    state.defaultSceneId,
+  ]);
+
+  React.useEffect(() => {
+    if (state.loadingModels || state.loadingTemplates) return;
+
+    const storageKey = buildBackgroundLibrarySelectionKey(returnPath);
+    const rawSelection = sessionStorage.getItem(storageKey);
+    if (!rawSelection) return;
+
+    sessionStorage.removeItem(storageKey);
+
+    let parsed: BackgroundLibrarySelectionPayload | null = null;
+    try {
+      parsed = JSON.parse(rawSelection) as BackgroundLibrarySelectionPayload;
+    } catch (error) {
+      console.error("Failed to parse background library selection:", error);
+      return;
+    }
+
+    if (!parsed?.filePath) return;
+
+    let cancelled = false;
+    void (async () => {
+      const dataUrl = await convertFilePathToDataUrl(parsed.filePath);
+      if (!dataUrl || cancelled) return;
+      actions.setBackgroundImagePath(dataUrl);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [actions, returnPath, state.loadingModels, state.loadingTemplates]);
+
+  const handleChooseBackgroundFromLibrary = React.useCallback(() => {
+    navigate("/library/images/pick", {
+      state: {
+        returnPath,
+        selectionKind: "background",
+      },
+    });
+  }, [navigate, returnPath]);
+
   const handleBack = () => {
     if (state.step === Step.Extras) {
       actions.setStep(Step.StartingScene);
@@ -91,6 +240,7 @@ export function CreateCharacterPage() {
   const handleSave = async () => {
     const success = await actions.handleSave();
     if (success) {
+      sessionStorage.removeItem(CREATE_CHARACTER_DRAFT_KEY);
       navigate("/chat");
     }
   };
@@ -122,13 +272,10 @@ export function CreateCharacterPage() {
               onAvatarCropChange={actions.setAvatarCrop}
               avatarRoundPath={state.avatarRoundPath}
               onAvatarRoundChange={actions.setAvatarRoundPath}
-              designDescription={state.designDescription}
-              onDesignDescriptionChange={actions.setDesignDescription}
-              designReferenceImageIds={state.designReferenceImageIds}
-              onDesignReferenceImageIdsChange={actions.setDesignReferenceImageIds}
               backgroundImagePath={state.backgroundImagePath}
               onBackgroundImageChange={actions.setBackgroundImagePath}
               onBackgroundImageUpload={actions.handleBackgroundImageUpload}
+              onChooseBackgroundFromLibrary={handleChooseBackgroundFromLibrary}
               disableAvatarGradient={state.disableAvatarGradient}
               onDisableAvatarGradientChange={actions.setDisableAvatarGradient}
               onContinue={() => actions.setStep(Step.Description)}

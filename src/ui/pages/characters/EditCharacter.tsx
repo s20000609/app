@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Loader2,
   Plus,
@@ -23,18 +23,24 @@ import {
   AlertTriangle,
   MessageSquare,
   ChevronRight,
+  FolderOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEditCharacterForm } from "./hooks/useEditCharacterForm";
 import { AvatarPicker } from "../../components/AvatarPicker";
 import { DesignReferenceEditor } from "../../components/DesignReferenceEditor";
-import { BottomMenu, MenuSection } from "../../components/BottomMenu";
+import { BottomMenu, MenuButton, MenuButtonGroup, MenuSection } from "../../components/BottomMenu";
 import { BackgroundPositionModal } from "../../components/BackgroundPositionModal";
 import { CharacterExportMenu } from "../../components/CharacterExportMenu";
 import { cn, radius, colors, interactive, spacing, typography } from "../../design-tokens";
 import { getProviderIcon } from "../../../core/utils/providerIcons";
 import { useI18n } from "../../../core/i18n/context";
 import type { CharacterFileFormat } from "../../../core/storage/characterTransfer";
+import { convertFilePathToDataUrl } from "../../../core/storage/images";
+import {
+  buildBackgroundLibrarySelectionKey,
+  type BackgroundLibrarySelectionPayload,
+} from "../../components/AvatarPicker/librarySelection";
 import {
   listAudioProviders,
   listUserVoices,
@@ -55,6 +61,7 @@ export function EditCharacterPage() {
   const { t } = useI18n();
   const { characterId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { state, actions, computed } = useEditCharacterForm(characterId);
   const [expandedSceneId, setExpandedSceneId] = React.useState<string | null>(null);
   const [newSceneEditorOpen, setNewSceneEditorOpen] = React.useState(false);
@@ -77,6 +84,7 @@ export function EditCharacterPage() {
   const tabPanelId = `${tabsId}-panel`;
   const characterTabId = `${tabsId}-tab-character`;
   const settingsTabId = `${tabsId}-tab-settings`;
+  const returnPath = `${location.pathname}${location.search}`;
 
   const {
     loading,
@@ -197,6 +205,46 @@ export function EditCharacterPage() {
     window.addEventListener("unsaved:discard", handleDiscard);
     return () => window.removeEventListener("unsaved:discard", handleDiscard);
   }, [resetToInitial]);
+
+  React.useEffect(() => {
+    if (loading) return;
+
+    const storageKey = buildBackgroundLibrarySelectionKey(returnPath);
+    const rawSelection = sessionStorage.getItem(storageKey);
+    if (!rawSelection) return;
+
+    sessionStorage.removeItem(storageKey);
+
+    let parsed: BackgroundLibrarySelectionPayload | null = null;
+    try {
+      parsed = JSON.parse(rawSelection) as BackgroundLibrarySelectionPayload;
+    } catch (error) {
+      console.error("Failed to parse background library selection:", error);
+      return;
+    }
+
+    if (!parsed?.filePath) return;
+
+    let cancelled = false;
+    void (async () => {
+      const dataUrl = await convertFilePathToDataUrl(parsed.filePath);
+      if (!dataUrl || cancelled) return;
+      setFields({ backgroundImagePath: dataUrl });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, returnPath, setFields]);
+
+  const handleChooseBackgroundFromLibrary = React.useCallback(() => {
+    navigate("/library/images/pick", {
+      state: {
+        returnPath,
+        selectionKind: "background",
+      },
+    });
+  }, [navigate, returnPath]);
 
   const loadVoices = React.useCallback(async () => {
     setLoadingVoices(true);
@@ -320,33 +368,47 @@ export function EditCharacterPage() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 transition hover:bg-fg/5">
+                    <div className="flex h-32 flex-col items-center justify-center gap-2">
                       <div className="rounded-lg border border-fg/10 bg-fg/5 p-2">
                         <Image size={20} className="text-fg/40" />
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-fg/70">Add Background Image</p>
-                        <p className="text-xs text-fg/40">Tap to select an image</p>
+                        <p className="text-xs text-fg/40">Upload one or pick from library</p>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            const dataUrl = reader.result as string;
-                            setPendingBackgroundSrc(dataUrl);
-                            setShowBackgroundChoiceMenu(true);
-                          };
-                          reader.readAsDataURL(file);
-                          e.target.value = "";
-                        }}
-                        className="hidden"
-                      />
-                    </label>
+                    </div>
                   )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-fg/10 bg-surface-el/20 px-3 py-3 text-sm text-fg/75 transition hover:bg-surface-el/30">
+                    <Upload size={14} />
+                    Upload image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const dataUrl = reader.result as string;
+                          setPendingBackgroundSrc(dataUrl);
+                          setShowBackgroundChoiceMenu(true);
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = "";
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleChooseBackgroundFromLibrary}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-fg/10 bg-surface-el/20 px-3 py-3 text-sm text-fg/75 transition hover:bg-surface-el/30"
+                  >
+                    <FolderOpen size={14} />
+                    Choose from library
+                  </button>
                 </div>
                 <p className="text-xs text-fg/50">
                   Optional background image for chat conversations with this character
@@ -1600,50 +1662,39 @@ export function EditCharacterPage() {
         }}
         title=""
       >
-        <div className="space-y-4 p-2">
+        <div className="space-y-4 px-1 pb-2">
           <div className="text-center">
             <h3 className="text-lg font-semibold text-fg">Background Image</h3>
             <p className="text-sm text-fg/50">Choose how to add your image</p>
           </div>
 
-          <div className="space-y-2">
-            {/* Quick Upload Option */}
-            <button
-              onClick={() => {
-                if (pendingBackgroundSrc) {
-                  setFields({ backgroundImagePath: pendingBackgroundSrc });
-                }
-                setShowBackgroundChoiceMenu(false);
-                setPendingBackgroundSrc(null);
-              }}
-              className="flex w-full items-center gap-4 rounded-xl border border-fg/10 bg-fg/5 p-2 transition hover:bg-fg/10 active:scale-[0.98]"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-accent/30 bg-accent/15 text-accent/80">
-                <Upload size={20} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium text-fg">Quick Upload</p>
-                <p className="text-xs text-fg/50">Use full image without cropping</p>
-              </div>
-            </button>
-
-            {/* Position & Crop Option */}
-            <button
-              onClick={() => {
-                setShowBackgroundChoiceMenu(false);
-                setShowBackgroundPositionModal(true);
-              }}
-              className="flex w-full items-center gap-4 rounded-xl border border-fg/10 bg-fg/5 p-4 transition hover:bg-fg/10 active:scale-[0.98]"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-info/30 bg-info/15 text-info">
-                <Crop size={20} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium text-fg">Position & Crop</p>
-                <p className="text-xs text-fg/50">Adjust to fit portrait view</p>
-              </div>
-            </button>
-          </div>
+          <MenuSection>
+            <MenuButtonGroup className="space-y-2">
+              <MenuButton
+                icon={Upload}
+                title="Quick Upload"
+                description="Use full image without cropping"
+                color="from-emerald-500 to-emerald-600"
+                onClick={() => {
+                  if (pendingBackgroundSrc) {
+                    setFields({ backgroundImagePath: pendingBackgroundSrc });
+                  }
+                  setShowBackgroundChoiceMenu(false);
+                  setPendingBackgroundSrc(null);
+                }}
+              />
+              <MenuButton
+                icon={Crop}
+                title="Position & Crop"
+                description="Adjust to fit portrait view"
+                color="from-blue-500 to-blue-600"
+                onClick={() => {
+                  setShowBackgroundChoiceMenu(false);
+                  setShowBackgroundPositionModal(true);
+                }}
+              />
+            </MenuButtonGroup>
+          </MenuSection>
         </div>
       </BottomMenu>
 

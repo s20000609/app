@@ -17,7 +17,9 @@ import { toast } from "../../components/toast";
 import { isRenderableImageUrl } from "../../../core/utils/image";
 import {
   buildAvatarLibrarySelectionKey,
+  buildBackgroundLibrarySelectionKey,
   type AvatarLibrarySelectionPayload,
+  type BackgroundLibrarySelectionPayload,
 } from "../../components/AvatarPicker/librarySelection";
 
 type FilterOption = "All" | "Backgrounds" | "Avatars" | "Attachments" | "Other";
@@ -667,10 +669,28 @@ export function AvatarLibraryPickerPage() {
         return;
       }
 
-      const payload: AvatarLibrarySelectionPayload = {
-        filePath: item.filePath,
-      };
-      sessionStorage.setItem(buildAvatarLibrarySelectionKey(returnPath), JSON.stringify(payload));
+      const selectionKind =
+        typeof location.state === "object" &&
+        location.state &&
+        "selectionKind" in location.state &&
+        typeof (location.state as { selectionKind?: unknown }).selectionKind === "string"
+          ? (location.state as { selectionKind: string }).selectionKind
+          : "avatar";
+
+      if (selectionKind === "background") {
+        const payload: BackgroundLibrarySelectionPayload = {
+          filePath: item.filePath,
+        };
+        sessionStorage.setItem(
+          buildBackgroundLibrarySelectionKey(returnPath),
+          JSON.stringify(payload),
+        );
+      } else {
+        const payload: AvatarLibrarySelectionPayload = {
+          filePath: item.filePath,
+        };
+        sessionStorage.setItem(buildAvatarLibrarySelectionKey(returnPath), JSON.stringify(payload));
+      }
       navigate(-1);
     },
     [location.state, navigate],

@@ -260,6 +260,15 @@ export function useCharacterForm(draftCharacter?: any) {
         // Use draft character if provided, otherwise defaults
         if (draftCharacter) {
           console.log("[useCharacterForm] Received draftCharacter:", draftCharacter);
+          dispatch({
+            type: "SET_STEP",
+            payload:
+              typeof draftCharacter.step === "number" &&
+              draftCharacter.step >= Step.Identity &&
+              draftCharacter.step <= Step.Extras
+                ? draftCharacter.step
+                : Step.Identity,
+          });
           dispatch({ type: "SET_NAME", payload: draftCharacter.name || "" });
           dispatch({
             type: "SET_DEFINITION",
