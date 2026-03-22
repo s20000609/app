@@ -33,7 +33,7 @@ use super::request::{
     extract_usage, new_assistant_variant, push_assistant_variant,
 };
 use super::service::{
-    record_failed_usage, record_usage_if_available, resolve_api_key, ChatContext,
+    record_failed_usage, record_usage_if_available, resolve_api_key, ChatContext, ChatService,
 };
 use crate::usage::tracking::UsageOperationType;
 
@@ -168,7 +168,7 @@ fn resolve_persona_id<'a>(session: &'a Session, explicit: Option<&'a str>) -> Op
 ///
 /// If either condition is false, the system falls back to manual memory mode
 /// (using session.memories) without modifying the character's memory_type setting.
-fn is_dynamic_memory_active(
+pub(crate) fn is_dynamic_memory_active(
     settings: &Settings,
     session_character: &super::types::Character,
 ) -> bool {
@@ -192,7 +192,7 @@ fn has_image_generation_model(settings: &Settings) -> bool {
     })
 }
 
-fn append_image_directive_instructions(
+pub(crate) fn append_image_directive_instructions(
     system_prompt_entries: Vec<SystemPromptEntry>,
     _settings: &Settings,
 ) -> Vec<SystemPromptEntry> {
@@ -208,7 +208,7 @@ fn prompt_entry_to_message(system_role: &str, entry: &SystemPromptEntry) -> Valu
     json!({ "role": role, "content": entry.content })
 }
 
-fn partition_prompt_entries(
+pub(crate) fn partition_prompt_entries(
     entries: Vec<SystemPromptEntry>,
 ) -> (Vec<SystemPromptEntry>, Vec<SystemPromptEntry>) {
     let mut relative = Vec::new();
@@ -239,7 +239,7 @@ fn should_insert_in_chat_prompt_entry(entry: &SystemPromptEntry, turn_count: usi
     }
 }
 
-fn insert_in_chat_prompt_entries(
+pub(crate) fn insert_in_chat_prompt_entries(
     messages: &mut Vec<Value>,
     system_role: &str,
     entries: &[SystemPromptEntry],
@@ -273,7 +273,7 @@ fn insert_in_chat_prompt_entries(
     }
 }
 
-fn manual_window_size(settings: &Settings) -> usize {
+pub(crate) fn manual_window_size(settings: &Settings) -> usize {
     settings
         .advanced_settings
         .as_ref()
@@ -297,7 +297,7 @@ fn conversation_window(messages: &[StoredMessage], limit: usize) -> Vec<StoredMe
 /// Extract pinned and unpinned conversation messages separately.
 /// Pinned messages are always included but don't count against the window limit.
 /// Returns (pinned_messages, recent_unpinned_messages_within_limit)
-fn conversation_window_with_pinned(
+pub(crate) fn conversation_window_with_pinned(
     messages: &[StoredMessage],
     limit: usize,
 ) -> (Vec<StoredMessage>, Vec<StoredMessage>) {
@@ -490,7 +490,7 @@ fn fetch_conversation_messages_range(
 /// - [assistant, assistant] -> prev.content + last.content (chat continue)
 /// - [user, user] -> prev.content + last.content (cancelled retry)
 /// Falls back to just the latest message if only 1 exists.
-fn build_enriched_query(messages: &[StoredMessage]) -> String {
+pub(crate) fn build_enriched_query(messages: &[StoredMessage]) -> String {
     let convo: Vec<&StoredMessage> = messages
         .iter()
         .filter(|m| m.role == "user" || m.role == "assistant")
@@ -1356,21 +1356,21 @@ fn resolve_reasoning_budget(
 }
 
 #[derive(Clone, Debug)]
-struct RequestSettings {
-    temperature: f64,
-    top_p: f64,
-    max_tokens: u32,
-    context_length: Option<u32>,
-    frequency_penalty: Option<f64>,
-    presence_penalty: Option<f64>,
-    top_k: Option<u32>,
-    reasoning_enabled: bool,
-    reasoning_effort: Option<String>,
-    reasoning_budget: Option<u32>,
+pub(crate) struct RequestSettings {
+    pub(crate) temperature: f64,
+    pub(crate) top_p: f64,
+    pub(crate) max_tokens: u32,
+    pub(crate) context_length: Option<u32>,
+    pub(crate) frequency_penalty: Option<f64>,
+    pub(crate) presence_penalty: Option<f64>,
+    pub(crate) top_k: Option<u32>,
+    pub(crate) reasoning_enabled: bool,
+    pub(crate) reasoning_effort: Option<String>,
+    pub(crate) reasoning_budget: Option<u32>,
 }
 
 impl RequestSettings {
-    fn resolve(session: &Session, model: &Model, settings: &Settings) -> Self {
+    pub(crate) fn resolve(session: &Session, model: &Model, settings: &Settings) -> Self {
         let reasoning_effort = resolve_reasoning_effort(session, model, settings);
         Self {
             temperature: resolve_temperature(session, model, settings),
@@ -1415,7 +1415,7 @@ impl RequestSettings {
     }
 }
 
-fn build_provider_extra_fields(
+pub(crate) fn build_provider_extra_fields(
     provider_id: &str,
     session: &Session,
     model: &Model,
@@ -1431,7 +1431,7 @@ fn build_provider_extra_fields(
     }
 }
 
-async fn select_relevant_memories(
+pub(crate) async fn select_relevant_memories(
     app: &AppHandle,
     session: &Session,
     query: &str,
@@ -1584,7 +1584,7 @@ async fn select_relevant_memories(
 use super::types::ImageAttachment;
 use crate::storage_manager::media::storage_save_session_attachment;
 
-fn persist_attachments(
+pub(crate) fn persist_attachments(
     app: &AppHandle,
     character_id: &str,
     session_id: &str,
@@ -1630,7 +1630,7 @@ fn persist_attachments(
 
 use crate::storage_manager::media::storage_load_session_attachment;
 
-fn load_attachment_data(app: &AppHandle, message: &StoredMessage) -> StoredMessage {
+pub(crate) fn load_attachment_data(app: &AppHandle, message: &StoredMessage) -> StoredMessage {
     let mut loaded_message = message.clone();
 
     loaded_message.attachments = message
@@ -1664,7 +1664,7 @@ fn load_attachment_data(app: &AppHandle, message: &StoredMessage) -> StoredMessa
     loaded_message
 }
 
-fn cleanup_attachments(app: &AppHandle, attachments: &[ImageAttachment], scope: &str) {
+pub(crate) fn cleanup_attachments(app: &AppHandle, attachments: &[ImageAttachment], scope: &str) {
     for attachment in attachments {
         let Some(storage_path) = &attachment.storage_path else {
             continue;
@@ -1702,7 +1702,7 @@ fn cleanup_attachments(app: &AppHandle, attachments: &[ImageAttachment], scope: 
     }
 }
 
-fn take_aborted_request(app: &AppHandle, request_id: Option<&str>) -> bool {
+pub(crate) fn take_aborted_request(app: &AppHandle, request_id: Option<&str>) -> bool {
     let Some(request_id) = request_id else {
         return false;
     };
@@ -1710,7 +1710,7 @@ fn take_aborted_request(app: &AppHandle, request_id: Option<&str>) -> bool {
     let registry = app.state::<crate::abort_manager::AbortRegistry>();
     registry.take_aborted(request_id)
 }
-fn role_swap_enabled(flag: Option<bool>) -> bool {
+pub(crate) fn role_swap_enabled(flag: Option<bool>) -> bool {
     flag.unwrap_or(false)
 }
 
@@ -1722,7 +1722,10 @@ fn swap_role_for_api(role: &str) -> &str {
     }
 }
 
-fn maybe_swap_message_for_api(message: &StoredMessage, swap_places: bool) -> StoredMessage {
+pub(crate) fn maybe_swap_message_for_api(
+    message: &StoredMessage,
+    swap_places: bool,
+) -> StoredMessage {
     if !swap_places {
         return message.clone();
     }
@@ -1731,7 +1734,7 @@ fn maybe_swap_message_for_api(message: &StoredMessage, swap_places: bool) -> Sto
     swapped
 }
 
-fn swapped_prompt_entities(
+pub(crate) fn swapped_prompt_entities(
     character: &Character,
     persona: Option<&Persona>,
 ) -> (Character, Option<Persona>) {
@@ -1769,898 +1772,9 @@ pub async fn chat_completion(
     app: AppHandle,
     args: ChatCompletionArgs,
 ) -> Result<ChatTurnResult, String> {
-    let ChatCompletionArgs {
-        session_id,
-        character_id,
-        user_message,
-        persona_id,
-        swap_places,
-        stream,
-        request_id,
-        attachments,
-    } = args;
-    let swap_places = role_swap_enabled(swap_places);
-
-    log_info(
-        &app,
-        "chat_completion",
-        format!(
-            "start session={} character={} stream={:?} request_id={:?}",
-            &session_id, &character_id, stream, request_id
-        ),
-    );
-
-    let context = ChatContext::initialize(app.clone())?;
-    let settings = &context.settings;
-
-    emit_debug(
-        &app,
-        "loading_character",
-        json!({ "characterId": character_id.clone() }),
-    );
-
-    let character = match context.find_character(&character_id) {
-        Ok(found) => found,
-        Err(err) => {
-            log_error(
-                &app,
-                "chat_completion",
-                format!("character {} not found", &character_id),
-            );
-            return Err(err);
-        }
-    };
-
-    let mut session = match context.load_session(&session_id)? {
-        Some(s) => s,
-        None => {
-            log_error(
-                &app,
-                "chat_completion",
-                format!("session {} not found", &session_id),
-            );
-            return Err(crate::utils::err_msg(
-                module_path!(),
-                line!(),
-                "Session not found",
-            ));
-        }
-    };
-
-    let effective_persona_id = resolve_persona_id(&session, persona_id.as_deref());
-    let persona = context.choose_persona(effective_persona_id);
-
-    emit_debug(
-        &app,
-        "session_loaded",
-        json!({
-            "sessionId": session.id,
-            "messageCount": session.messages.len(),
-            "updatedAt": session.updated_at,
-        }),
-    );
-
-    if session.character_id != character.id {
-        session.character_id = character.id.clone();
-    }
-
-    let dynamic_memory_enabled = is_dynamic_memory_active(settings, &character);
-    let dynamic_window = dynamic_window_size(settings);
-    if dynamic_memory_enabled {
-        let _ = prompts::ensure_dynamic_memory_templates(&app);
-    }
-
-    let (model, provider_cred) = context.select_model(&character)?;
-
-    log_info(
-        &app,
-        "chat_completion",
-        format!(
-            "selected provider={} model={} credential={}",
-            provider_cred.provider_id.as_str(),
-            model.name.as_str(),
-            provider_cred.id.as_str()
-        ),
-    );
-
-    emit_debug(
-        &app,
-        "model_selected",
-        json!({
-            "providerId": provider_cred.provider_id,
-            "model": model.name,
-            "credentialId": provider_cred.id,
-        }),
-    );
-
-    let now = now_millis()?;
-
-    let user_msg_id = uuid::Uuid::new_v4().to_string();
-
-    let persisted_attachments = persist_attachments(
-        &app,
-        &character_id,
-        &session_id,
-        &user_msg_id,
-        "user",
-        attachments,
-    )?;
-
-    let user_msg = StoredMessage {
-        id: user_msg_id,
-        role: "user".into(),
-        content: user_message.clone(),
-        created_at: now,
-        usage: None,
-        variants: Vec::new(),
-        selected_variant_id: None,
-        memory_refs: Vec::new(),
-        used_lorebook_entries: Vec::new(),
-        is_pinned: false,
-        attachments: persisted_attachments,
-        reasoning: None,
-        model_id: None,
-        fallback_from_model_id: None,
-    };
-    session.messages.push(user_msg.clone());
-    session.updated_at = now;
-    save_session(&app, &session)?;
-
-    emit_debug(
-        &app,
-        "session_saved",
-        json!({
-            "stage": "after_user_message",
-            "sessionId": session.id,
-            "messageCount": session.messages.len(),
-            "updatedAt": session.updated_at,
-        }),
-    );
-    let prompt_entries = if swap_places {
-        let (prompt_character, prompt_persona) = swapped_prompt_entities(&character, persona);
-        append_image_directive_instructions(
-            context.build_system_prompt(
-                &prompt_character,
-                model,
-                prompt_persona.as_ref(),
-                &session,
-            ),
-            settings,
-        )
-    } else {
-        append_image_directive_instructions(
-            context.build_system_prompt(&character, model, persona, &session),
-            settings,
-        )
-    };
-    let used_lorebook_entries = super::prompt_engine::resolve_used_lorebook_entries(
-        &app,
-        &character.id,
-        &session,
-        &prompt_entries,
-    );
-    let (relative_entries, in_chat_entries) = partition_prompt_entries(prompt_entries);
-
-    // Determine message window: use conversation_window for dynamic memory (limited context),
-    // or recent_messages for manual memory (includes all recent non-scene messages)
-    // For dynamic memory with pinned messages: pinned messages are always included but don't count in the limit
-    let (pinned_msgs, recent_msgs) = if dynamic_memory_enabled {
-        let (pinned, unpinned) = conversation_window_with_pinned(&session.messages, dynamic_window);
-        (pinned, unpinned)
-    } else {
-        (
-            Vec::new(),
-            recent_messages(&session, manual_window_size(settings)),
-        )
-    };
-
-    // Retrieve top-k relevant memories for this turn.
-    // - Dynamic memory: use semantic search over memory embeddings
-    // - Manual memory: memories are injected via system prompt (see below)
-    let relevant_memories = if dynamic_memory_enabled && !session.memory_embeddings.is_empty() {
-        let fixed = ensure_pinned_hot(&mut session.memory_embeddings);
-        if fixed > 0 {
-            log_info(
-                &app,
-                "dynamic_memory",
-                format!("Restored {} pinned memories to hot", fixed),
-            );
-        }
-
-        // Build search query - use enriched query (last 2 msgs) if enabled, else just user message
-        let search_query = if context_enrichment_enabled(settings) {
-            build_enriched_query(&session.messages)
-        } else {
-            user_message.clone()
-        };
-
-        crate::utils::log_info(
-            &app,
-            "memory_retrieval",
-            format!(
-                "Search query ({} chars, enriched={})",
-                search_query.len(),
-                context_enrichment_enabled(settings)
-            ),
-        );
-
-        select_relevant_memories(
-            &app,
-            &session,
-            &search_query,
-            dynamic_retrieval_limit(settings),
-            dynamic_min_similarity(settings),
-            dynamic_retrieval_strategy(settings),
-        )
+    super::flows::completion::CompletionFlow::new(app)
+        .execute(args)
         .await
-    } else {
-        Vec::new()
-    };
-
-    // Update access tracking for retrieved memories
-    if !relevant_memories.is_empty() {
-        let memory_ids: Vec<String> = relevant_memories.iter().map(|m| m.id.clone()).collect();
-        // Promote any cold memories that were recalled via keyword search
-        let now = now_millis().unwrap_or_default();
-        let promoted = promote_cold_memories(&mut session.memory_embeddings, &memory_ids, now);
-        let accessed = mark_memories_accessed(&mut session.memory_embeddings, &memory_ids, now);
-        if promoted > 0 {
-            log_info(
-                &app,
-                "dynamic_memory",
-                format!("Promoted {} cold memories to hot", promoted),
-            );
-        }
-        if accessed > 0 {
-            log_info(
-                &app,
-                "dynamic_memory",
-                format!("Marked {} memories as accessed", accessed),
-            );
-        }
-    }
-
-    let system_role = super::request_builder::system_role_for(provider_cred);
-    let mut messages_for_api = Vec::new();
-    for entry in &relative_entries {
-        crate::chat_manager::messages::push_prompt_entry_message(
-            &mut messages_for_api,
-            &system_role,
-            entry,
-        );
-    }
-    if swap_places {
-        let persona_title = persona
-            .map(|p| p.title.clone())
-            .unwrap_or_else(|| "the user persona".to_string());
-        crate::chat_manager::messages::push_system_message(
-            &mut messages_for_api,
-            &system_role,
-            Some(format!(
-                "Swap places mode is active for this turn. The human is speaking as character '{}' and you must respond as persona '{}'. Keep the response in first person as '{}'.",
-                character.name, persona_title, persona_title
-            )),
-        );
-    }
-
-    // Inject memory context when available
-    // - Dynamic memory: inject semantically relevant memories as context
-    // - Manual memory: session.memories are already included in system prompt
-    //   (see build_system_prompt in prompt_engine.rs)
-    let memory_block = if dynamic_memory_enabled {
-        if relevant_memories.is_empty() {
-            None
-        } else {
-            Some(
-                relevant_memories
-                    .iter()
-                    .map(|m| format!("- {}", m.text))
-                    .collect::<Vec<_>>()
-                    .join("\n"),
-            )
-        }
-    } else if !session.memories.is_empty() {
-        Some(
-            session
-                .memories
-                .iter()
-                .map(|m| format!("- {}", m))
-                .collect::<Vec<_>>()
-                .join("\n"),
-        )
-    } else {
-        None
-    };
-    if let Some(block) = memory_block {
-        crate::chat_manager::messages::push_system_message(
-            &mut messages_for_api,
-            &system_role,
-            Some(format!("Relevant memories:\n{}", block)),
-        );
-    }
-
-    let char_name = if swap_places {
-        persona.map(|p| p.title.as_str()).unwrap_or("User")
-    } else {
-        character.name.as_str()
-    };
-    let persona_name = if swap_places {
-        character.name.as_str()
-    } else {
-        persona.map(|p| p.title.as_str()).unwrap_or("")
-    };
-    let allow_image_input = model
-        .input_scopes
-        .iter()
-        .any(|scope| scope.eq_ignore_ascii_case("image"));
-
-    let mut chat_messages = Vec::new();
-
-    // Include pinned messages first (if dynamic memory is enabled)
-    // Pinned messages are always included but don't count against the sliding window limit
-    for msg in &pinned_msgs {
-        let msg_with_data = load_attachment_data(&app, msg);
-        let msg_with_data = maybe_swap_message_for_api(&msg_with_data, swap_places);
-        crate::chat_manager::messages::push_user_or_assistant_message_with_context(
-            &mut chat_messages,
-            &msg_with_data,
-            char_name,
-            persona_name,
-            allow_image_input,
-        );
-    }
-
-    for msg in &recent_msgs {
-        let msg_with_data = load_attachment_data(&app, msg);
-        let msg_with_data = maybe_swap_message_for_api(&msg_with_data, swap_places);
-        crate::chat_manager::messages::push_user_or_assistant_message_with_context(
-            &mut chat_messages,
-            &msg_with_data,
-            char_name,
-            persona_name,
-            allow_image_input,
-        );
-    }
-
-    insert_in_chat_prompt_entries(&mut chat_messages, &system_role, &in_chat_entries);
-    messages_for_api.extend(chat_messages);
-
-    crate::chat_manager::messages::sanitize_placeholders_in_api_messages(
-        &mut messages_for_api,
-        char_name,
-        persona_name,
-    );
-
-    let should_stream = stream.unwrap_or(true);
-    let request_id = if should_stream {
-        request_id.or_else(|| Some(Uuid::new_v4().to_string()))
-    } else {
-        None
-    };
-
-    let explicit_fallback_candidate = character
-        .fallback_model_id
-        .as_ref()
-        .filter(|fallback_id| *fallback_id != &model.id)
-        .and_then(|fallback_id| find_model_and_credential(settings, fallback_id));
-
-    let app_default_fallback_candidate = settings
-        .default_model_id
-        .as_ref()
-        .filter(|default_id| *default_id != &model.id)
-        .and_then(|default_id| find_model_and_credential(settings, default_id));
-
-    let mut attempts: Vec<(&Model, &ProviderCredential, bool)> =
-        vec![(model, provider_cred, false)];
-    if let Some((fallback_model, fallback_cred)) = explicit_fallback_candidate {
-        attempts.push((fallback_model, fallback_cred, true));
-    } else if character
-        .fallback_model_id
-        .as_ref()
-        .is_some_and(|id| id != &model.id)
-    {
-        log_warn(
-            &app,
-            "chat_completion",
-            format!(
-                "configured character fallback model id {} could not be resolved",
-                character.fallback_model_id.as_deref().unwrap_or("")
-            ),
-        );
-        if let Some((fallback_model, fallback_cred)) = app_default_fallback_candidate {
-            log_info(
-                &app,
-                "chat_completion",
-                format!(
-                    "using app default model {} as fallback candidate",
-                    fallback_model.name
-                ),
-            );
-            attempts.push((fallback_model, fallback_cred, true));
-        }
-    }
-
-    let mut selected_model = model;
-    let mut selected_provider_cred = provider_cred;
-    let mut selected_api_key = String::new();
-    let mut fallback_from_model_id: Option<String> = None;
-    let mut successful_response = None;
-    let mut last_error = "request failed".to_string();
-    let mut fallback_toast_shown = false;
-
-    for (idx, (attempt_model, attempt_provider_cred, is_fallback_attempt)) in
-        attempts.iter().enumerate()
-    {
-        let has_next_attempt = idx + 1 < attempts.len();
-
-        let attempt_api_key = match resolve_api_key(&app, attempt_provider_cred, "chat_completion")
-        {
-            Ok(key) => key,
-            Err(err) => {
-                log_error(
-                    &app,
-                    "chat_completion",
-                    format!(
-                        "failed to resolve API key for model={} provider={}: {}",
-                        attempt_model.name, attempt_provider_cred.provider_id, err
-                    ),
-                );
-                last_error = err;
-                if has_next_attempt {
-                    emit_fallback_retry_toast(&app, &mut fallback_toast_shown);
-                    continue;
-                }
-                return Err(last_error);
-            }
-        };
-
-        let request_settings = RequestSettings::resolve(&session, attempt_model, &settings);
-        let extra_body_fields = build_provider_extra_fields(
-            &attempt_provider_cred.provider_id,
-            &session,
-            attempt_model,
-            &settings,
-            &request_settings,
-        );
-
-        log_info(
-            &app,
-            "chat_completion",
-            format!(
-                "reasoning settings: enabled={} effort={:?} budget={:?} model_adv={:?}",
-                request_settings.reasoning_enabled,
-                request_settings.reasoning_effort,
-                request_settings.reasoning_budget,
-                attempt_model
-                    .advanced_model_settings
-                    .as_ref()
-                    .map(|a| a.reasoning_enabled)
-            ),
-        );
-
-        let built = super::request_builder::build_chat_request(
-            attempt_provider_cred,
-            &attempt_api_key,
-            &attempt_model.name,
-            &messages_for_api,
-            None,
-            request_settings.temperature,
-            request_settings.top_p,
-            request_settings.max_tokens,
-            request_settings.context_length,
-            should_stream,
-            request_id.clone(),
-            request_settings.frequency_penalty,
-            request_settings.presence_penalty,
-            request_settings.top_k,
-            None,
-            request_settings.reasoning_enabled,
-            request_settings.reasoning_effort.clone(),
-            request_settings.reasoning_budget,
-            extra_body_fields,
-        );
-
-        log_info(
-            &app,
-            "chat_completion",
-            format!(
-                "request prepared endpoint={} stream={} request_id={:?} model={} fallback_attempt={}",
-                built.url.as_str(),
-                should_stream,
-                &request_id,
-                attempt_model.name,
-                is_fallback_attempt
-            ),
-        );
-
-        log_info(
-            &app,
-            "chat_completion",
-            format!(
-                "request body: reasoning_effort={:?}, reasoning_budget={:?}, max_tokens={:?}, reasoning_enabled={}",
-                built.body.get("reasoning_effort"),
-                built.body.get("reasoning").and_then(|r| r.get("max_tokens")),
-                built.body.get("max_completion_tokens").or(built.body.get("max_tokens")),
-                request_settings.reasoning_enabled
-            ),
-        );
-
-        emit_debug(
-            &app,
-            "sending_request",
-            json!({
-                "providerId": attempt_provider_cred.provider_id,
-                "model": attempt_model.name,
-                "stream": should_stream,
-                "requestId": request_id,
-                "endpoint": built.url,
-                "reasoning": built.body.get("reasoning"),
-                "reasoning_effort": built.body.get("reasoning_effort"),
-                "max_completion_tokens": built.body.get("max_completion_tokens"),
-                "fallbackAttempt": is_fallback_attempt,
-            }),
-        );
-
-        let api_request_payload = ApiRequest {
-            url: built.url,
-            method: Some("POST".into()),
-            headers: Some(built.headers),
-            query: None,
-            body: Some(built.body),
-            timeout_ms: Some(900_000),
-            stream: Some(built.stream),
-            request_id: built.request_id.clone(),
-            provider_id: Some(attempt_provider_cred.provider_id.clone()),
-        };
-
-        let api_response = match api_request(app.clone(), api_request_payload).await {
-            Ok(resp) => resp,
-            Err(err) => {
-                log_error(
-                    &app,
-                    "chat_completion",
-                    format!(
-                        "api_request failed model={} provider={} err={}",
-                        attempt_model.name, attempt_provider_cred.provider_id, err
-                    ),
-                );
-                last_error = err;
-                if has_next_attempt {
-                    emit_fallback_retry_toast(&app, &mut fallback_toast_shown);
-                    continue;
-                }
-                return Err(last_error);
-            }
-        };
-
-        emit_debug(
-            &app,
-            "response",
-            json!({
-                "status": api_response.status,
-                "ok": api_response.ok,
-                "model": attempt_model.name,
-            }),
-        );
-
-        if !api_response.ok {
-            let fallback = format!("Provider returned status {}", api_response.status);
-            let err_message =
-                extract_error_message(api_response.data()).unwrap_or(fallback.clone());
-
-            let failed_usage = extract_usage(api_response.data());
-            if let Some(ref usage) = failed_usage {
-                log_info(
-                    &app,
-                    "chat_completion",
-                    format!(
-                        "usage from failed request: prompt={:?} completion={:?} total={:?} reasoning={:?}",
-                        usage.prompt_tokens,
-                        usage.completion_tokens,
-                        usage.total_tokens,
-                        usage.reasoning_tokens
-                    ),
-                );
-                emit_debug(
-                    &app,
-                    "failed_request_usage",
-                    json!({
-                        "promptTokens": usage.prompt_tokens,
-                        "completionTokens": usage.completion_tokens,
-                        "totalTokens": usage.total_tokens,
-                        "reasoningTokens": usage.reasoning_tokens,
-                    }),
-                );
-                if !has_next_attempt {
-                    record_failed_usage(
-                        &app,
-                        &failed_usage,
-                        &session,
-                        &character,
-                        attempt_model,
-                        attempt_provider_cred,
-                        UsageOperationType::Chat,
-                        &err_message,
-                        "chat_completion",
-                    );
-                }
-            }
-
-            emit_debug(
-                &app,
-                "provider_error",
-                json!({
-                    "status": api_response.status,
-                    "message": err_message,
-                    "usage": failed_usage,
-                    "model": attempt_model.name,
-                }),
-            );
-
-            let combined_error = if err_message == fallback {
-                err_message
-            } else {
-                format!("{} (status {})", err_message, api_response.status)
-            };
-            log_error(
-                &app,
-                "chat_completion",
-                format!("provider error: {}", &combined_error),
-            );
-            last_error = combined_error;
-
-            if has_next_attempt {
-                emit_fallback_retry_toast(&app, &mut fallback_toast_shown);
-                continue;
-            }
-            return Err(last_error);
-        }
-
-        selected_model = attempt_model;
-        selected_provider_cred = attempt_provider_cred;
-        selected_api_key = attempt_api_key;
-        fallback_from_model_id = if *is_fallback_attempt {
-            Some(model.id.clone())
-        } else {
-            None
-        };
-        successful_response = Some(api_response);
-        break;
-    }
-
-    let api_response = match successful_response {
-        Some(resp) => resp,
-        None => return Err(last_error),
-    };
-
-    if take_aborted_request(&app, request_id.as_deref()) {
-        return Err("Request aborted by user".to_string());
-    }
-
-    // Extract assistant text and any image outputs.
-    // Some multimodal models stream image data URLs via SSE; we must not treat those as text.
-    let images_from_sse = match api_response.data() {
-        Value::String(s) if s.contains("data:") => {
-            super::sse::accumulate_image_data_urls_from_sse(s)
-        }
-        _ => Vec::new(),
-    };
-
-    let text =
-        extract_text(api_response.data(), Some(&selected_model.provider_id)).unwrap_or_default();
-    let usage = extract_usage(api_response.data());
-    let reasoning = extract_reasoning(api_response.data(), Some(&selected_model.provider_id));
-
-    if text.trim().is_empty() && images_from_sse.is_empty() {
-        let preview =
-            serde_json::to_string(api_response.data()).unwrap_or_else(|_| "<non-json>".into());
-
-        // Enhanced debug info for diagnosing model-specific parsing issues
-        let raw_len = match api_response.data() {
-            Value::String(s) => s.len(),
-            _ => 0,
-        };
-        let has_sse_marker = match api_response.data() {
-            Value::String(s) => s.contains("data:"),
-            _ => false,
-        };
-
-        let has_reasoning = reasoning.as_ref().map_or(false, |r| !r.trim().is_empty());
-        let reasoning_len = reasoning.as_ref().map_or(0, |r| r.len());
-        let error_detail = if has_reasoning {
-            "Model completed reasoning but generated no response text. This may indicate the model ran out of tokens or encountered an issue during generation."
-        } else {
-            "Empty response from provider"
-        };
-
-        log_error(
-            &app,
-            "chat_completion",
-            format!(
-                "empty response from provider: has_reasoning={}, reasoning_len={}, raw_len={}, has_sse_marker={}, preview_start={}",
-                has_reasoning,
-                reasoning_len,
-                raw_len,
-                has_sse_marker,
-                preview.chars().take(500).collect::<String>()
-            ),
-        );
-        emit_debug(
-            &app,
-            "empty_response",
-            json!({
-                "preview": preview,
-                "hasReasoning": has_reasoning,
-                "reasoningLen": reasoning_len,
-                "rawLen": raw_len,
-                "hasSseMarker": has_sse_marker
-            }),
-        );
-        return Err(error_detail.to_string());
-    }
-
-    // Post-generation content filter check
-    if let Some(filter) = app.try_state::<crate::content_filter::ContentFilter>() {
-        if filter.is_enabled() {
-            let result = filter.check_text(&text);
-            if result.blocked {
-                log_warn(
-                    &app,
-                    "chat_completion",
-                    format!(
-                        "Content blocked by Pure Mode (score={:.1}, terms={:?})",
-                        result.score, result.matched_terms
-                    ),
-                );
-                return Err(
-                    "Response blocked by Pure Mode. Try rephrasing your message.".to_string(),
-                );
-            }
-        }
-    }
-
-    emit_debug(
-        &app,
-        "assistant_reply",
-        json!({
-            "length": text.len(),
-        }),
-    );
-
-    let assistant_created_at = now_millis()?;
-    let variant = new_assistant_variant(text.clone(), usage.clone(), assistant_created_at);
-    let variant_id = variant.id.clone();
-
-    let assistant_message_id = Uuid::new_v4().to_string();
-
-    let mut assistant_generated_attachments: Vec<ImageAttachment> = Vec::new();
-    for data_url in images_from_sse {
-        // Best-effort mime type inference from data URL header; fallback to PNG.
-        let mime_type = data_url
-            .split_once(";base64,")
-            .and_then(|(prefix, _)| prefix.strip_prefix("data:"))
-            .unwrap_or("image/png")
-            .to_string();
-
-        assistant_generated_attachments.push(ImageAttachment {
-            id: Uuid::new_v4().to_string(),
-            data: data_url,
-            mime_type,
-            filename: None,
-            width: None,
-            height: None,
-            storage_path: None,
-        });
-    }
-
-    let persisted_assistant_attachments = persist_attachments(
-        &app,
-        &character_id,
-        &session_id,
-        &assistant_message_id,
-        "assistant",
-        assistant_generated_attachments,
-    )?;
-
-    if take_aborted_request(&app, request_id.as_deref()) {
-        cleanup_attachments(&app, &persisted_assistant_attachments, "chat_completion");
-        return Err("Request aborted by user".to_string());
-    }
-
-    let assistant_message = StoredMessage {
-        id: assistant_message_id,
-        role: "assistant".into(),
-        content: text.clone(),
-        created_at: assistant_created_at,
-        usage: usage.clone(),
-        variants: vec![variant],
-        selected_variant_id: Some(variant_id),
-        memory_refs: if dynamic_memory_enabled {
-            relevant_memories
-                .iter()
-                .map(|m| {
-                    if let Some(score) = m.match_score {
-                        format!("{}::{}", score, m.text)
-                    } else {
-                        m.text.clone()
-                    }
-                })
-                .collect()
-        } else {
-            Vec::new()
-        },
-        used_lorebook_entries,
-        is_pinned: false,
-        attachments: persisted_assistant_attachments,
-        reasoning,
-        model_id: Some(selected_model.id.clone()),
-        fallback_from_model_id: fallback_from_model_id.clone(),
-    };
-
-    session.messages.push(assistant_message.clone());
-    session.updated_at = now_millis()?;
-    if take_aborted_request(&app, request_id.as_deref()) {
-        cleanup_attachments(&app, &assistant_message.attachments, "chat_completion");
-        return Err("Request aborted by user".to_string());
-    }
-    save_session(&app, &session)?;
-
-    log_info(
-        &app,
-        "chat_completion",
-        format!(
-            "assistant response saved message_id={} length={} total_messages={}",
-            assistant_message.id.as_str(),
-            assistant_message.content.len(),
-            session.messages.len()
-        ),
-    );
-
-    emit_debug(
-        &app,
-        "session_saved",
-        json!({
-            "stage": "after_assistant_message",
-            "sessionId": session.id,
-            "messageCount": session.messages.len(),
-            "updatedAt": session.updated_at,
-        }),
-    );
-
-    record_usage_if_available(
-        &context,
-        &usage,
-        &session,
-        &character,
-        selected_model,
-        selected_provider_cred,
-        &selected_api_key,
-        assistant_created_at,
-        UsageOperationType::Chat,
-        "chat_completion",
-    )
-    .await;
-
-    if dynamic_memory_enabled {
-        if let Err(err) =
-            process_dynamic_memory_cycle(&app, &mut session, settings, &character).await
-        {
-            log_error(
-                &app,
-                "chat_completion",
-                format!("dynamic memory cycle failed: {}", err),
-            );
-        }
-    }
-
-    Ok(ChatTurnResult {
-        session_id: session.id,
-        session_updated_at: session.updated_at,
-        request_id,
-        user_message: user_msg,
-        assistant_message,
-        usage,
-    })
 }
 
 #[tauri::command]
@@ -2677,9 +1791,6 @@ pub async fn chat_regenerate(
     } = args;
     let swap_places = role_swap_enabled(swap_places);
 
-    let context = ChatContext::initialize(app.clone())?;
-    let settings = &context.settings;
-
     log_info(
         &app,
         "chat_regenerate",
@@ -2689,21 +1800,16 @@ pub async fn chat_regenerate(
         ),
     );
 
-    let mut session = match context.load_session(&session_id)? {
-        Some(s) => s,
-        None => {
-            log_error(
-                &app,
-                "chat_regenerate",
-                format!("session {} not found", &session_id),
-            );
-            return Err(crate::utils::err_msg(
-                module_path!(),
-                line!(),
-                "Session not found",
-            ));
-        }
-    };
+    let prepared = ChatService::initialize(app.clone())?.prepare_regeneration(&session_id)?;
+    let super::service::PreparedChatTurn {
+        context,
+        character,
+        mut session,
+        persona,
+        model,
+        provider_cred,
+    } = prepared;
+    let settings = &context.settings;
 
     emit_debug(
         &app,
@@ -2765,22 +1871,6 @@ pub async fn chat_regenerate(
             "Selected message is not an assistant or scene response",
         ));
     }
-
-    let character = match context.find_character(&session.character_id) {
-        Ok(found) => found,
-        Err(err) => {
-            log_error(
-                &app,
-                "chat_regenerate",
-                format!("character {} not found", &session.character_id),
-            );
-            return Err(err);
-        }
-    };
-
-    let persona = context.choose_persona(resolve_persona_id(&session, None));
-
-    let (model, provider_cred) = context.select_model(&character)?;
 
     log_info(
         &app,
@@ -2869,11 +1959,12 @@ pub async fn chat_regenerate(
     }
 
     let prompt_entries = if swap_places {
-        let (prompt_character, prompt_persona) = swapped_prompt_entities(&character, persona);
+        let (prompt_character, prompt_persona) =
+            swapped_prompt_entities(&character, persona.as_ref());
         append_image_directive_instructions(
             context.build_system_prompt(
                 &prompt_character,
-                model,
+                &model,
                 prompt_persona.as_ref(),
                 &session,
             ),
@@ -2881,7 +1972,7 @@ pub async fn chat_regenerate(
         )
     } else {
         append_image_directive_instructions(
-            context.build_system_prompt(&character, model, persona, &session),
+            context.build_system_prompt(&character, &model, persona.as_ref(), &session),
             settings,
         )
     };
@@ -2893,7 +1984,7 @@ pub async fn chat_regenerate(
     );
     let (relative_entries, in_chat_entries) = partition_prompt_entries(prompt_entries);
 
-    let system_role = super::request_builder::system_role_for(provider_cred);
+    let system_role = super::request_builder::system_role_for(&provider_cred);
     let messages_for_api = {
         let mut out = Vec::new();
         for entry in &relative_entries {
@@ -2901,6 +1992,7 @@ pub async fn chat_regenerate(
         }
         if swap_places {
             let persona_title = persona
+                .as_ref()
                 .map(|p| p.title.clone())
                 .unwrap_or_else(|| "the user persona".to_string());
             crate::chat_manager::messages::push_system_message(
@@ -2914,14 +2006,14 @@ pub async fn chat_regenerate(
         }
 
         let char_name = if swap_places {
-            persona.map(|p| p.title.as_str()).unwrap_or("User")
+            persona.as_ref().map(|p| p.title.as_str()).unwrap_or("User")
         } else {
             character.name.as_str()
         };
         let persona_name = if swap_places {
             character.name.as_str()
         } else {
-            persona.map(|p| p.title.as_str()).unwrap_or("")
+            persona.as_ref().map(|p| p.title.as_str()).unwrap_or("")
         };
         let allow_image_input = model
             .input_scopes
@@ -3010,13 +2102,13 @@ pub async fn chat_regenerate(
         &app,
         settings,
         &character,
-        model,
-        provider_cred,
+        &model,
+        &provider_cred,
         "chat_regenerate",
     );
 
-    let mut selected_model = model;
-    let mut selected_provider_cred = provider_cred;
+    let mut selected_model = &model;
+    let mut selected_provider_cred = &provider_cred;
     let mut selected_api_key = String::new();
     let mut fallback_from_model_id: Option<String> = None;
     let mut successful_response = None;
@@ -3318,7 +2410,7 @@ pub async fn chat_regenerate(
         cleanup_attachments(&app, &cleanup_assistant_attachments, "chat_regenerate");
         return Err("Request aborted by user".to_string());
     }
-    save_session(&app, &session)?;
+    context.save_session(&session)?;
     cleanup_attachments(&app, &previous_attachments, "chat_regenerate");
 
     emit_debug(
@@ -3383,9 +2475,6 @@ pub async fn chat_continue(
     } = args;
     let swap_places = role_swap_enabled(swap_places);
 
-    let context = ChatContext::initialize(app.clone())?;
-    let settings = &context.settings;
-
     log_info(
         &app,
         "chat_continue",
@@ -3395,21 +2484,20 @@ pub async fn chat_continue(
         ),
     );
 
-    let mut session = match context.load_session(&session_id)? {
-        Some(s) => s,
-        None => {
-            log_error(
-                &app,
-                "chat_continue",
-                format!("session {} not found", &session_id),
-            );
-            return Err(crate::utils::err_msg(
-                module_path!(),
-                line!(),
-                "Session not found",
-            ));
-        }
-    };
+    let prepared = ChatService::initialize(app.clone())?.prepare_turn(
+        &session_id,
+        &character_id,
+        persona_id.as_deref(),
+    )?;
+    let super::service::PreparedChatTurn {
+        context,
+        character,
+        mut session,
+        persona,
+        model,
+        provider_cred,
+    } = prepared;
+    let settings = &context.settings;
 
     emit_debug(
         &app,
@@ -3431,23 +2519,6 @@ pub async fn chat_continue(
             stored_total_messages, stored_convo_messages
         ),
     );
-
-    let character = match context.find_character(&character_id) {
-        Ok(found) => found,
-        Err(err) => {
-            log_error(
-                &app,
-                "chat_continue",
-                format!("character {} not found", &character_id),
-            );
-            return Err(err);
-        }
-    };
-
-    let effective_persona_id = resolve_persona_id(&session, persona_id.as_deref());
-    let persona = context.choose_persona(effective_persona_id);
-
-    let (model, provider_cred) = context.select_model(&character)?;
 
     log_info(
         &app,
@@ -3531,11 +2602,12 @@ pub async fn chat_continue(
     }
 
     let prompt_entries = if swap_places {
-        let (prompt_character, prompt_persona) = swapped_prompt_entities(&character, persona);
+        let (prompt_character, prompt_persona) =
+            swapped_prompt_entities(&character, persona.as_ref());
         append_image_directive_instructions(
             context.build_system_prompt(
                 &prompt_character,
-                model,
+                &model,
                 prompt_persona.as_ref(),
                 &session,
             ),
@@ -3543,7 +2615,7 @@ pub async fn chat_continue(
         )
     } else {
         append_image_directive_instructions(
-            context.build_system_prompt(&character, model, persona, &session),
+            context.build_system_prompt(&character, &model, persona.as_ref(), &session),
             settings,
         )
     };
@@ -3565,7 +2637,7 @@ pub async fn chat_continue(
         )
     };
 
-    let system_role = super::request_builder::system_role_for(provider_cred);
+    let system_role = super::request_builder::system_role_for(&provider_cred);
     let mut messages_for_api = Vec::new();
     for entry in &relative_entries {
         crate::chat_manager::messages::push_prompt_entry_message(
@@ -3576,6 +2648,7 @@ pub async fn chat_continue(
     }
     if swap_places {
         let persona_title = persona
+            .as_ref()
             .map(|p| p.title.clone())
             .unwrap_or_else(|| "the user persona".to_string());
         crate::chat_manager::messages::push_system_message(
@@ -3589,14 +2662,14 @@ pub async fn chat_continue(
     }
 
     let char_name = if swap_places {
-        persona.map(|p| p.title.as_str()).unwrap_or("User")
+        persona.as_ref().map(|p| p.title.as_str()).unwrap_or("User")
     } else {
         character.name.as_str()
     };
     let persona_name = if swap_places {
         character.name.as_str()
     } else {
-        persona.map(|p| p.title.as_str()).unwrap_or("")
+        persona.as_ref().map(|p| p.title.as_str()).unwrap_or("")
     };
     let allow_image_input = model
         .input_scopes
@@ -3660,13 +2733,13 @@ pub async fn chat_continue(
         &app,
         settings,
         &character,
-        model,
-        provider_cred,
+        &model,
+        &provider_cred,
         "chat_continue",
     );
 
-    let mut selected_model = model;
-    let mut selected_provider_cred = provider_cred;
+    let mut selected_model = &model;
+    let mut selected_provider_cred = &provider_cred;
     let mut selected_api_key = String::new();
     let mut fallback_from_model_id: Option<String> = None;
     let mut successful_response = None;
@@ -3976,7 +3049,7 @@ pub async fn chat_continue(
         cleanup_attachments(&app, &assistant_message.attachments, "chat_continue");
         return Err("Request aborted by user".to_string());
     }
-    save_session(&app, &session)?;
+    context.save_session(&session)?;
 
     emit_debug(
         &app,
@@ -4417,7 +3490,7 @@ pub fn abort_dynamic_memory(app: AppHandle, session_id: String) -> Result<(), St
     run_manager.cancel_run(&abort_registry, &run_key)
 }
 
-async fn process_dynamic_memory_cycle(
+pub(crate) async fn process_dynamic_memory_cycle(
     app: &AppHandle,
     session: &mut Session,
     settings: &Settings,
@@ -6600,7 +5673,7 @@ fn find_model_and_credential<'a>(
     Some((model, provider_cred))
 }
 
-fn build_model_attempts<'a>(
+pub(crate) fn build_model_attempts<'a>(
     app: &AppHandle,
     settings: &'a Settings,
     character: &Character,
@@ -6653,7 +5726,7 @@ fn build_model_attempts<'a>(
     attempts
 }
 
-fn emit_fallback_retry_toast(app: &AppHandle, shown: &mut bool) {
+pub(crate) fn emit_fallback_retry_toast(app: &AppHandle, shown: &mut bool) {
     if *shown {
         return;
     }

@@ -12,17 +12,15 @@ use crate::usage::{
 
 use crate::utils::{log_error, log_info, log_warn, now_millis};
 
-use super::storage::{
-    build_system_prompt, choose_persona, load_characters, load_personas, load_session,
-    load_settings, select_model,
-};
+use super::repository::ChatRepository;
+use super::storage::{build_system_prompt, choose_persona, select_model};
 use super::types::{
     Character, Model, Persona, ProviderCredential, Session, Settings, SystemPromptEntry,
     UsageSummary,
 };
 
 pub struct ChatContext {
-    app: AppHandle,
+    repository: ChatRepository,
     pub settings: Settings,
     pub characters: Vec<Character>,
     pub personas: Vec<Persona>,
@@ -30,10 +28,12 @@ pub struct ChatContext {
 
 impl ChatContext {
     pub fn initialize(app: AppHandle) -> Result<Self, String> {
+        let repository = ChatRepository::new(app);
+        let app = repository.app();
         log_info(&app, "chat_context", "Initializing chat context");
-        let settings = load_settings(&app)?;
-        let characters = load_characters(&app)?;
-        let personas = load_personas(&app)?;
+        let settings = repository.load_settings()?;
+        let characters = repository.load_characters()?;
+        let personas = repository.load_personas()?;
 
         log_info(
             &app,
@@ -46,7 +46,7 @@ impl ChatContext {
         );
 
         Ok(Self {
-            app,
+            repository,
             settings,
             characters,
             personas,
@@ -54,7 +54,7 @@ impl ChatContext {
     }
 
     pub fn app(&self) -> &AppHandle {
-        &self.app
+        self.repository.app()
     }
 
     pub fn find_character(&self, character_id: &str) -> Result<Character, String> {
@@ -73,7 +73,11 @@ impl ChatContext {
     }
 
     pub fn load_session(&self, session_id: &str) -> Result<Option<Session>, String> {
-        load_session(&self.app, session_id)
+        self.repository.load_session(session_id)
+    }
+
+    pub fn save_session(&self, session: &Session) -> Result<(), String> {
+        self.repository.save_session(session)
     }
 
     pub fn build_system_prompt(
@@ -84,7 +88,7 @@ impl ChatContext {
         session: &Session,
     ) -> Vec<SystemPromptEntry> {
         build_system_prompt(
-            &self.app,
+            self.app(),
             character,
             model,
             persona,
@@ -96,6 +100,89 @@ impl ChatContext {
     pub fn choose_persona(&self, explicit_persona_id: Option<&str>) -> Option<&Persona> {
         let owned = explicit_persona_id.map(|id| id.to_string());
         choose_persona(&self.personas, owned.as_ref())
+    }
+}
+
+pub struct ChatService {
+    context: ChatContext,
+}
+
+pub struct PreparedChatTurn {
+    pub context: ChatContext,
+    pub character: Character,
+    pub session: Session,
+    pub persona: Option<Persona>,
+    pub model: Model,
+    pub provider_cred: ProviderCredential,
+}
+
+impl ChatService {
+    pub fn initialize(app: AppHandle) -> Result<Self, String> {
+        Ok(Self {
+            context: ChatContext::initialize(app)?,
+        })
+    }
+
+    pub fn prepare_turn(
+        self,
+        session_id: &str,
+        character_id: &str,
+        persona_id: Option<&str>,
+    ) -> Result<PreparedChatTurn, String> {
+        let session = self
+            .context
+            .load_session(session_id)?
+            .ok_or_else(|| "Session not found".to_string())?;
+        self.prepare_loaded_turn(session, character_id, persona_id, true)
+    }
+
+    pub fn prepare_regeneration(self, session_id: &str) -> Result<PreparedChatTurn, String> {
+        let session = self
+            .context
+            .load_session(session_id)?
+            .ok_or_else(|| "Session not found".to_string())?;
+        let character_id = session.character_id.clone();
+        self.prepare_loaded_turn(session, &character_id, None, false)
+    }
+
+    fn prepare_loaded_turn(
+        self,
+        mut session: Session,
+        character_id: &str,
+        persona_id: Option<&str>,
+        sync_character_id: bool,
+    ) -> Result<PreparedChatTurn, String> {
+        let character = self.context.find_character(character_id)?;
+
+        if sync_character_id && session.character_id != character.id {
+            session.character_id = character.id.clone();
+        }
+
+        let effective_persona_id = resolve_persona_id(&session, persona_id);
+        let persona = self.context.choose_persona(effective_persona_id).cloned();
+        let (model, provider_cred) = self.context.select_model(&character)?;
+        let model = model.clone();
+        let provider_cred = provider_cred.clone();
+
+        Ok(PreparedChatTurn {
+            context: self.context,
+            character,
+            session,
+            persona,
+            model,
+            provider_cred,
+        })
+    }
+}
+
+fn resolve_persona_id<'a>(session: &'a Session, explicit: Option<&'a str>) -> Option<&'a str> {
+    if explicit.is_some() {
+        return explicit;
+    }
+    if session.persona_disabled {
+        Some("")
+    } else {
+        session.persona_id.as_deref()
     }
 }
 

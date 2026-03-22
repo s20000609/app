@@ -1,10 +1,12 @@
 mod commands;
 pub mod dynamic_memory;
+pub mod flows;
 pub mod lorebook_matcher;
 pub mod messages;
 pub mod prompt_engine;
 pub mod prompts;
 pub mod provider_adapter;
+pub mod repository;
 pub mod request;
 pub mod request_builder;
 pub mod service;
