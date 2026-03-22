@@ -996,6 +996,60 @@ pub(crate) fn build_provider_extra_fields(
     }
 }
 
+pub(crate) fn prepare_sampling_request(
+    provider_id: &str,
+    session: &Session,
+    model: &Model,
+    settings: &Settings,
+    max_tokens: u32,
+    temperature: f64,
+    top_p: f64,
+    top_k: Option<u32>,
+    frequency_penalty: Option<f64>,
+    presence_penalty: Option<f64>,
+) -> (RequestSettings, Option<HashMap<String, Value>>) {
+    let model_request_settings = RequestSettings::resolve(session, model, settings);
+    let request_settings = RequestSettings::for_sampling(
+        model_request_settings.context_length,
+        max_tokens,
+        temperature,
+        top_p,
+        top_k,
+        frequency_penalty,
+        presence_penalty,
+    );
+    let extra_body_fields =
+        build_provider_extra_fields(provider_id, session, model, settings, &request_settings);
+
+    (request_settings, extra_body_fields)
+}
+
+pub(crate) fn prepare_default_sampling_request(
+    provider_id: &str,
+    session: &Session,
+    model: &Model,
+    settings: &Settings,
+    temperature: f64,
+    top_p: f64,
+    top_k: Option<u32>,
+    frequency_penalty: Option<f64>,
+    presence_penalty: Option<f64>,
+) -> (RequestSettings, Option<HashMap<String, Value>>) {
+    let model_request_settings = RequestSettings::resolve(session, model, settings);
+    prepare_sampling_request(
+        provider_id,
+        session,
+        model,
+        settings,
+        model_request_settings.max_tokens,
+        temperature,
+        top_p,
+        top_k,
+        frequency_penalty,
+        presence_penalty,
+    )
+}
+
 pub(crate) fn find_model_and_credential<'a>(
     settings: &'a Settings,
     model_id: &str,
