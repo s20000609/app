@@ -10,8 +10,8 @@ use crate::storage_manager::{
     settings::{read_settings_typed, write_settings_typed},
 };
 
-use super::prompt_engine;
-use super::types::{
+use crate::chat_manager::prompt_engine;
+use crate::chat_manager::types::{
     AccessibilitySettings, AccessibilitySoundSettings, AdvancedModelSettings, AdvancedSettings,
     Character, Model, Persona, ProviderCredential, Session, Settings, StoredMessage,
     SystemPromptEntry,

@@ -2,13 +2,12 @@ use std::fs;
 
 use tauri::AppHandle;
 
+use crate::chat_manager::types::{ImageAttachment, StoredMessage};
 use crate::storage_manager::legacy::storage_root;
 use crate::storage_manager::media::{
     storage_load_session_attachment, storage_save_session_attachment,
 };
 use crate::utils::{log_error, log_info};
-
-use super::types::{ImageAttachment, StoredMessage};
 
 pub fn persist_attachments(
     app: &AppHandle,

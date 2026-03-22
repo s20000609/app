@@ -1,19 +1,18 @@
-pub mod attachments;
 mod commands;
 pub mod execution;
 pub mod flows;
 pub mod memory;
+pub mod persistence;
 pub mod prompting;
 pub mod provider_adapter;
 pub mod reply_helper;
-pub mod repository;
 pub mod scene;
 pub mod service;
 pub mod sse;
-pub mod storage;
 pub mod tooling;
 pub mod types;
 
+pub use persistence::{attachments, repository, storage};
 pub use prompting::{
     lorebook_matcher, messages, prompt_engine, prompts, request, request_builder, turn_builder,
 };

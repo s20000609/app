@@ -1,7 +1,7 @@
 use tauri::AppHandle;
 
 use super::storage::{load_characters, load_personas, load_session, load_settings, save_session};
-use super::types::{Character, Persona, Session, Settings};
+use crate::chat_manager::types::{Character, Persona, Session, Settings};
 
 #[derive(Clone)]
 pub struct ChatRepository {
