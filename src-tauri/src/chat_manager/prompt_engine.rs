@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 use tauri::AppHandle;
 
 use super::lorebook_matcher::{format_lorebook_for_prompt, get_active_lorebook_entries};
+use super::memory::manual::{has_manual_memories, render_manual_memory_lines};
 use super::prompts;
 use super::types::{
     Character, Model, Persona, PromptEntryPosition, PromptEntryRole, Session, Settings,
@@ -1295,7 +1296,7 @@ pub fn build_system_prompt_entries(
         let has_memories = if dynamic_memory_active {
             !session.memory_embeddings.is_empty()
         } else {
-            !session.memories.is_empty()
+            has_manual_memories(&session.memories)
         };
         if has_memories {
             let mut content = String::from("# Key Memories\n");
@@ -1305,9 +1306,8 @@ pub fn build_system_prompt_entries(
                     content.push_str(&format!("- {}\n", mem.text));
                 }
             } else {
-                for memory in &session.memories {
-                    content.push_str(&format!("- {}\n", memory));
-                }
+                content.push_str(&render_manual_memory_lines(&session.memories));
+                content.push('\n');
             }
             rendered_entries.push(SystemPromptEntry {
                 id: "entry_key_memories".to_string(),
@@ -1774,15 +1774,10 @@ fn render_with_context_internal(
             .map(|m| format!("- {}", m.text))
             .collect::<Vec<_>>()
             .join("\n")
-    } else if session.memories.is_empty() {
+    } else if !has_manual_memories(&session.memories) {
         String::new()
     } else {
-        session
-            .memories
-            .iter()
-            .map(|m| format!("- {}", m))
-            .collect::<Vec<_>>()
-            .join("\n")
+        render_manual_memory_lines(&session.memories)
     };
 
     result = result.replace("{{key_memories}}", &key_memories_text);

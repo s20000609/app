@@ -24,16 +24,17 @@ use crate::dynamic_memory_run_manager::{DynamicMemoryCancellationToken, DynamicM
 use crate::usage::add_usage_record;
 use crate::usage::tracking::{RequestUsage, UsageFinishReason, UsageOperationType};
 
-use crate::chat_manager::dynamic_memory::{
+use crate::chat_manager::lorebook_matcher::{
+    activate_lorebook_entries, format_lorebook_for_prompt, get_active_lorebook_entries,
+};
+use crate::chat_manager::memory::dynamic::{
     apply_memory_decay, calculate_hot_memory_tokens, cosine_similarity,
     effective_group_dynamic_memory_settings, enforce_hot_memory_budget, ensure_pinned_hot,
     generate_memory_id, mark_memories_accessed, normalize_query_text, promote_cold_memories,
     search_cold_memory_indices_by_keyword, select_relevant_memory_indices,
     select_top_cosine_memory_indices, trim_memories_to_max,
 };
-use crate::chat_manager::lorebook_matcher::{
-    activate_lorebook_entries, format_lorebook_for_prompt, get_active_lorebook_entries,
-};
+use crate::chat_manager::memory::manual::{has_manual_memories, render_manual_memory_lines};
 use crate::chat_manager::prompts::{
     self, APP_DYNAMIC_MEMORY_TEMPLATE_ID, APP_DYNAMIC_SUMMARY_TEMPLATE_ID,
 };
@@ -3954,22 +3955,25 @@ fn build_group_system_prompt(
     let context_summary_text = session.memory_summary.trim().to_string();
 
     // Format key memories like normal chat does - include both manual and retrieved dynamic memories
-    let key_memories_text = if session.memories.is_empty() && retrieved_memories.is_empty() {
-        String::new()
-    } else {
-        let mut mem_text = String::from("Important facts to remember in this conversation:\n");
+    let key_memories_text =
+        if !has_manual_memories(&session.memories) && retrieved_memories.is_empty() {
+            String::new()
+        } else {
+            let mut mem_text = String::from("Important facts to remember in this conversation:\n");
 
-        // Add retrieved dynamic memories first
-        for memory in retrieved_memories {
-            mem_text.push_str(&format!("- {}\n", memory.text));
-        }
+            // Add retrieved dynamic memories first
+            for memory in retrieved_memories {
+                mem_text.push_str(&format!("- {}\n", memory.text));
+            }
 
-        // Add manual memories
-        for memory in &session.memories {
-            mem_text.push_str(&format!("- {}\n", memory));
-        }
-        mem_text
-    };
+            // Add manual memories
+            let manual_memories = render_manual_memory_lines(&session.memories);
+            if !manual_memories.is_empty() {
+                mem_text.push_str(&manual_memories);
+                mem_text.push('\n');
+            }
+            mem_text
+        };
 
     // Get content rules (same as normal chat)
     let pure_mode_level = crate::content_filter::level_from_app_state(Some(&settings.app_state));

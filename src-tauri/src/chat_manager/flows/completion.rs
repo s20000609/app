@@ -6,17 +6,17 @@ use crate::api::{api_request, ApiRequest};
 use crate::chat_manager::attachments::{
     cleanup_attachments, load_attachment_data, persist_attachments,
 };
-use crate::chat_manager::commands::{
-    process_dynamic_memory_cycle, select_relevant_memories, take_aborted_request,
+use crate::chat_manager::commands::take_aborted_request;
+use crate::chat_manager::execution::{
+    build_model_attempts, build_provider_extra_fields, emit_fallback_retry_toast, RequestSettings,
 };
-use crate::chat_manager::dynamic_memory::{
+use crate::chat_manager::memory::dynamic::{
     context_enrichment_enabled, dynamic_min_similarity, dynamic_retrieval_limit,
     dynamic_retrieval_strategy, dynamic_window_size, ensure_pinned_hot, mark_memories_accessed,
     promote_cold_memories,
 };
-use crate::chat_manager::execution::{
-    build_model_attempts, build_provider_extra_fields, emit_fallback_retry_toast, RequestSettings,
-};
+use crate::chat_manager::memory::flow::{process_dynamic_memory_cycle, select_relevant_memories};
+use crate::chat_manager::memory::manual::{has_manual_memories, render_manual_memory_lines};
 use crate::chat_manager::messages::{
     push_prompt_entry_message, push_system_message, push_user_or_assistant_message_with_context,
     sanitize_placeholders_in_api_messages,
@@ -305,15 +305,8 @@ impl CompletionFlow {
                         .join("\n"),
                 )
             }
-        } else if !session.memories.is_empty() {
-            Some(
-                session
-                    .memories
-                    .iter()
-                    .map(|m| format!("- {}", m))
-                    .collect::<Vec<_>>()
-                    .join("\n"),
-            )
+        } else if has_manual_memories(&session.memories) {
+            Some(render_manual_memory_lines(&session.memories))
         } else {
             None
         };

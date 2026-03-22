@@ -5,7 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use super::types::{DynamicMemorySettings, MemoryRetrievalStrategy, Settings};
+use crate::chat_manager::types::{DynamicMemorySettings, MemoryRetrievalStrategy, Settings};
 
 // ============================================================================
 // Shared Memory Entry Trait
