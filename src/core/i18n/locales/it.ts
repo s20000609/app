@@ -2405,6 +2405,43 @@ export const itMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Elimina lorebook",
       importLorebook: "Importa lorebook",
     },
+    imageLibrary: {
+      filters: {
+        all: "Tutto",
+        backgrounds: "Sfondi",
+        avatars: "Avatar",
+        attachments: "Allegati",
+        other: "Altro",
+      },
+      searchPlaceholder: "Cerca per nome file, percorso, id sessione o id entità",
+      empty: {
+        title: "Nessuna immagine corrisponde a questa vista",
+        description: "Prova un filtro o un termine di ricerca diverso. La libreria mostra solo immagini già archiviate nello spazio locale dell'app.",
+      },
+      actions: {
+        sort: "Ordina",
+        useThis: "Usa questa",
+        using: "Uso in corso...",
+        copyPath: "Copia percorso",
+        saving: "Salvataggio...",
+        download: "Scarica",
+        delete: "Elimina immagine",
+        deleting: "Eliminazione...",
+      },
+      active: "Attivo",
+      messages: {
+        loadFailed: "Impossibile caricare la libreria immagini",
+        saved: "Immagine salvata",
+        downloadFailed: "Download non riuscito",
+        useFailed: "Impossibile usare questa immagine",
+        deleted: "Immagine eliminata",
+        deleteFailed: "Impossibile eliminare l'immagine",
+      },
+      deleteConfirm: {
+        title: "Eliminare l'immagine?",
+        message: "Vuoi davvero eliminare \"{{filename}}\"? Questo potrebbe rompere avatar, sfondi chat o allegati dei messaggi che la usano ancora.",
+      },
+    },
     deleteConfirm: {
       title: "Eliminare {{itemType}}?",
       message: "Sei sicuro di voler eliminare",

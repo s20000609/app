@@ -2404,6 +2404,43 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Excluir Livro de Lore",
       importLorebook: "Importar Livro de Lore",
     },
+    imageLibrary: {
+      filters: {
+        all: "Tudo",
+        backgrounds: "Fundos",
+        avatars: "Avatares",
+        attachments: "Anexos",
+        other: "Outros",
+      },
+      searchPlaceholder: "Pesquisar por nome do arquivo, caminho, id da sessão ou id da entidade",
+      empty: {
+        title: "Nenhuma imagem corresponde a esta visualização",
+        description: "Tente outro filtro ou termo de pesquisa. A biblioteca mostra apenas imagens já armazenadas localmente no app.",
+      },
+      actions: {
+        sort: "Ordenar",
+        useThis: "Usar esta",
+        using: "Usando...",
+        copyPath: "Copiar caminho",
+        saving: "Salvando...",
+        download: "Baixar",
+        delete: "Excluir imagem",
+        deleting: "Excluindo...",
+      },
+      active: "Ativo",
+      messages: {
+        loadFailed: "Falha ao carregar a biblioteca de imagens",
+        saved: "Imagem salva",
+        downloadFailed: "Falha no download",
+        useFailed: "Não foi possível usar esta imagem",
+        deleted: "Imagem excluída",
+        deleteFailed: "Falha ao excluir a imagem",
+      },
+      deleteConfirm: {
+        title: "Excluir imagem?",
+        message: "Tem certeza de que deseja excluir \"{{filename}}\"? Isso pode quebrar avatares, fundos de chat ou anexos de mensagem que ainda a utilizam.",
+      },
+    },
     deleteConfirm: {
       title: "Excluir {{itemType}}?",
       message: "Tem certeza de que deseja excluir",

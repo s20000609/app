@@ -2399,6 +2399,43 @@ export const plMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Usuń lorebook",
       importLorebook: "Importuj lorebook",
     },
+    imageLibrary: {
+      filters: {
+        all: "Wszystko",
+        backgrounds: "Tła",
+        avatars: "Awatary",
+        attachments: "Załączniki",
+        other: "Inne",
+      },
+      searchPlaceholder: "Szukaj po nazwie pliku, ścieżce, identyfikatorze sesji lub encji",
+      empty: {
+        title: "Brak obrazów dla tego widoku",
+        description: "Spróbuj innego filtra lub hasła wyszukiwania. Biblioteka pokazuje tylko obrazy zapisane już w lokalnej pamięci aplikacji.",
+      },
+      actions: {
+        sort: "Sortuj",
+        useThis: "Użyj tego",
+        using: "Używanie...",
+        copyPath: "Kopiuj ścieżkę",
+        saving: "Zapisywanie...",
+        download: "Pobierz",
+        delete: "Usuń obraz",
+        deleting: "Usuwanie...",
+      },
+      active: "Aktywne",
+      messages: {
+        loadFailed: "Nie udało się załadować biblioteki obrazów",
+        saved: "Obraz zapisany",
+        downloadFailed: "Pobieranie nie powiodło się",
+        useFailed: "Nie udało się użyć tego obrazu",
+        deleted: "Obraz usunięty",
+        deleteFailed: "Nie udało się usunąć obrazu",
+      },
+      deleteConfirm: {
+        title: "Usunąć obraz?",
+        message: "Na pewno usunąć \"{{filename}}\"? Może to zepsuć awatary, tła czatu lub załączniki wiadomości, które nadal go używają.",
+      },
+    },
     deleteConfirm: {
       title: "Usunąć {{itemType}}?",
       message: "Czy na pewno chcesz usunąć",

@@ -2385,6 +2385,43 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "ロアブックを削除",
       importLorebook: "ロアブックをインポート",
     },
+    imageLibrary: {
+      filters: {
+        all: "すべて",
+        backgrounds: "背景",
+        avatars: "アバター",
+        attachments: "添付",
+        other: "その他",
+      },
+      searchPlaceholder: "ファイル名、パス、セッションID、エンティティIDで検索",
+      empty: {
+        title: "この表示に一致する画像はありません",
+        description: "別のフィルターや検索語を試してください。ライブラリにはアプリのローカルストレージに保存済みの画像だけが表示されます。",
+      },
+      actions: {
+        sort: "並び替え",
+        useThis: "これを使う",
+        using: "使用中...",
+        copyPath: "パスをコピー",
+        saving: "保存中...",
+        download: "ダウンロード",
+        delete: "画像を削除",
+        deleting: "削除中...",
+      },
+      active: "有効",
+      messages: {
+        loadFailed: "画像ライブラリの読み込みに失敗しました",
+        saved: "画像を保存しました",
+        downloadFailed: "ダウンロードに失敗しました",
+        useFailed: "この画像は使用できませんでした",
+        deleted: "画像を削除しました",
+        deleteFailed: "画像を削除できませんでした",
+      },
+      deleteConfirm: {
+        title: "画像を削除しますか？",
+        message: "本当に \"{{filename}}\" を削除しますか？ まだ使っているアバター、チャット背景、メッセージ添付が壊れる可能性があります。",
+      },
+    },
     deleteConfirm: {
       title: "{{itemType}}を削除しますか？",
       message: "本当に削除してもよろしいですか",

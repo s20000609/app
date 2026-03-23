@@ -2351,6 +2351,43 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "刪除設定集",
       importLorebook: "匯入設定集",
     },
+    imageLibrary: {
+      filters: {
+        all: "全部",
+        backgrounds: "背景",
+        avatars: "頭像",
+        attachments: "附件",
+        other: "其他",
+      },
+      searchPlaceholder: "依檔名、路徑、工作階段 ID 或實體 ID 搜尋",
+      empty: {
+        title: "此檢視沒有符合的圖片",
+        description: "請嘗試其他篩選條件或搜尋詞。圖片庫只會顯示已儲存在應用程式本機儲存空間中的圖片。",
+      },
+      actions: {
+        sort: "排序",
+        useThis: "使用這張",
+        using: "使用中...",
+        copyPath: "複製路徑",
+        saving: "儲存中...",
+        download: "下載",
+        delete: "刪除圖片",
+        deleting: "刪除中...",
+      },
+      active: "使用中",
+      messages: {
+        loadFailed: "無法載入圖片庫",
+        saved: "圖片已儲存",
+        downloadFailed: "下載失敗",
+        useFailed: "無法使用這張圖片",
+        deleted: "圖片已刪除",
+        deleteFailed: "無法刪除圖片",
+      },
+      deleteConfirm: {
+        title: "要刪除圖片嗎？",
+        message: "確定要刪除 \"{{filename}}\" 嗎？這可能會讓仍在使用它的頭像、聊天背景或訊息附件失效。",
+      },
+    },
     deleteConfirm: {
       title: "刪除 {{itemType}}？",
       message: "您確定要刪除",

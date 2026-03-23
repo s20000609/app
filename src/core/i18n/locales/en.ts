@@ -2393,6 +2393,43 @@ export const enMessages = {
       deleteLorebook: "Delete Lorebook",
       importLorebook: "Import Lorebook",
     },
+    imageLibrary: {
+      filters: {
+        all: "All",
+        backgrounds: "Backgrounds",
+        avatars: "Avatars",
+        attachments: "Attachments",
+        other: "Other",
+      },
+      searchPlaceholder: "Search by filename, path, session id, or entity id",
+      empty: {
+        title: "No images match this view",
+        description: "Try a different filter or search term. The library only lists images already stored in the app's local storage.",
+      },
+      actions: {
+        sort: "Sort",
+        useThis: "Use this",
+        using: "Using...",
+        copyPath: "Copy path",
+        saving: "Saving...",
+        download: "Download",
+        delete: "Delete image",
+        deleting: "Deleting...",
+      },
+      active: "Active",
+      messages: {
+        loadFailed: "Failed to load image library",
+        saved: "Image saved",
+        downloadFailed: "Download failed",
+        useFailed: "Could not use this image",
+        deleted: "Image deleted",
+        deleteFailed: "Failed to delete image",
+      },
+      deleteConfirm: {
+        title: "Delete image?",
+        message: "Are you sure you want to delete \"{{filename}}\"? This may break avatars, chat backgrounds, or message attachments that still use it.",
+      },
+    },
     deleteConfirm: {
       title: "Delete {{itemType}}?",
       message: "Are you sure you want to delete",

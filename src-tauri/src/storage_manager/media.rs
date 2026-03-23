@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Component, PathBuf};
 use std::time::UNIX_EPOCH;
 #[cfg(not(target_os = "android"))]
 use tauri::Manager;
@@ -213,6 +213,48 @@ fn images_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(images_dir)
 }
 
+fn is_safe_library_storage_path(storage_path: &str) -> bool {
+    let path = PathBuf::from(storage_path);
+    if path.is_absolute() {
+        return false;
+    }
+
+    let mut components = path.components();
+    let Some(Component::Normal(first)) = components.next() else {
+        return false;
+    };
+
+    let bucket = first.to_string_lossy();
+    if !matches!(bucket.as_ref(), "images" | "avatars" | "sessions") {
+        return false;
+    }
+
+    path.components()
+        .all(|component| matches!(component, Component::Normal(_)))
+}
+
+fn prune_empty_parent_dirs(mut current: PathBuf, root: &PathBuf) {
+    while current.starts_with(root) && current != *root {
+        let is_empty = fs::read_dir(&current)
+            .ok()
+            .and_then(|mut entries| entries.next())
+            .is_none();
+
+        if !is_empty {
+            break;
+        }
+
+        if fs::remove_dir(&current).is_err() {
+            break;
+        }
+
+        let Some(parent) = current.parent() else {
+            break;
+        };
+        current = parent.to_path_buf();
+    }
+}
+
 #[cfg(target_os = "android")]
 fn downloads_dir(_app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let download_dir = PathBuf::from("/storage/emulated/0/Download");
@@ -414,6 +456,44 @@ pub fn storage_delete_image(app: tauri::AppHandle, image_id: String) -> Result<(
                 .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
         }
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn storage_delete_image_library_item(
+    app: tauri::AppHandle,
+    storage_path: String,
+) -> Result<(), String> {
+    if !is_safe_library_storage_path(&storage_path) {
+        return Err(crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Unsafe image library path: {}", storage_path),
+        ));
+    }
+
+    let root = storage_root(&app)?;
+    let full_path = root.join(&storage_path);
+
+    if !full_path.exists() {
+        return Ok(());
+    }
+
+    if !is_supported_image_file(&full_path) {
+        return Err(crate::utils::err_msg(
+            module_path!(),
+            line!(),
+            format!("Unsupported image library file: {}", storage_path),
+        ));
+    }
+
+    fs::remove_file(&full_path)
+        .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+
+    if let Some(parent) = full_path.parent() {
+        prune_empty_parent_dirs(parent.to_path_buf(), &root);
+    }
+
     Ok(())
 }
 

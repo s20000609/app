@@ -2407,6 +2407,43 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Eliminar libro de lore",
       importLorebook: "Importar libro de lore",
     },
+    imageLibrary: {
+      filters: {
+        all: "Todo",
+        backgrounds: "Fondos",
+        avatars: "Avatares",
+        attachments: "Adjuntos",
+        other: "Otros",
+      },
+      searchPlaceholder: "Buscar por nombre de archivo, ruta, id de sesión o id de entidad",
+      empty: {
+        title: "No hay imágenes para esta vista",
+        description: "Prueba con otro filtro o término de búsqueda. La biblioteca solo muestra imágenes ya guardadas en el almacenamiento local de la app.",
+      },
+      actions: {
+        sort: "Ordenar",
+        useThis: "Usar esta",
+        using: "Usando...",
+        copyPath: "Copiar ruta",
+        saving: "Guardando...",
+        download: "Descargar",
+        delete: "Eliminar imagen",
+        deleting: "Eliminando...",
+      },
+      active: "Activo",
+      messages: {
+        loadFailed: "No se pudo cargar la biblioteca de imágenes",
+        saved: "Imagen guardada",
+        downloadFailed: "La descarga falló",
+        useFailed: "No se pudo usar esta imagen",
+        deleted: "Imagen eliminada",
+        deleteFailed: "No se pudo eliminar la imagen",
+      },
+      deleteConfirm: {
+        title: "¿Eliminar imagen?",
+        message: "¿Seguro que quieres eliminar \"{{filename}}\"? Esto puede romper avatares, fondos de chat o adjuntos de mensajes que aún la usen.",
+      },
+    },
     deleteConfirm: {
       title: "¿Eliminar {{itemType}}?",
       message: "¿Estás seguro de que quieres eliminar",

@@ -2389,6 +2389,43 @@ export const hiMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "लोरबुक हटाएँ",
       importLorebook: "लोरबुक आयात करें",
     },
+    imageLibrary: {
+      filters: {
+        all: "सभी",
+        backgrounds: "बैकग्राउंड",
+        avatars: "अवतार",
+        attachments: "अटैचमेंट",
+        other: "अन्य",
+      },
+      searchPlaceholder: "फ़ाइलनाम, पथ, सत्र आईडी या एंटिटी आईडी से खोजें",
+      empty: {
+        title: "इस दृश्य के लिए कोई चित्र नहीं मिला",
+        description: "कोई दूसरा फ़िल्टर या खोज शब्द आज़माएँ। लाइब्रेरी केवल वे चित्र दिखाती है जो ऐप के स्थानीय संग्रहण में पहले से सहेजे गए हैं।",
+      },
+      actions: {
+        sort: "क्रमबद्ध करें",
+        useThis: "इसे उपयोग करें",
+        using: "उपयोग हो रहा है...",
+        copyPath: "पथ कॉपी करें",
+        saving: "सहेजा जा रहा है...",
+        download: "डाउनलोड",
+        delete: "चित्र हटाएँ",
+        deleting: "हटाया जा रहा है...",
+      },
+      active: "सक्रिय",
+      messages: {
+        loadFailed: "इमेज लाइब्रेरी लोड नहीं हो सकी",
+        saved: "चित्र सहेज लिया गया",
+        downloadFailed: "डाउनलोड विफल हुआ",
+        useFailed: "इस चित्र का उपयोग नहीं किया जा सका",
+        deleted: "चित्र हटा दिया गया",
+        deleteFailed: "चित्र हटाया नहीं जा सका",
+      },
+      deleteConfirm: {
+        title: "चित्र हटाएँ?",
+        message: "क्या आप वाकई \"{{filename}}\" हटाना चाहते हैं? इससे वे अवतार, चैट बैकग्राउंड या संदेश अटैचमेंट टूट सकते हैं जो अभी भी इसका उपयोग कर रहे हैं।",
+      },
+    },
     deleteConfirm: {
       title: "{{itemType}} हटाएँ?",
       message: "क्या आप वाकई हटाना चाहते हैं",

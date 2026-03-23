@@ -2417,6 +2417,43 @@ export const frMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Supprimer l'encyclopédie",
       importLorebook: "Importer une encyclopédie",
     },
+    imageLibrary: {
+      filters: {
+        all: "Tout",
+        backgrounds: "Arrière-plans",
+        avatars: "Avatars",
+        attachments: "Pièces jointes",
+        other: "Autres",
+      },
+      searchPlaceholder: "Rechercher par nom de fichier, chemin, identifiant de session ou d'entité",
+      empty: {
+        title: "Aucune image ne correspond à cette vue",
+        description: "Essayez un autre filtre ou terme de recherche. La bibliothèque n'affiche que les images déjà stockées localement dans l'application.",
+      },
+      actions: {
+        sort: "Trier",
+        useThis: "Utiliser cette image",
+        using: "Utilisation...",
+        copyPath: "Copier le chemin",
+        saving: "Enregistrement...",
+        download: "Télécharger",
+        delete: "Supprimer l'image",
+        deleting: "Suppression...",
+      },
+      active: "Actif",
+      messages: {
+        loadFailed: "Impossible de charger la bibliothèque d'images",
+        saved: "Image enregistrée",
+        downloadFailed: "Échec du téléchargement",
+        useFailed: "Impossible d'utiliser cette image",
+        deleted: "Image supprimée",
+        deleteFailed: "Impossible de supprimer l'image",
+      },
+      deleteConfirm: {
+        title: "Supprimer l'image ?",
+        message: "Voulez-vous vraiment supprimer \"{{filename}}\" ? Cela peut casser des avatars, des arrière-plans de chat ou des pièces jointes de message qui l'utilisent encore.",
+      },
+    },
     deleteConfirm: {
       title: "Supprimer {{itemType}} ?",
       message: "Êtes-vous sûr de vouloir supprimer",

@@ -2399,6 +2399,43 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Slett lorebok",
       importLorebook: "Importer lorebok",
     },
+    imageLibrary: {
+      filters: {
+        all: "Alle",
+        backgrounds: "Bakgrunner",
+        avatars: "Avatarer",
+        attachments: "Vedlegg",
+        other: "Annet",
+      },
+      searchPlaceholder: "Søk etter filnavn, sti, økt-ID eller entitets-ID",
+      empty: {
+        title: "Ingen bilder matcher denne visningen",
+        description: "Prøv et annet filter eller søkeord. Biblioteket viser bare bilder som allerede er lagret lokalt i appen.",
+      },
+      actions: {
+        sort: "Sorter",
+        useThis: "Bruk dette",
+        using: "Bruker...",
+        copyPath: "Kopier sti",
+        saving: "Lagrer...",
+        download: "Last ned",
+        delete: "Slett bilde",
+        deleting: "Sletter...",
+      },
+      active: "Aktiv",
+      messages: {
+        loadFailed: "Kunne ikke laste bildebiblioteket",
+        saved: "Bildet er lagret",
+        downloadFailed: "Nedlasting mislyktes",
+        useFailed: "Kunne ikke bruke dette bildet",
+        deleted: "Bildet er slettet",
+        deleteFailed: "Kunne ikke slette bildet",
+      },
+      deleteConfirm: {
+        title: "Slette bildet?",
+        message: "Er du sikker på at du vil slette \"{{filename}}\"? Dette kan ødelegge avatarer, chatbakgrunner eller meldingsvedlegg som fortsatt bruker det.",
+      },
+    },
     deleteConfirm: {
       title: "Slett {{itemType}}?",
       message: "Er du sikker på at du vil slette",

@@ -2372,6 +2372,43 @@ export const koMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "로어북 삭제",
       importLorebook: "로어북 가져오기",
     },
+    imageLibrary: {
+      filters: {
+        all: "전체",
+        backgrounds: "배경",
+        avatars: "아바타",
+        attachments: "첨부파일",
+        other: "기타",
+      },
+      searchPlaceholder: "파일명, 경로, 세션 ID 또는 엔티티 ID로 검색",
+      empty: {
+        title: "이 보기와 일치하는 이미지가 없습니다",
+        description: "다른 필터나 검색어를 시도해 보세요. 라이브러리에는 앱의 로컬 저장소에 이미 저장된 이미지만 표시됩니다.",
+      },
+      actions: {
+        sort: "정렬",
+        useThis: "이 이미지 사용",
+        using: "사용 중...",
+        copyPath: "경로 복사",
+        saving: "저장 중...",
+        download: "다운로드",
+        delete: "이미지 삭제",
+        deleting: "삭제 중...",
+      },
+      active: "활성",
+      messages: {
+        loadFailed: "이미지 라이브러리를 불러오지 못했습니다",
+        saved: "이미지가 저장되었습니다",
+        downloadFailed: "다운로드에 실패했습니다",
+        useFailed: "이 이미지를 사용할 수 없습니다",
+        deleted: "이미지가 삭제되었습니다",
+        deleteFailed: "이미지를 삭제하지 못했습니다",
+      },
+      deleteConfirm: {
+        title: "이미지를 삭제할까요?",
+        message: "\"{{filename}}\"을(를) 정말 삭제하시겠습니까? 아직 이 파일을 사용하는 아바타, 채팅 배경 또는 메시지 첨부가 깨질 수 있습니다.",
+      },
+    },
     deleteConfirm: {
       title: "{{itemType}}을(를) 삭제하시겠습니까?",
       message: "정말 삭제하시겠습니까",

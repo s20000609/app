@@ -613,6 +613,12 @@ export async function downloadImageLibraryItem(
   return storageBridge.imageLibraryDownloadToDownloads(item.filePath, item.filename);
 }
 
+export async function deleteImageLibraryItem(
+  item: Pick<ImageLibraryItem, "storagePath">,
+): Promise<void> {
+  await storageBridge.imageLibraryDeleteItem(item.storagePath);
+}
+
 export async function listReferencedBackgroundImagePaths(): Promise<string[]> {
   const [characters, groups, groupSessions] = await Promise.all([
     listCharacters(),

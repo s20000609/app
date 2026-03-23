@@ -2435,6 +2435,43 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Tanggalin ang Lorebook",
       importLorebook: "Mag-import ng Lorebook",
     },
+    imageLibrary: {
+      filters: {
+        all: "Lahat",
+        backgrounds: "Mga Background",
+        avatars: "Mga Avatar",
+        attachments: "Mga Attachment",
+        other: "Iba pa",
+      },
+      searchPlaceholder: "Maghanap ayon sa filename, path, session id, o entity id",
+      empty: {
+        title: "Walang tugmang larawan sa view na ito",
+        description: "Subukan ang ibang filter o termino sa paghahanap. Mga larawang nakaimbak na sa lokal na storage ng app lang ang ipinapakita ng library.",
+      },
+      actions: {
+        sort: "Ayusin",
+        useThis: "Gamitin ito",
+        using: "Ginagamit...",
+        copyPath: "Kopyahin ang path",
+        saving: "Sine-save...",
+        download: "I-download",
+        delete: "Tanggalin ang larawan",
+        deleting: "Tinatanggal...",
+      },
+      active: "Aktibo",
+      messages: {
+        loadFailed: "Hindi ma-load ang image library",
+        saved: "Na-save ang larawan",
+        downloadFailed: "Hindi nagtagumpay ang download",
+        useFailed: "Hindi magamit ang larawang ito",
+        deleted: "Tinanggal ang larawan",
+        deleteFailed: "Hindi matanggal ang larawan",
+      },
+      deleteConfirm: {
+        title: "Tanggalin ang larawan?",
+        message: "Sigurado ka bang gusto mong tanggalin ang \"{{filename}}\"? Maaaring masira nito ang mga avatar, chat background, o message attachment na gumagamit pa nito.",
+      },
+    },
     deleteConfirm: {
       title: "Tanggalin ang {{itemType}}?",
       message: "Sigurado ka bang gusto mong tanggalin",

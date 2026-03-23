@@ -2394,6 +2394,43 @@ export const idMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Hapus Lorebook",
       importLorebook: "Impor Lorebook",
     },
+    imageLibrary: {
+      filters: {
+        all: "Semua",
+        backgrounds: "Latar belakang",
+        avatars: "Avatar",
+        attachments: "Lampiran",
+        other: "Lainnya",
+      },
+      searchPlaceholder: "Cari berdasarkan nama file, path, id sesi, atau id entitas",
+      empty: {
+        title: "Tidak ada gambar yang cocok untuk tampilan ini",
+        description: "Coba filter atau kata pencarian lain. Perpustakaan hanya menampilkan gambar yang sudah tersimpan di penyimpanan lokal aplikasi.",
+      },
+      actions: {
+        sort: "Urutkan",
+        useThis: "Gunakan ini",
+        using: "Sedang digunakan...",
+        copyPath: "Salin path",
+        saving: "Menyimpan...",
+        download: "Unduh",
+        delete: "Hapus gambar",
+        deleting: "Menghapus...",
+      },
+      active: "Aktif",
+      messages: {
+        loadFailed: "Gagal memuat perpustakaan gambar",
+        saved: "Gambar disimpan",
+        downloadFailed: "Unduhan gagal",
+        useFailed: "Gambar ini tidak dapat digunakan",
+        deleted: "Gambar dihapus",
+        deleteFailed: "Gagal menghapus gambar",
+      },
+      deleteConfirm: {
+        title: "Hapus gambar?",
+        message: "Yakin ingin menghapus \"{{filename}}\"? Ini dapat merusak avatar, latar belakang chat, atau lampiran pesan yang masih menggunakannya.",
+      },
+    },
     deleteConfirm: {
       title: "Hapus {{itemType}}?",
       message: "Apakah Anda yakin ingin menghapus",

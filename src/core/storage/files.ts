@@ -183,6 +183,8 @@ export const storageBridge = {
       filePath,
       filename: filename ?? null,
     }),
+  imageLibraryDeleteItem: (storagePath: string) =>
+    invoke("storage_delete_image_library_item", { storagePath }) as Promise<void>,
 
   // Lorebook
   lorebooksList: () => invoke<string>("lorebooks_list").then((s) => JSON.parse(s) as any[]),

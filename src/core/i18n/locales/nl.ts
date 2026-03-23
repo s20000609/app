@@ -2406,6 +2406,43 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Lorebook verwijderen",
       importLorebook: "Lorebook importeren",
     },
+    imageLibrary: {
+      filters: {
+        all: "Alles",
+        backgrounds: "Achtergronden",
+        avatars: "Avatars",
+        attachments: "Bijlagen",
+        other: "Overig",
+      },
+      searchPlaceholder: "Zoek op bestandsnaam, pad, sessie-id of entiteits-id",
+      empty: {
+        title: "Geen afbeeldingen voor deze weergave",
+        description: "Probeer een ander filter of zoekwoord. De bibliotheek toont alleen afbeeldingen die al in de lokale opslag van de app staan.",
+      },
+      actions: {
+        sort: "Sorteren",
+        useThis: "Deze gebruiken",
+        using: "Wordt gebruikt...",
+        copyPath: "Pad kopiëren",
+        saving: "Opslaan...",
+        download: "Downloaden",
+        delete: "Afbeelding verwijderen",
+        deleting: "Verwijderen...",
+      },
+      active: "Actief",
+      messages: {
+        loadFailed: "Afbeeldingenbibliotheek laden mislukt",
+        saved: "Afbeelding opgeslagen",
+        downloadFailed: "Download mislukt",
+        useFailed: "Deze afbeelding kon niet worden gebruikt",
+        deleted: "Afbeelding verwijderd",
+        deleteFailed: "Afbeelding kon niet worden verwijderd",
+      },
+      deleteConfirm: {
+        title: "Afbeelding verwijderen?",
+        message: "Weet je zeker dat je \"{{filename}}\" wilt verwijderen? Hierdoor kunnen avatars, chatachtergronden of berichtbijlagen die dit nog gebruiken kapotgaan.",
+      },
+    },
     deleteConfirm: {
       title: "{{itemType}} verwijderen?",
       message: "Weet je zeker dat je wilt verwijderen",

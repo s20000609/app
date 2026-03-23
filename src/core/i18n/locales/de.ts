@@ -2419,6 +2419,43 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Lorebook löschen",
       importLorebook: "Lorebook importieren",
     },
+    imageLibrary: {
+      filters: {
+        all: "Alle",
+        backgrounds: "Hintergründe",
+        avatars: "Avatare",
+        attachments: "Anhänge",
+        other: "Sonstige",
+      },
+      searchPlaceholder: "Nach Dateiname, Pfad, Sitzungs-ID oder Entitäts-ID suchen",
+      empty: {
+        title: "Keine Bilder für diese Ansicht gefunden",
+        description: "Versuche einen anderen Filter oder Suchbegriff. Die Bibliothek zeigt nur Bilder, die bereits im lokalen Speicher der App liegen.",
+      },
+      actions: {
+        sort: "Sortieren",
+        useThis: "Dieses verwenden",
+        using: "Wird verwendet...",
+        copyPath: "Pfad kopieren",
+        saving: "Wird gespeichert...",
+        download: "Herunterladen",
+        delete: "Bild löschen",
+        deleting: "Wird gelöscht...",
+      },
+      active: "Aktiv",
+      messages: {
+        loadFailed: "Bildbibliothek konnte nicht geladen werden",
+        saved: "Bild gespeichert",
+        downloadFailed: "Download fehlgeschlagen",
+        useFailed: "Dieses Bild konnte nicht verwendet werden",
+        deleted: "Bild gelöscht",
+        deleteFailed: "Bild konnte nicht gelöscht werden",
+      },
+      deleteConfirm: {
+        title: "Bild löschen?",
+        message: "Möchtest du \"{{filename}}\" wirklich löschen? Dadurch können Avatare, Chat-Hintergründe oder Nachrichtenanhänge kaputtgehen, die es noch verwenden.",
+      },
+    },
     deleteConfirm: {
       title: "{{itemType}} löschen?",
       message: "Bist du sicher, dass du löschen möchtest",

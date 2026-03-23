@@ -98,6 +98,7 @@ macro_rules! invoke_handler {
             crate::storage_manager::media::storage_get_image_path,
             crate::storage_manager::media::storage_read_image,
             crate::storage_manager::media::storage_delete_image,
+            crate::storage_manager::media::storage_delete_image_library_item,
             crate::storage_manager::media::storage_save_avatar,
             crate::storage_manager::media::storage_load_avatar,
             crate::storage_manager::media::storage_get_avatar_path,

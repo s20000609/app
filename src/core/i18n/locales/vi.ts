@@ -2383,6 +2383,43 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       deleteLorebook: "Xóa sách lore",
       importLorebook: "Nhập sách lore",
     },
+    imageLibrary: {
+      filters: {
+        all: "Tất cả",
+        backgrounds: "Nền",
+        avatars: "Avatar",
+        attachments: "Tệp đính kèm",
+        other: "Khác",
+      },
+      searchPlaceholder: "Tìm theo tên tệp, đường dẫn, id phiên hoặc id thực thể",
+      empty: {
+        title: "Không có hình ảnh nào khớp với chế độ xem này",
+        description: "Hãy thử bộ lọc hoặc từ khóa khác. Thư viện chỉ hiển thị các hình ảnh đã được lưu trong bộ nhớ cục bộ của ứng dụng.",
+      },
+      actions: {
+        sort: "Sắp xếp",
+        useThis: "Dùng ảnh này",
+        using: "Đang dùng...",
+        copyPath: "Sao chép đường dẫn",
+        saving: "Đang lưu...",
+        download: "Tải xuống",
+        delete: "Xóa ảnh",
+        deleting: "Đang xóa...",
+      },
+      active: "Đang dùng",
+      messages: {
+        loadFailed: "Không thể tải thư viện ảnh",
+        saved: "Đã lưu ảnh",
+        downloadFailed: "Tải xuống thất bại",
+        useFailed: "Không thể dùng ảnh này",
+        deleted: "Đã xóa ảnh",
+        deleteFailed: "Không thể xóa ảnh",
+      },
+      deleteConfirm: {
+        title: "Xóa ảnh?",
+        message: "Bạn có chắc muốn xóa \"{{filename}}\" không? Việc này có thể làm hỏng avatar, nền chat hoặc tệp đính kèm tin nhắn vẫn đang dùng ảnh này.",
+      },
+    },
     deleteConfirm: {
       title: "Xóa {{itemType}}?",
       message: "Bạn có chắc muốn xóa",
