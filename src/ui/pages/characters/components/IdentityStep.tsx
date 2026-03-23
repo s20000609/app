@@ -10,6 +10,7 @@ interface IdentityStepProps {
   onNameChange: (value: string) => void;
   avatarPath: string;
   onAvatarChange: (value: string) => void;
+  onBeforeChooseAvatarFromLibrary?: () => void;
   avatarCrop?: AvatarCrop | null;
   onAvatarCropChange?: (value: AvatarCrop | null) => void;
   avatarRoundPath?: string | null;
@@ -32,6 +33,7 @@ export function IdentityStep({
   onNameChange,
   avatarPath,
   onAvatarChange,
+  onBeforeChooseAvatarFromLibrary,
   avatarCrop,
   onAvatarCropChange,
   avatarRoundPath,
@@ -76,6 +78,7 @@ export function IdentityStep({
             <AvatarPicker
               currentAvatarPath={avatarPath}
               onAvatarChange={onAvatarChange}
+              onBeforeChooseFromLibrary={onBeforeChooseAvatarFromLibrary}
               promptSubjectName={name}
               avatarCrop={avatarCrop}
               onAvatarCropChange={onAvatarCropChange}
