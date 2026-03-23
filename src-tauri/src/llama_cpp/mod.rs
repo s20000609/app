@@ -1,18 +1,26 @@
+#[cfg(not(mobile))]
 use std::collections::HashMap;
+#[cfg(not(mobile))]
 use std::io::Cursor;
 
+#[cfg(not(mobile))]
 use base64::Engine as _;
+#[cfg(not(mobile))]
 use serde_json::{json, Value};
 use tauri::AppHandle;
 #[cfg(not(mobile))]
 use tauri::Emitter;
 
 use crate::api::{ApiRequest, ApiResponse};
+#[cfg(not(mobile))]
 use crate::chat_manager::provider_adapter::{
     extract_image_data_urls, extract_text_content, parse_data_url,
 };
+#[cfg(not(mobile))]
 use crate::chat_manager::tooling::{parse_tool_calls, ToolCall};
+#[cfg(not(mobile))]
 use crate::chat_manager::types::{ErrorEnvelope, NormalizedEvent, UsageSummary};
+#[cfg(not(mobile))]
 use crate::transport;
 #[cfg(not(mobile))]
 use crate::utils::{log_error, log_info, log_warn};
@@ -1500,6 +1508,7 @@ pub async fn llamacpp_context_info(
     {
         let _ = app;
         let _ = model_path;
+        let _ = llama_offload_kqv;
         let _ = llama_kv_type;
         Err(crate::utils::err_msg(
             module_path!(),

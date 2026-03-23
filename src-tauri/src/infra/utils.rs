@@ -628,12 +628,20 @@ pub fn developer_force_crash(app: AppHandle) -> Result<(), String> {
     std::thread::sleep(std::time::Duration::from_millis(150));
 
     #[cfg(target_os = "android")]
-    unsafe {
-        let pid = libc::getpid();
-        libc::kill(pid, libc::SIGABRT);
-        libc::kill(pid, libc::SIGKILL);
-        libc::_exit(134);
+    {
+        unsafe {
+            let pid = libc::getpid();
+            libc::kill(pid, libc::SIGABRT);
+            libc::kill(pid, libc::SIGKILL);
+            libc::_exit(134);
+        }
+        loop {
+            std::thread::park();
+        }
     }
 
-    std::process::abort();
+    #[cfg(not(target_os = "android"))]
+    {
+        std::process::abort();
+    }
 }

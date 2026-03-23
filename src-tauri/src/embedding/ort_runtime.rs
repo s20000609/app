@@ -1,13 +1,20 @@
 use super::*;
 use crate::utils::log_info;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use std::collections::HashMap;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use std::fs;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use std::io::Cursor;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use tauri::path::BaseDirectory;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use tauri::Manager;
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn macos_primary_dylib_name() -> String {
     format!("libonnxruntime.{}.dylib", ORT_VERSION)
 }
@@ -550,6 +557,7 @@ fn resolve_bundled_onnxruntime(app: &AppHandle) -> Option<PathBuf> {
     None
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn is_nonempty_file(path: &Path) -> bool {
     fs::metadata(path)
         .map(|metadata| metadata.is_file() && metadata.len() > 0)

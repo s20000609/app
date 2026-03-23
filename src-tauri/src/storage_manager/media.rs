@@ -2,6 +2,7 @@ use base64::{engine::general_purpose, Engine as _};
 use std::fs;
 use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
+#[cfg(not(target_os = "android"))]
 use tauri::Manager;
 
 use super::legacy::storage_root;
@@ -212,11 +213,18 @@ fn images_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(images_dir)
 }
 
-fn downloads_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    #[cfg(target_os = "android")]
+#[cfg(target_os = "android")]
+fn downloads_dir(_app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let download_dir = PathBuf::from("/storage/emulated/0/Download");
+    if !download_dir.exists() {
+        fs::create_dir_all(&download_dir)
+            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    }
+    Ok(download_dir)
+}
 
-    #[cfg(not(target_os = "android"))]
+#[cfg(not(target_os = "android"))]
+fn downloads_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let download_dir = app.path().download_dir().map_err(|e| {
         crate::utils::err_msg(
             module_path!(),
