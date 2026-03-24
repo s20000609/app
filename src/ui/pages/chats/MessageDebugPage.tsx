@@ -89,6 +89,51 @@ function JsonBlock({ title, value }: { title: string; value: unknown }) {
   );
 }
 
+function MessageRoleBadge({ role }: { role: string }) {
+  const tone =
+    role === "system" || role === "developer"
+      ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-200"
+      : role === "assistant" || role === "model"
+        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+        : "border-white/10 bg-white/5 text-white/70";
+
+  return (
+    <span className={`rounded border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${tone}`}>
+      {role}
+    </span>
+  );
+}
+
+function MessageListBlock({ title, messages }: { title: string; messages: unknown[] }) {
+  return (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <div className="space-y-3">
+        {messages.map((value, index) => {
+          const message = getPayloadObject(value);
+          const role = String(message?.role ?? "unknown");
+          return (
+            <div
+              key={`${title}-${index}`}
+              className="rounded border border-white/10 bg-black px-3 py-3"
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <MessageRoleBadge role={role} />
+                  <span className="font-mono text-[11px] text-white/45">#{index + 1}</span>
+                </div>
+              </div>
+              <pre className="overflow-x-auto text-xs leading-6 text-white/85">
+                {stringify(value)}
+              </pre>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function MessageDebugPage() {
   const navigate = useNavigate();
   const { sessionId, messageId } = useParams<{
@@ -193,6 +238,10 @@ export function MessageDebugPage() {
   const promptEntries = snapshot?.promptEntries ?? null;
   const relativePromptEntries = snapshot?.relativePromptEntries ?? null;
   const inChatPromptEntries = snapshot?.inChatPromptEntries ?? null;
+  const providerMessages = Array.isArray(requestBodyObject?.messages)
+    ? requestBodyObject.messages
+    : null;
+  const providerSystem = requestBodyObject?.system;
 
   return (
     <div className="h-full overflow-y-auto bg-[#050505] px-4 py-4 text-sm text-white">
@@ -300,8 +349,14 @@ export function MessageDebugPage() {
         {inChatPromptEntries ? (
           <JsonBlock title="In-Chat Prompt Entries" value={inChatPromptEntries} />
         ) : null}
-        {requestMessages ? (
-          <JsonBlock title="Resolved Request Messages" value={requestMessages} />
+        {Array.isArray(requestMessages) ? (
+          <MessageListBlock title="Pre-Adapter Request Messages" messages={requestMessages} />
+        ) : null}
+        {providerSystem !== undefined ? (
+          <JsonBlock title="Final Provider System Field" value={providerSystem} />
+        ) : null}
+        {providerMessages ? (
+          <MessageListBlock title="Final Provider Messages" messages={providerMessages} />
         ) : null}
         {requestBody !== undefined ? (
           <JsonBlock title="Full Request Body" value={requestBody} />
