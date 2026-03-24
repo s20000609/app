@@ -436,15 +436,34 @@ impl RegenerateFlow {
                 extra_body_fields,
             );
 
+            let request_started_at = now_millis().unwrap_or_default();
+
             emit_debug(
                 &app,
                 "regenerate_request",
                 json!({
+                    "operation": "regenerate",
                     "sessionId": session.id,
                     "messageId": message_id,
+                    "providerId": attempt_credential.provider_id,
                     "requestId": request_id,
                     "endpoint": built.url,
                     "model": attempt_model.name,
+                    "stream": should_stream,
+                    "requestStartedAt": request_started_at,
+                    "requestBody": &built.body,
+                    "requestSettings": {
+                        "temperature": request_settings.temperature,
+                        "topP": request_settings.top_p,
+                        "maxTokens": request_settings.max_tokens,
+                        "contextLength": request_settings.context_length,
+                        "frequencyPenalty": request_settings.frequency_penalty,
+                        "presencePenalty": request_settings.presence_penalty,
+                        "topK": request_settings.top_k,
+                        "reasoningEnabled": request_settings.reasoning_enabled,
+                        "reasoningEffort": request_settings.reasoning_effort,
+                        "reasoningBudget": request_settings.reasoning_budget,
+                    },
                     "fallbackAttempt": is_fallback_attempt,
                 }),
             );
@@ -477,9 +496,15 @@ impl RegenerateFlow {
                 &app,
                 "regenerate_response",
                 json!({
+                    "operation": "regenerate",
+                    "sessionId": session.id,
+                    "messageId": message_id,
+                    "requestId": request_id,
                     "status": api_response.status,
                     "ok": api_response.ok,
                     "model": attempt_model.name,
+                    "elapsedMs": now_millis().unwrap_or_default().saturating_sub(request_started_at),
+                    "responseData": api_response.data(),
                 }),
             );
 
@@ -492,10 +517,15 @@ impl RegenerateFlow {
                     &app,
                     "regenerate_provider_error",
                     json!({
+                        "operation": "regenerate",
+                        "sessionId": session.id,
+                        "messageId": message_id,
+                        "requestId": request_id,
                         "status": api_response.status,
                         "message": err_message,
                         "usage": failed_usage,
                         "model": attempt_model.name,
+                        "responseData": api_response.data(),
                     }),
                 );
                 if !has_next_attempt {
@@ -677,6 +707,7 @@ impl RegenerateFlow {
             json!({
                 "sessionId": session.id,
                 "messageId": message_id,
+                "requestId": request_id,
                 "variantId": assistant_clone
                     .selected_variant_id
                     .clone()

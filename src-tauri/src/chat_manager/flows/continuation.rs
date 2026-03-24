@@ -372,15 +372,33 @@ impl ContinueFlow {
                 extra_body_fields,
             );
 
+            let request_started_at = now_millis().unwrap_or_default();
+
             emit_debug(
                 &app,
                 "continue_request",
                 json!({
+                    "operation": "continue",
+                    "sessionId": session.id,
                     "providerId": attempt_credential.provider_id,
                     "model": attempt_model.name,
                     "stream": should_stream,
                     "requestId": request_id,
                     "endpoint": built.url,
+                    "requestStartedAt": request_started_at,
+                    "requestBody": &built.body,
+                    "requestSettings": {
+                        "temperature": request_settings.temperature,
+                        "topP": request_settings.top_p,
+                        "maxTokens": request_settings.max_tokens,
+                        "contextLength": request_settings.context_length,
+                        "frequencyPenalty": request_settings.frequency_penalty,
+                        "presencePenalty": request_settings.presence_penalty,
+                        "topK": request_settings.top_k,
+                        "reasoningEnabled": request_settings.reasoning_enabled,
+                        "reasoningEffort": request_settings.reasoning_effort,
+                        "reasoningBudget": request_settings.reasoning_budget,
+                    },
                     "fallbackAttempt": is_fallback_attempt,
                 }),
             );
@@ -413,9 +431,14 @@ impl ContinueFlow {
                 &app,
                 "continue_response",
                 json!({
+                    "operation": "continue",
+                    "sessionId": session.id,
+                    "requestId": request_id,
                     "status": api_response.status,
                     "ok": api_response.ok,
                     "model": attempt_model.name,
+                    "elapsedMs": now_millis().unwrap_or_default().saturating_sub(request_started_at),
+                    "responseData": api_response.data(),
                 }),
             );
 
@@ -428,10 +451,14 @@ impl ContinueFlow {
                     &app,
                     "continue_provider_error",
                     json!({
+                        "operation": "continue",
+                        "sessionId": session.id,
+                        "requestId": request_id,
                         "status": api_response.status,
                         "message": err_message,
                         "usage": failed_usage,
                         "model": attempt_model.name,
+                        "responseData": api_response.data(),
                     }),
                 );
                 if !has_next_attempt {
@@ -628,6 +655,8 @@ impl ContinueFlow {
             "continue_session_saved",
             json!({
                 "sessionId": session.id,
+                "messageId": assistant_message.id,
+                "requestId": request_id,
                 "messageCount": session.messages.len(),
                 "updatedAt": session.updated_at,
             }),

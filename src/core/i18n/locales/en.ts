@@ -55,6 +55,7 @@ export const enMessages = {
       embeddingDownload: "Embedding Download",
       embeddingTest: "Embedding Test",
       editModel: "Edit Model",
+      messageDebug: "Message Debug",
     },
     bottomNav: {
       chats: "Chats",
@@ -261,6 +262,10 @@ export const enMessages = {
       githubDescription: "Source code, issues, and development",
       discord: "Discord",
       discordDescription: "Community server and support",
+    },
+    developerMode: {
+      enable: "Enable Developer Mode",
+      enabled: "Developer Mode Enabled",
     },
     errors: {
       saveTitle: "Couldn't save preference",
@@ -734,6 +739,7 @@ export const enMessages = {
       regenerateSceneImage: "Regenerate scene image",
       chatAppearance: "Chat Appearance",
       delete: "Delete",
+      debug: "Debug",
       unpinToDelete: "Unpin to delete",
       editPlaceholder: "Edit your message...",
       memoriesUsed: "{{count}} memories used",

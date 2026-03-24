@@ -25,6 +25,28 @@ export interface ChatContinueResult {
   assistantMessage: StoredMessage;
 }
 
+export interface ChatMessageDebugSnapshot {
+  source: string;
+  sessionId: string;
+  messageId: string;
+  role: string;
+  operation: string;
+  providerId: string;
+  credentialId: string;
+  modelId: string;
+  model: string;
+  modelDisplayName: string;
+  endpoint: string;
+  stream: boolean;
+  requestSettings: unknown;
+  promptEntries: unknown[];
+  relativePromptEntries: unknown[];
+  inChatPromptEntries: unknown[];
+  requestMessages: unknown[];
+  requestBody: unknown;
+  notes: string[];
+}
+
 export async function sendChatTurn(params: {
   sessionId: string;
   characterId: string;
@@ -215,4 +237,16 @@ export async function generateDesignReferenceDescription(params: {
   } finally {
     if (requestId) endAsyncAction(requestId);
   }
+}
+
+export async function getMessageDebugSnapshot(params: {
+  sessionId: string;
+  messageId: string;
+}): Promise<ChatMessageDebugSnapshot> {
+  return invoke<ChatMessageDebugSnapshot>("chat_message_debug_snapshot", {
+    args: {
+      sessionId: params.sessionId,
+      messageId: params.messageId,
+    },
+  });
 }

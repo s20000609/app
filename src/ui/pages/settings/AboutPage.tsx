@@ -14,6 +14,7 @@ import {
   GITHUB_REPO_LINK,
 } from "../../../core/utils/links";
 import { getPlatform } from "../../../core/utils/platform";
+import { isDevelopmentMode, setDeveloperModeOverride } from "../../../core/utils/env";
 import { toast } from "../../components/toast";
 import { cn, interactive } from "../../design-tokens";
 
@@ -27,6 +28,7 @@ function ensureAdvancedSettings(settings: Settings): NonNullable<Settings["advan
     sceneGenerationMode: settings.advancedSettings?.sceneGenerationMode ?? "auto",
     accessibility: settings.advancedSettings?.accessibility,
     appUpdateChecksEnabled: settings.advancedSettings?.appUpdateChecksEnabled ?? true,
+    developerModeEnabled: settings.advancedSettings?.developerModeEnabled ?? false,
   };
 }
 
@@ -51,6 +53,7 @@ export function AboutPage() {
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   const [updateState, setUpdateState] = useState<"idle" | "available" | "upToDate">("idle");
   const [availableUpdate, setAvailableUpdate] = useState<AppUpdateInfo | null>(null);
+  const [developerModeEnabled, setDeveloperModeEnabled] = useState(isDevelopmentMode());
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +67,9 @@ export function AboutPage() {
         if (cancelled) return;
         setAppVersion(version);
         setAutoChecksEnabled(settings.advancedSettings?.appUpdateChecksEnabled ?? true);
+        setDeveloperModeEnabled(
+          isDevelopmentMode() || settings.advancedSettings?.developerModeEnabled === true,
+        );
       } catch (error) {
         console.error("Failed to load about page state:", error);
       }
@@ -134,6 +140,21 @@ export function AboutPage() {
       await openUrl(url);
     } catch {
       window.open(url, "_blank");
+    }
+  };
+
+  const handleEnableDeveloperMode = async () => {
+    try {
+      const settings = await readSettings();
+      const advanced = ensureAdvancedSettings(settings);
+      advanced.developerModeEnabled = true;
+      setDeveloperModeOverride(true);
+      await saveAdvancedSettings(advanced);
+      setDeveloperModeEnabled(true);
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to enable developer mode:", error);
+      toast.error(t("about.errors.saveTitle"), t("about.errors.saveDescription"));
     }
   };
 
@@ -321,6 +342,26 @@ export function AboutPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={handleEnableDeveloperMode}
+            disabled={developerModeEnabled}
+            className={cn(
+              "flex h-10 w-full items-center justify-center rounded-lg border text-sm font-medium",
+              developerModeEnabled
+                ? "border-warning/12 bg-warning/8 text-warning/70"
+                : "border-warning/18 bg-surface/45 text-warning",
+              interactive.transition.default,
+              "hover:bg-surface-el/55 disabled:cursor-default",
+            )}
+          >
+            {developerModeEnabled
+              ? t("about.developerMode.enabled")
+              : t("about.developerMode.enable")}
+          </button>
         </div>
       </section>
     </div>

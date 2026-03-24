@@ -29,6 +29,7 @@ import {
   createDefaultSettings,
   createDefaultAccessibilitySettings,
 } from "./schemas";
+import { setDeveloperModeOverride } from "../utils/env";
 
 const SessionPreviewSchema = z.object({
   id: z.string(),
@@ -862,6 +863,7 @@ export async function listSessionPreviews(
 
 export async function saveAdvancedSettings(settings: Settings["advancedSettings"]): Promise<void> {
   await storageBridge.settingsSetAdvanced(settings);
+  setDeveloperModeOverride(settings?.developerModeEnabled === true);
   broadcastSettingsUpdated();
 }
 

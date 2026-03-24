@@ -1972,6 +1972,7 @@ export function ChatConversationPage() {
         characterMemoryType={character?.memoryType}
         characterDefaultModelId={character?.defaultModelId ?? null}
         characterId={characterId}
+        sessionId={session?.id ?? null}
       />
 
       {/* Character Selection for Branch */}

@@ -177,7 +177,13 @@ pub async fn api_request(app: tauri::AppHandle, req: ApiRequest) -> Result<ApiRe
                 emit_abort();
                 return Err("Request was cancelled by user".to_string());
             }
-            response = transport::send_with_retries(&app, "api_request", request_builder, 2) => {
+            response = transport::send_with_retries(
+                &app,
+                "api_request",
+                request_builder,
+                2,
+                request_id.as_deref(),
+            ) => {
                 match response {
                     Ok(resp) => {
                         log_info(
@@ -204,7 +210,15 @@ pub async fn api_request(app: tauri::AppHandle, req: ApiRequest) -> Result<ApiRe
             }
         }
     } else {
-        match transport::send_with_retries(&app, "api_request", request_builder, 2).await {
+        match transport::send_with_retries(
+            &app,
+            "api_request",
+            request_builder,
+            2,
+            request_id.as_deref(),
+        )
+        .await
+        {
             Ok(resp) => {
                 log_info(
                     &app,

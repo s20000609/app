@@ -41,6 +41,7 @@ import {
   ChatSettingsPage,
   ChatHistoryPage,
   ChatMemoriesPage,
+  MessageDebugPage,
   SearchMessagesPage,
   ChatLayout,
 } from "./ui/pages/chats";
@@ -102,6 +103,7 @@ import { hasSeenTooltip, setTooltipSeen } from "./core/storage/appState";
 import { checkForAppUpdate } from "./core/app-updates/checkForAppUpdate";
 import { presentAppUpdateToast } from "./core/app-updates/presentAppUpdateToast";
 import { readSettings, SETTINGS_UPDATED_EVENT } from "./core/storage/repo";
+import { recordChatDebugEvent } from "./core/debug/chatDebugStore";
 
 const chatLog = logManager({ component: "Chat" });
 
@@ -154,6 +156,7 @@ function App() {
                 }
               }
             } else if (payload !== undefined) {
+              recordChatDebugEvent({ state, payload, level });
               chatLog.with({ fn: state }).log(payload);
             } else {
               chatLog.with({ fn: state }).log(event.payload);
@@ -874,6 +877,10 @@ function AppContent() {
               <Route path="/chat/:characterId/search" element={<SearchMessagesPage />} />
               <Route path="/chat/:characterId/history" element={<ChatHistoryPage />} />
               <Route path="/chat/:characterId/memories" element={<ChatMemoriesPage />} />
+              <Route
+                path="/chat/:characterId/debug/:sessionId/:messageId"
+                element={<MessageDebugPage />}
+              />
               <Route path="/create/character" element={<CreateCharacterPage />} />
               <Route path="/create/character/helper" element={<CreationHelperPage />} />
               <Route path="/settings/characters" element={<CharactersPage />} />

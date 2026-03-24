@@ -141,6 +141,7 @@ macro_rules! invoke_handler {
             crate::chat_manager::chat_completion,
             crate::chat_manager::chat_regenerate,
             crate::chat_manager::chat_continue,
+            crate::chat_manager::chat_message_debug_snapshot,
             crate::chat_manager::chat_add_message_attachment,
             crate::chat_manager::chat_generate_scene_image,
             crate::chat_manager::chat_generate_scene_prompt,
