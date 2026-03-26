@@ -90,6 +90,24 @@ pub enum PromptEntryCondition {
     HasLorebookContent {
         value: bool,
     },
+    HasSubjectDescription {
+        value: bool,
+    },
+    HasCurrentDescription {
+        value: bool,
+    },
+    HasCharacterReferenceImages {
+        value: bool,
+    },
+    HasPersonaReferenceImages {
+        value: bool,
+    },
+    HasCharacterReferenceText {
+        value: bool,
+    },
+    HasPersonaReferenceText {
+        value: bool,
+    },
     InputScopeAny {
         values: Vec<String>,
     },

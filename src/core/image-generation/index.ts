@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import type {
   AdvancedModelSettings,
   Model,
+  PromptEntryCondition,
   ProviderCredential,
   Settings,
 } from "../storage/schemas";
@@ -80,7 +81,11 @@ export async function generateImage(
 
 type PromptTemplateLike = {
   content: string;
-  entries?: Array<{ content: string; enabled?: boolean }>;
+  entries?: Array<{
+    content: string;
+    enabled?: boolean;
+    conditions?: PromptEntryCondition | null;
+  }>;
 };
 
 type AvatarPromptContext = {
@@ -89,6 +94,11 @@ type AvatarPromptContext = {
   avatarRequest?: string | null;
   currentAvatarPrompt?: string | null;
   editRequest?: string | null;
+};
+
+type AvatarPromptConditionContext = {
+  hasSubjectDescription: boolean;
+  hasCurrentDescription: boolean;
 };
 
 const FALLBACK_AVATAR_GENERATION_TEMPLATE = [
@@ -110,12 +120,44 @@ const FALLBACK_AVATAR_EDIT_TEMPLATE = [
   "Output only the revised image prompt text.",
 ].join("\n\n");
 
-function resolveTemplateContent(template: PromptTemplateLike | null, fallback: string): string {
+function matchesAvatarPromptCondition(
+  condition: PromptEntryCondition,
+  context: AvatarPromptConditionContext,
+): boolean {
+  switch (condition.type) {
+    case "hasSubjectDescription":
+      return context.hasSubjectDescription === condition.value;
+    case "hasCurrentDescription":
+      return context.hasCurrentDescription === condition.value;
+    case "all":
+      return condition.conditions.every((child) => matchesAvatarPromptCondition(child, context));
+    case "any":
+      return (
+        condition.conditions.length > 0 &&
+        condition.conditions.some((child) => matchesAvatarPromptCondition(child, context))
+      );
+    case "not":
+      return !matchesAvatarPromptCondition(condition.condition, context);
+    default:
+      return true;
+  }
+}
+
+function resolveTemplateContent(
+  template: PromptTemplateLike | null,
+  fallback: string,
+  context: AvatarPromptConditionContext,
+): string {
   if (!template) return fallback;
 
   const mergedEntries =
     template.entries
-      ?.filter((entry) => entry.enabled !== false && entry.content.trim().length > 0)
+      ?.filter(
+        (entry) =>
+          entry.enabled !== false &&
+          entry.content.trim().length > 0 &&
+          (!entry.conditions || matchesAvatarPromptCondition(entry.conditions, context)),
+      )
       .map((entry) => entry.content)
       .join("\n\n") ?? "";
 
@@ -153,7 +195,10 @@ async function buildAvatarTemplatePrompt(
 ): Promise<string> {
   try {
     const template = await getPromptTemplate(templateId);
-    const content = resolveTemplateContent(template, fallback);
+    const content = resolveTemplateContent(template, fallback, {
+      hasSubjectDescription: Boolean(context.subjectDescription?.trim()),
+      hasCurrentDescription: Boolean(context.currentAvatarPrompt?.trim()),
+    });
     return applyTemplateVariables(content, context);
   } catch (error) {
     console.warn("Failed to load avatar prompt template, using fallback:", error);

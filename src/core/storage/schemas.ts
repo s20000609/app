@@ -39,6 +39,12 @@ export type PromptEntryCondition =
   | { type: "hasMemorySummary"; value: boolean }
   | { type: "hasKeyMemories"; value: boolean }
   | { type: "hasLorebookContent"; value: boolean }
+  | { type: "hasSubjectDescription"; value: boolean }
+  | { type: "hasCurrentDescription"; value: boolean }
+  | { type: "hasCharacterReferenceImages"; value: boolean }
+  | { type: "hasPersonaReferenceImages"; value: boolean }
+  | { type: "hasCharacterReferenceText"; value: boolean }
+  | { type: "hasPersonaReferenceText"; value: boolean }
   | { type: "inputScopeAny"; values: string[] }
   | { type: "outputScopeAny"; values: string[] }
   | { type: "providerIdAny"; values: string[] }
@@ -65,6 +71,12 @@ export const PromptEntryConditionSchema: z.ZodType<PromptEntryCondition> = z.laz
     z.object({ type: z.literal("hasMemorySummary"), value: z.boolean() }),
     z.object({ type: z.literal("hasKeyMemories"), value: z.boolean() }),
     z.object({ type: z.literal("hasLorebookContent"), value: z.boolean() }),
+    z.object({ type: z.literal("hasSubjectDescription"), value: z.boolean() }),
+    z.object({ type: z.literal("hasCurrentDescription"), value: z.boolean() }),
+    z.object({ type: z.literal("hasCharacterReferenceImages"), value: z.boolean() }),
+    z.object({ type: z.literal("hasPersonaReferenceImages"), value: z.boolean() }),
+    z.object({ type: z.literal("hasCharacterReferenceText"), value: z.boolean() }),
+    z.object({ type: z.literal("hasPersonaReferenceText"), value: z.boolean() }),
     z.object({
       type: z.literal("inputScopeAny"),
       values: z.array(z.string().trim().min(1)).min(1),

@@ -851,6 +851,12 @@ fn render_design_reference_prompt_entries(
         has_memory_summary: false,
         has_key_memories: false,
         has_lorebook_content: false,
+        has_subject_description: subject_description.is_some(),
+        has_current_description: current_description.is_some(),
+        has_character_reference_images: false,
+        has_persona_reference_images: false,
+        has_character_reference_text: false,
+        has_persona_reference_text: false,
         input_scopes: &model.input_scopes,
         output_scopes: &model.output_scopes,
         provider_id: Some(model.provider_id.as_str()),
@@ -987,6 +993,7 @@ fn render_scene_generation_prompt_entries(
     character: &Character,
     persona: Option<&Persona>,
     recent_messages_text: &str,
+    reference_images: &SceneReferenceImages,
 ) -> Vec<SystemPromptEntry> {
     let (template_entries, condense_prompt_entries) = load_scene_generation_prompt_entries(app);
     let mut rendered_entries = Vec::new();
@@ -1006,6 +1013,26 @@ fn render_scene_generation_prompt_entries(
     } else {
         false
     };
+    let has_character_reference_text = !build_scene_prompt_reference_text(
+        character.name.as_str(),
+        character.design_description.as_deref(),
+        reference_images.character_reference_count,
+        reference_images.character_reference_source,
+    )
+    .trim()
+    .is_empty();
+    let has_persona_reference_text = if let Some(persona) = persona {
+        !build_scene_prompt_reference_text(
+            &persona_scene_name(Some(persona)),
+            persona.design_description.as_deref(),
+            reference_images.persona_reference_count,
+            reference_images.persona_reference_source,
+        )
+        .trim()
+        .is_empty()
+    } else {
+        false
+    };
     let condition_context = PromptEntryConditionContext {
         chat_mode: PromptEntryChatMode::Direct,
         scene_generation_enabled: scene_generation_enabled(settings),
@@ -1020,6 +1047,12 @@ fn render_scene_generation_prompt_entries(
         has_memory_summary: false,
         has_key_memories: false,
         has_lorebook_content: false,
+        has_subject_description: false,
+        has_current_description: false,
+        has_character_reference_images: !reference_images.character_images.is_empty(),
+        has_persona_reference_images: !reference_images.persona_images.is_empty(),
+        has_character_reference_text,
+        has_persona_reference_text,
         input_scopes: &model.input_scopes,
         output_scopes: &model.output_scopes,
         provider_id: Some(model.provider_id.as_str()),
@@ -1320,6 +1353,7 @@ pub async fn chat_generate_scene_prompt(
         &character,
         persona,
         &recent_messages_text,
+        &reference_images,
     );
     if prompt_entries.is_empty() {
         return Err("Scene generation prompt template rendered no usable entries".to_string());

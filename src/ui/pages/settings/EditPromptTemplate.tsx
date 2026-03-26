@@ -392,6 +392,28 @@ const SIMPLE_CONDITION_OPTIONS: Array<{
   { value: "hasMemorySummary", label: "Has memory summary", kind: "boolean" },
   { value: "hasKeyMemories", label: "Has key memories", kind: "boolean" },
   { value: "hasLorebookContent", label: "Has lorebook content", kind: "boolean" },
+  { value: "hasSubjectDescription", label: "Has subject description", kind: "boolean" },
+  { value: "hasCurrentDescription", label: "Has current description", kind: "boolean" },
+  {
+    value: "hasCharacterReferenceImages",
+    label: "Has character reference images",
+    kind: "boolean",
+  },
+  {
+    value: "hasPersonaReferenceImages",
+    label: "Has persona reference images",
+    kind: "boolean",
+  },
+  {
+    value: "hasCharacterReferenceText",
+    label: "Has character reference text",
+    kind: "boolean",
+  },
+  {
+    value: "hasPersonaReferenceText",
+    label: "Has persona reference text",
+    kind: "boolean",
+  },
   { value: "inputScopeAny", label: "Input scope any", kind: "list", placeholder: "text, image" },
   {
     value: "outputScopeAny",
@@ -606,6 +628,24 @@ function describeSimpleCondition(condition: SimplePromptEntryCondition): string 
       return condition.value ? "key memories exist" : "key memories missing";
     case "hasLorebookContent":
       return condition.value ? "lorebook content exists" : "lorebook content missing";
+    case "hasSubjectDescription":
+      return condition.value ? "subject description exists" : "subject description missing";
+    case "hasCurrentDescription":
+      return condition.value ? "current description exists" : "current description missing";
+    case "hasCharacterReferenceImages":
+      return condition.value
+        ? "character reference images exist"
+        : "character reference images missing";
+    case "hasPersonaReferenceImages":
+      return condition.value
+        ? "persona reference images exist"
+        : "persona reference images missing";
+    case "hasCharacterReferenceText":
+      return condition.value
+        ? "character reference text exists"
+        : "character reference text missing";
+    case "hasPersonaReferenceText":
+      return condition.value ? "persona reference text exists" : "persona reference text missing";
     case "inputScopeAny":
       return `input scope: ${condition.values.join(", ")}`;
     case "outputScopeAny":
@@ -747,6 +787,12 @@ function getScalarConditionBucket(
     case "hasMemorySummary":
     case "hasKeyMemories":
     case "hasLorebookContent":
+    case "hasSubjectDescription":
+    case "hasCurrentDescription":
+    case "hasCharacterReferenceImages":
+    case "hasPersonaReferenceImages":
+    case "hasCharacterReferenceText":
+    case "hasPersonaReferenceText":
     case "reasoningEnabled":
     case "visionEnabled":
       return {

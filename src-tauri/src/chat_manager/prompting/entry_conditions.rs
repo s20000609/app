@@ -16,6 +16,12 @@ pub(crate) struct PromptEntryConditionContext<'a> {
     pub(crate) has_memory_summary: bool,
     pub(crate) has_key_memories: bool,
     pub(crate) has_lorebook_content: bool,
+    pub(crate) has_subject_description: bool,
+    pub(crate) has_current_description: bool,
+    pub(crate) has_character_reference_images: bool,
+    pub(crate) has_persona_reference_images: bool,
+    pub(crate) has_character_reference_text: bool,
+    pub(crate) has_persona_reference_text: bool,
     pub(crate) input_scopes: &'a [String],
     pub(crate) output_scopes: &'a [String],
     pub(crate) provider_id: Option<&'a str>,
@@ -75,6 +81,24 @@ pub(crate) fn matches_condition(
         PromptEntryCondition::HasKeyMemories { value } => context.has_key_memories == *value,
         PromptEntryCondition::HasLorebookContent { value } => {
             context.has_lorebook_content == *value
+        }
+        PromptEntryCondition::HasSubjectDescription { value } => {
+            context.has_subject_description == *value
+        }
+        PromptEntryCondition::HasCurrentDescription { value } => {
+            context.has_current_description == *value
+        }
+        PromptEntryCondition::HasCharacterReferenceImages { value } => {
+            context.has_character_reference_images == *value
+        }
+        PromptEntryCondition::HasPersonaReferenceImages { value } => {
+            context.has_persona_reference_images == *value
+        }
+        PromptEntryCondition::HasCharacterReferenceText { value } => {
+            context.has_character_reference_text == *value
+        }
+        PromptEntryCondition::HasPersonaReferenceText { value } => {
+            context.has_persona_reference_text == *value
         }
         PromptEntryCondition::InputScopeAny { values } => {
             scope_list_match_any(values, context.input_scopes)
@@ -157,6 +181,12 @@ mod tests {
             has_memory_summary: true,
             has_key_memories: false,
             has_lorebook_content: true,
+            has_subject_description: false,
+            has_current_description: false,
+            has_character_reference_images: false,
+            has_persona_reference_images: false,
+            has_character_reference_text: false,
+            has_persona_reference_text: false,
             input_scopes,
             output_scopes,
             provider_id: Some("openai"),

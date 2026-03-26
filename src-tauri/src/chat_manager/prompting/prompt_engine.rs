@@ -8,8 +8,8 @@ use super::prompts;
 use crate::chat_manager::execution::RequestSettings;
 use crate::chat_manager::memory::manual::{has_manual_memories, render_manual_memory_lines};
 use crate::chat_manager::types::{
-    Character, Model, Persona, PromptEntryChatMode, PromptEntryPosition, PromptEntryRole, Session,
-    Settings, SystemPromptEntry,
+    Character, Model, Persona, PromptEntryChatMode, PromptEntryCondition, PromptEntryPosition,
+    PromptEntryRole, Session, Settings, SystemPromptEntry,
 };
 use crate::storage_manager::db::open_db;
 use crate::storage_manager::lorebook::get_lorebook;
@@ -694,7 +694,7 @@ pub fn default_avatar_generation_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasSubjectDescription { value: true }),
         },
         SystemPromptEntry {
             id: "avatar_gen_request".to_string(),
@@ -766,7 +766,7 @@ pub fn default_avatar_edit_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasSubjectDescription { value: true }),
         },
         SystemPromptEntry {
             id: "avatar_edit_source".to_string(),
@@ -779,7 +779,7 @@ pub fn default_avatar_edit_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasCurrentDescription { value: true }),
         },
         SystemPromptEntry {
             id: "avatar_edit_request".to_string(),
@@ -862,7 +862,7 @@ pub fn default_scene_generation_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasCharacterReferenceImages { value: true }),
         },
         SystemPromptEntry {
             id: "scene_gen_character_reference".to_string(),
@@ -875,7 +875,7 @@ pub fn default_scene_generation_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasCharacterReferenceText { value: true }),
         },
         SystemPromptEntry {
             id: "scene_gen_persona_image".to_string(),
@@ -888,7 +888,7 @@ pub fn default_scene_generation_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasPersonaReferenceImages { value: true }),
         },
         SystemPromptEntry {
             id: "scene_gen_persona_reference".to_string(),
@@ -901,7 +901,7 @@ pub fn default_scene_generation_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::HasPersonaReferenceText { value: true }),
         },
         SystemPromptEntry {
             id: "scene_gen_request".to_string(),
@@ -971,7 +971,12 @@ pub fn default_design_reference_entries() -> Vec<SystemPromptEntry> {
             conditional_min_messages: None,
             interval_turns: None,
             system_prompt: false,
-        conditions: None,
+            conditions: Some(PromptEntryCondition::Any {
+                conditions: vec![
+                    PromptEntryCondition::HasSubjectDescription { value: true },
+                    PromptEntryCondition::HasCurrentDescription { value: true },
+                ],
+            }),
         },
         SystemPromptEntry {
             id: "design_ref_avatar_image".to_string(),
@@ -1533,6 +1538,12 @@ pub fn build_system_prompt_entries(
         has_memory_summary,
         has_key_memories,
         has_lorebook_content,
+        has_subject_description: false,
+        has_current_description: false,
+        has_character_reference_images: false,
+        has_persona_reference_images: false,
+        has_character_reference_text: false,
+        has_persona_reference_text: false,
         input_scopes: &model.input_scopes,
         output_scopes: &model.output_scopes,
         provider_id: Some(model.provider_id.as_str()),
