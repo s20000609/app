@@ -22,6 +22,7 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Converter Arquivos",
       usageAnalytics: "Análise de Uso",
       changelog: "Registro de Alterações",
+      about: "Sobre",
       createSystemPrompt: "Criar Prompt de Sistema",
       editSystemPrompt: "Editar Prompt de Sistema",
       systemPrompts: "Prompts de Sistema",
@@ -58,6 +59,7 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Download de Embedding",
       embeddingTest: "Teste de Embedding",
       editModel: "Editar Modelo",
+      messageDebug: "Depuração de mensagem",
     },
     bottomNav: {
       chats: "Conversas",
@@ -160,6 +162,7 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Documentação", subtitle: "Guias e referência" },
       github: { title: "Reportar Problemas", subtitle: "Bugs e feedback • v{{version}}" },
       discord: { title: "Entrar no Discord", subtitle: "Comunidade e ajuda" },
+      about: { title: "Sobre", subtitle: "Versão, atualizações e links" },
       changelog: { title: "Registro de Alterações", subtitle: "O que há de novo" },
       reset: { title: "Reiniciar", subtitle: "Apagar tudo" },
       developer: { title: "Ferramentas de Desenvolvedor", subtitle: "Debug e testes" },
@@ -219,6 +222,65 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Salvar",
   },
 
+  updates: {
+    available: {
+      title: "Nova versão disponível",
+      description: "A v{{latestVersion}} está disponível. Você está na v{{currentVersion}}.",
+      actions: {
+        view: "Ver versão",
+      },
+    },
+  },
+
+  about: {
+    kicker: "Informações do app",
+    appName: "LettuceAI",
+    description: "Detalhes da versão, verificação de atualizações e links úteis.",
+    info: {
+      version: "Versão",
+      channel: "Canal",
+      platform: "Plataforma",
+    },
+    buildChannel: {
+      dev: "Build de desenvolvimento",
+      release: "Versão estável",
+    },
+    update: {
+      sectionTitle: "Atualizações",
+      title: "Atualizações do app",
+      description:
+        "Verifique novas versões manualmente ou desative as verificações automáticas na inicialização.",
+      autoChecks: "Verificações automáticas de atualização",
+      autoChecksDescription: "Quando ativado, o LettuceAI verifica novas versões ao abrir o app.",
+      checkNow: "Verificar atualizações",
+      checking: "Verificando atualizações...",
+      upToDateTitle: "Você está em dia",
+      upToDateDescription:
+        "Não há uma versão mais recente disponível para este dispositivo no momento.",
+      failedTitle: "Falha ao verificar atualizações",
+      failedDescription:
+        "Não foi possível verificar atualizações agora. Tente novamente em instantes.",
+    },
+    links: {
+      sectionTitle: "Links",
+      website: "Site",
+      websiteDescription: "Página de download e informações de lançamento",
+      github: "GitHub",
+      githubDescription: "Código-fonte, issues e desenvolvimento",
+      discord: "Discord",
+      discordDescription: "Servidor da comunidade e suporte",
+      reddit: "Reddit",
+      redditDescription: "Discussões da comunidade, feedback e atualizações",
+    },
+    developerMode: {
+      enable: "Ativar Modo Desenvolvedor",
+      enabled: "Modo Desenvolvedor Ativado",
+    },
+    errors: {
+      saveTitle: "Não foi possível salvar a preferência",
+      saveDescription: "Sua preferência de verificação de atualizações não foi alterada.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Toque em qualquer lugar para fechar",
@@ -537,7 +599,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       writePrompt: "Solicitação de gravação",
       writePromptDesc: "Digite o prompt exato da imagem da cena que deseja usar.",
       askAi: "Pergunte à IA",
-      askAiDesc: "Deixe o modelo de bate-papo atual esboçar um prompt de cena a partir do momento selecionado.",
+      askAiDesc:
+        "Deixe o modelo de bate-papo atual esboçar um prompt de cena a partir do momento selecionado.",
       generateTitle: "Gerar imagem de cena",
       regenerateTitle: "Regenerar imagem da cena",
       aiTitle: "Prompt de cena AI",
@@ -691,6 +754,7 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Regenerar imagem da cena",
       chatAppearance: "Aparência do Chat",
       delete: "Excluir",
+      debug: "Depurar",
       unpinToDelete: "Desfixe para excluir",
       editPlaceholder: "Edite sua mensagem...",
       memoriesUsed: "{{count}} memórias usadas",
@@ -982,7 +1046,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Mínimo de 2 personagens necessários",
       removeCharacter: "Remover personagem",
       groupMinCharacters: "Um grupo requer pelo menos 2 personagens",
-      mutedCharactersNote: "Personagens silenciados são ignorados pela seleção automática de orador, mas ainda podem responder via `@menção` explícita.",
+      mutedCharactersNote:
+        "Personagens silenciados são ignorados pela seleção automática de orador, mas ainda podem responder via `@menção` explícita.",
       addCharacterTitle: "Adicionar personagem",
       allCharactersInGroup: "Todos os personagens já estão neste grupo.",
       removeCharacterTitle: "Remover personagem?",
@@ -1025,7 +1090,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Mínimo de 2 personagens necessários",
       removeCharacter: "Remover personagem",
       groupMinCharacters: "Um chat em grupo requer pelo menos 2 personagens",
-      mutedCharactersNote: "Personagens silenciados são ignorados pela seleção automática de orador, mas ainda podem responder via `@menção` explícita.",
+      mutedCharactersNote:
+        "Personagens silenciados são ignorados pela seleção automática de orador, mas ainda podem responder via `@menção` explícita.",
       data: "Dados",
       dataSubtitle: "Exportar ou importar conversas",
       export: "Exportar",
@@ -1053,7 +1119,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "Sem mensagens",
       withoutMessagesDesc: "Clonar apenas a configuração (personagens, cena inicial)",
       branchWithCharacterTitle: "Ramificar com personagem",
-      branchWithCharacterDesc: "Selecione um personagem para continuar como conversa 1 a 1. Todas as mensagens deste grupo serão convertidas.",
+      branchWithCharacterDesc:
+        "Selecione um personagem para continuar como conversa 1 a 1. Todas as mensagens deste grupo serão convertidas.",
       continueWith: "Continuar conversa com {{name}}",
       exportChatPackageTitle: "Exportar pacote de chat",
       includeCharacterSnapshots: "Incluir snapshots de personagens",
@@ -1065,7 +1132,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       selectCharacterPlaceholder: "Selecionar personagem...",
       continue: "Continuar",
       importChatPackageTitle: "Importar pacote de chat",
-      importChatPackageDesc: "Isso importará o `.chatpkg` selecionado como uma nova sessão em grupo.",
+      importChatPackageDesc:
+        "Isso importará o `.chatpkg` selecionado como uma nova sessão em grupo.",
       importing: "Importando...",
     },
   },
@@ -1851,14 +1919,16 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Pesquisar modelos...",
       selectAvatarModel: "Selecione o modelo do avatar",
       selectSceneModel: "Selecione o modelo de cena",
+      selectWriterModel: "Selecionar modelo de redator de cena",
       useFirstAvailable: "Use o primeiro modelo disponível",
+      useFirstCompatible: "Usar o primeiro modelo de redator compatível",
     },
     mode: {
       title: "Comportamento",
-      description: "Defina como os prompts de cena detectados na saída do modelo devem ser tratados.",
+      description:
+        "Defina como os prompts de cena detectados na saída do modelo devem ser tratados.",
       auto: "Automático",
-      autoDescription:
-        "Gere a imagem da cena assim que o modelo fornecer um prompt de cena.",
+      autoDescription: "Gere a imagem da cena assim que o modelo fornecer um prompt de cena.",
       askFirst: "Perguntar antes",
       askFirstDescription:
         "Mostre o prompt de cena detectado e espere sua aprovação antes de gerar uma imagem.",
@@ -1881,6 +1951,11 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Geração de cena",
         description:
           "Modelo reservado para imagens de cena geradas a partir de contexto de conversa ou prompts de cena.",
+      },
+      writer: {
+        title: "Redator de cena",
+        description:
+          "Modelo de texto multimodal reservado para redigir prompts de cena e descrições de referência de design a partir do contexto do chat, avatares e imagens de referência.",
       },
     },
   },
@@ -1924,7 +1999,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "Crash App agora",
-      forceCrashDesc: "Encerra imediatamente o processo do aplicativo nativo para testar a detecção de falhas",
+      forceCrashDesc:
+        "Encerra imediatamente o processo do aplicativo nativo para testar a detecção de falhas",
       forceCrashConfirm:
         "Isso travará imediatamente o aplicativo para testar o detector de falhas. Continuar?",
     },
@@ -2431,7 +2507,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Pesquisar por nome do arquivo, caminho, id da sessão ou id da entidade",
       empty: {
         title: "Nenhuma imagem corresponde a esta visualização",
-        description: "Tente outro filtro ou termo de pesquisa. A biblioteca mostra apenas imagens já armazenadas localmente no app.",
+        description:
+          "Tente outro filtro ou termo de pesquisa. A biblioteca mostra apenas imagens já armazenadas localmente no app.",
       },
       actions: {
         sort: "Ordenar",
@@ -2454,7 +2531,8 @@ export const ptMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Excluir imagem?",
-        message: "Tem certeza de que deseja excluir \"{{filename}}\"? Isso pode quebrar avatares, fundos de chat ou anexos de mensagem que ainda a utilizam.",
+        message:
+          'Tem certeza de que deseja excluir "{{filename}}"? Isso pode quebrar avatares, fundos de chat ou anexos de mensagem que ainda a utilizam.',
       },
     },
     deleteConfirm: {

@@ -22,6 +22,7 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Convertir archivos",
       usageAnalytics: "Análisis de uso",
       changelog: "Registro de cambios",
+      about: "Acerca de",
       createSystemPrompt: "Crear prompt de sistema",
       editSystemPrompt: "Editar prompt de sistema",
       systemPrompts: "Prompts de sistema",
@@ -58,6 +59,7 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Descarga de embedding",
       embeddingTest: "Prueba de embedding",
       editModel: "Editar modelo",
+      messageDebug: "Depuración de mensajes",
     },
     bottomNav: {
       chats: "Chats",
@@ -160,6 +162,7 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Documentación", subtitle: "Guías y referencia" },
       github: { title: "Reportar problemas", subtitle: "Errores y comentarios • v{{version}}" },
       discord: { title: "Unirse a Discord", subtitle: "Comunidad y ayuda" },
+      about: { title: "Acerca de", subtitle: "Versión, actualizaciones y enlaces" },
       changelog: { title: "Registro de cambios", subtitle: "Novedades" },
       reset: { title: "Restablecer", subtitle: "Borrar todo" },
       developer: { title: "Herramientas de desarrollador", subtitle: "Depuración y pruebas" },
@@ -219,6 +222,66 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Guardar",
   },
 
+  updates: {
+    available: {
+      title: "Nueva versión disponible",
+      description: "v{{latestVersion}} está disponible. Estás en la v{{currentVersion}}.",
+      actions: {
+        view: "Ver lanzamiento",
+      },
+    },
+  },
+
+  about: {
+    kicker: "Información de la app",
+    appName: "LettuceAI",
+    description: "Detalles de la versión, comprobación de actualizaciones y enlaces útiles.",
+    info: {
+      version: "Versión",
+      channel: "Canal",
+      platform: "Plataforma",
+    },
+    buildChannel: {
+      dev: "Compilación de desarrollo",
+      release: "Versión estable",
+    },
+    update: {
+      sectionTitle: "Actualizaciones",
+      title: "Actualizaciones de la app",
+      description:
+        "Comprueba manualmente si hay nuevas versiones o desactiva las comprobaciones automáticas al iniciar.",
+      autoChecks: "Comprobaciones automáticas de actualizaciones",
+      autoChecksDescription:
+        "Si está activado, LettuceAI buscará nuevas versiones al abrir la app.",
+      checkNow: "Buscar actualizaciones",
+      checking: "Buscando actualizaciones...",
+      upToDateTitle: "Ya estás al día",
+      upToDateDescription:
+        "No hay una versión más reciente disponible para este dispositivo en este momento.",
+      failedTitle: "Falló la comprobación de actualizaciones",
+      failedDescription:
+        "No se pudieron comprobar las actualizaciones ahora mismo. Inténtalo de nuevo en un momento.",
+    },
+    links: {
+      sectionTitle: "Enlaces",
+      website: "Sitio web",
+      websiteDescription: "Página de descarga e información de versiones",
+      github: "GitHub",
+      githubDescription: "Código fuente, incidencias y desarrollo",
+      discord: "Discord",
+      discordDescription: "Servidor de la comunidad y soporte",
+      reddit: "Reddit",
+      redditDescription: "Debates de la comunidad, comentarios y actualizaciones",
+    },
+    developerMode: {
+      enable: "Activar modo de desarrollador",
+      enabled: "Modo de desarrollador activado",
+    },
+    errors: {
+      saveTitle: "No se pudo guardar la preferencia",
+      saveDescription: "Tu preferencia de comprobación de actualizaciones no se cambió.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Toca en cualquier lugar para cerrar",
@@ -536,7 +599,8 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       writePrompt: "Escribir mensaje",
       writePromptDesc: "Escriba el mensaje de imagen de escena exacto que desea utilizar.",
       askAi: "Pregúntale a la IA",
-      askAiDesc: "Deje que el modelo de chat actual redacte un mensaje de escena a partir del momento seleccionado.",
+      askAiDesc:
+        "Deje que el modelo de chat actual redacte un mensaje de escena a partir del momento seleccionado.",
       generateTitle: "Generar imagen de escena",
       regenerateTitle: "Regenerar imagen de escena",
       aiTitle: "Aviso de escena de IA",
@@ -690,6 +754,7 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Regenerar imagen de escena",
       chatAppearance: "Apariencia del chat",
       delete: "Eliminar",
+      debug: "Depurar",
       unpinToDelete: "Desfija para eliminar",
       editPlaceholder: "Edita tu mensaje...",
       memoriesUsed: "{{count}} memorias usadas",
@@ -1459,7 +1524,8 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "Dale a tu persona un nombre descriptivo",
       nicknameLabel: "APODO (OPCIONAL)",
       nicknamePlaceholder: "p. ej., Variante de Trabajo, Modo RPG...",
-      nicknameHint: "Un apodo privado para distinguir las variantes de esta persona en tu biblioteca",
+      nicknameHint:
+        "Un apodo privado para distinguir las variantes de esta persona en tu biblioteca",
       descriptionLabel: "DESCRIPCIÓN",
       descriptionPlaceholder:
         "Describe cómo la IA debe dirigirse a ti, tus preferencias, antecedentes o estilo de comunicación...",
@@ -1854,7 +1920,9 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Buscar modelos...",
       selectAvatarModel: "Seleccionar modelo de avatar",
       selectSceneModel: "Seleccionar modelo de escena",
+      selectWriterModel: "Seleccionar modelo de redactor de escenas",
       useFirstAvailable: "Usar el primer modelo disponible",
+      useFirstCompatible: "Usar el primer modelo de redactor compatible",
     },
     mode: {
       title: "Comportamiento",
@@ -1884,6 +1952,11 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Generación de escena",
         description:
           "Modelo reservado para imágenes de escenas generadas a partir del contexto de conversación o indicaciones de escenas.",
+      },
+      writer: {
+        title: "Redactor de escenas",
+        description:
+          "Modelo de texto multimodal reservado para redactar prompts de escena y descripciones de referencias de diseño a partir del contexto del chat, avatares e imágenes de referencia.",
       },
     },
   },
@@ -1927,7 +2000,8 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "Bloquear la aplicación ahora",
-      forceCrashDesc: "Finaliza inmediatamente el proceso de la aplicación nativa para probar la detección de fallos.",
+      forceCrashDesc:
+        "Finaliza inmediatamente el proceso de la aplicación nativa para probar la detección de fallos.",
       forceCrashConfirm:
         "Esto bloqueará inmediatamente la aplicación para probar el detector de fallas. ¿Continuar?",
     },
@@ -2434,7 +2508,8 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Buscar por nombre de archivo, ruta, id de sesión o id de entidad",
       empty: {
         title: "No hay imágenes para esta vista",
-        description: "Prueba con otro filtro o término de búsqueda. La biblioteca solo muestra imágenes ya guardadas en el almacenamiento local de la app.",
+        description:
+          "Prueba con otro filtro o término de búsqueda. La biblioteca solo muestra imágenes ya guardadas en el almacenamiento local de la app.",
       },
       actions: {
         sort: "Ordenar",
@@ -2457,7 +2532,8 @@ export const esMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "¿Eliminar imagen?",
-        message: "¿Seguro que quieres eliminar \"{{filename}}\"? Esto puede romper avatares, fondos de chat o adjuntos de mensajes que aún la usen.",
+        message:
+          '¿Seguro que quieres eliminar "{{filename}}"? Esto puede romper avatares, fondos de chat o adjuntos de mensajes que aún la usen.',
       },
     },
     deleteConfirm: {

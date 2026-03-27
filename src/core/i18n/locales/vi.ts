@@ -22,6 +22,7 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Chuyển đổi tệp",
       usageAnalytics: "Phân tích sử dụng",
       changelog: "Nhật ký thay đổi",
+      about: "Giới thiệu",
       createSystemPrompt: "Tạo lời nhắc hệ thống",
       editSystemPrompt: "Sửa lời nhắc hệ thống",
       systemPrompts: "Lời nhắc hệ thống",
@@ -58,6 +59,7 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Tải Embedding",
       embeddingTest: "Kiểm tra Embedding",
       editModel: "Sửa mô hình",
+      messageDebug: "Gỡ lỗi tin nhắn",
     },
     bottomNav: {
       chats: "Trò chuyện",
@@ -160,6 +162,7 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Tài liệu", subtitle: "Hướng dẫn & tham khảo" },
       github: { title: "Báo lỗi", subtitle: "Lỗi & phản hồi • v{{version}}" },
       discord: { title: "Tham gia Discord", subtitle: "Cộng đồng & hỗ trợ" },
+      about: { title: "Giới thiệu", subtitle: "Phiên bản, cập nhật & liên kết" },
       changelog: { title: "Nhật ký thay đổi", subtitle: "Có gì mới" },
       reset: { title: "Đặt lại", subtitle: "Xóa tất cả" },
       developer: { title: "Công cụ phát triển", subtitle: "Gỡ lỗi & kiểm thử" },
@@ -219,6 +222,62 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Lưu",
   },
 
+  updates: {
+    available: {
+      title: "Có phiên bản mới",
+      description: "v{{latestVersion}} đã có sẵn. Bạn đang dùng v{{currentVersion}}.",
+      actions: {
+        view: "Xem bản phát hành",
+      },
+    },
+  },
+
+  about: {
+    kicker: "Thông tin ứng dụng",
+    appName: "LettuceAI",
+    description: "Chi tiết phiên bản, kiểm tra cập nhật và các liên kết hữu ích.",
+    info: {
+      version: "Phiên bản",
+      channel: "Kênh",
+      platform: "Nền tảng",
+    },
+    buildChannel: {
+      dev: "Bản dựng phát triển",
+      release: "Bản phát hành ổn định",
+    },
+    update: {
+      sectionTitle: "Cập nhật",
+      title: "Cập nhật ứng dụng",
+      description: "Kiểm tra bản phát hành mới thủ công hoặc tắt kiểm tra tự động khi khởi động.",
+      autoChecks: "Tự động kiểm tra cập nhật",
+      autoChecksDescription: "Khi bật, LettuceAI sẽ kiểm tra phiên bản mới khi mở ứng dụng.",
+      checkNow: "Kiểm tra cập nhật",
+      checking: "Đang kiểm tra cập nhật...",
+      upToDateTitle: "Bạn đang dùng phiên bản mới nhất",
+      upToDateDescription: "Hiện chưa có bản phát hành mới hơn cho thiết bị này.",
+      failedTitle: "Kiểm tra cập nhật thất bại",
+      failedDescription: "Không thể kiểm tra cập nhật ngay bây giờ. Hãy thử lại sau ít phút.",
+    },
+    links: {
+      sectionTitle: "Liên kết",
+      website: "Trang web",
+      websiteDescription: "Trang tải xuống và thông tin phát hành",
+      github: "GitHub",
+      githubDescription: "Mã nguồn, vấn đề và phát triển",
+      discord: "Discord",
+      discordDescription: "Máy chủ cộng đồng và hỗ trợ",
+      reddit: "Reddit",
+      redditDescription: "Thảo luận cộng đồng, phản hồi và cập nhật",
+    },
+    developerMode: {
+      enable: "Bật Chế độ Nhà phát triển",
+      enabled: "Chế độ Nhà phát triển đã bật",
+    },
+    errors: {
+      saveTitle: "Không thể lưu tùy chọn",
+      saveDescription: "Tùy chọn kiểm tra cập nhật của bạn không được thay đổi.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Nhấn bất kỳ đâu để đóng",
@@ -528,8 +587,7 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
     helpMeReply: "Giúp tôi trả lời",
     sceneImage: {
       modeTitle: "Hình ảnh cảnh",
-      modeDescription:
-        "Chọn tự viết cảnh nhắc hay để AI phác thảo cảnh đó trước.",
+      modeDescription: "Chọn tự viết cảnh nhắc hay để AI phác thảo cảnh đó trước.",
       writePrompt: "Viết lời nhắc",
       writePromptDesc: "Nhập lời nhắc hình ảnh cảnh chính xác mà bạn muốn sử dụng.",
       askAi: "Hỏi AI",
@@ -686,6 +744,7 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Tái tạo hình ảnh cảnh",
       chatAppearance: "Giao diện trò chuyện",
       delete: "Xóa",
+      debug: "Gỡ lỗi",
       unpinToDelete: "Bỏ ghim để xóa",
       editPlaceholder: "Sửa tin nhắn của bạn...",
       memoriesUsed: "{{count}} ký ức đã dùng",
@@ -973,7 +1032,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Cần tối thiểu 2 nhân vật",
       removeCharacter: "Xóa nhân vật",
       groupMinCharacters: "Một nhóm cần ít nhất 2 nhân vật",
-      mutedCharactersNote: "Nhân vật bị tắt tiếng sẽ bị bỏ qua bởi lựa chọn người nói tự động, nhưng vẫn có thể phản hồi qua `@đề cập` rõ ràng.",
+      mutedCharactersNote:
+        "Nhân vật bị tắt tiếng sẽ bị bỏ qua bởi lựa chọn người nói tự động, nhưng vẫn có thể phản hồi qua `@đề cập` rõ ràng.",
       addCharacterTitle: "Thêm nhân vật",
       allCharactersInGroup: "Tất cả nhân vật đã ở trong nhóm này.",
       removeCharacterTitle: "Xóa nhân vật?",
@@ -1016,7 +1076,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Cần tối thiểu 2 nhân vật",
       removeCharacter: "Xóa nhân vật",
       groupMinCharacters: "Trò chuyện nhóm cần ít nhất 2 nhân vật",
-      mutedCharactersNote: "Nhân vật bị tắt tiếng sẽ bị bỏ qua bởi lựa chọn người nói tự động, nhưng vẫn có thể phản hồi qua `@đề cập` rõ ràng.",
+      mutedCharactersNote:
+        "Nhân vật bị tắt tiếng sẽ bị bỏ qua bởi lựa chọn người nói tự động, nhưng vẫn có thể phản hồi qua `@đề cập` rõ ràng.",
       data: "Dữ liệu",
       dataSubtitle: "Xuất hoặc nhập cuộc trò chuyện",
       export: "Xuất",
@@ -1044,7 +1105,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "Không tin nhắn",
       withoutMessagesDesc: "Chỉ nhân bản thiết lập (nhân vật, cảnh bắt đầu)",
       branchWithCharacterTitle: "Phân nhánh với nhân vật",
-      branchWithCharacterDesc: "Chọn nhân vật để tiếp tục dưới dạng cuộc trò chuyện 1-1. Tất cả tin nhắn từ nhóm này sẽ được chuyển đổi.",
+      branchWithCharacterDesc:
+        "Chọn nhân vật để tiếp tục dưới dạng cuộc trò chuyện 1-1. Tất cả tin nhắn từ nhóm này sẽ được chuyển đổi.",
       continueWith: "Tiếp tục trò chuyện với {{name}}",
       exportChatPackageTitle: "Xuất gói trò chuyện",
       includeCharacterSnapshots: "Bao gồm snapshot nhân vật",
@@ -1442,7 +1504,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "Đặt tên mô tả cho persona của bạn",
       nicknameLabel: "BIỆT DANH (TÙY CHỌN)",
       nicknamePlaceholder: "VD: Biến thể công việc, Chế độ RPG...",
-      nicknameHint: "Một biệt danh riêng để phân biệt các biến thể của persona này trong thư viện của bạn",
+      nicknameHint:
+        "Một biệt danh riêng để phân biệt các biến thể của persona này trong thư viện của bạn",
       descriptionLabel: "MÔ TẢ",
       descriptionPlaceholder:
         "Mô tả cách AI nên xưng hô với bạn, sở thích, lý lịch, hoặc phong cách giao tiếp...",
@@ -1674,8 +1737,7 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
     previewLabel: "Xem trước",
     settingsCardsLabel: "Thẻ cài đặt",
     settingsCardsOpacity: "Độ mờ thẻ",
-    settingsCardsOpacityDesc:
-      "Điều chỉnh mức độ trong suốt của thẻ cài đặt và các hàng danh sách.",
+    settingsCardsOpacityDesc: "Điều chỉnh mức độ trong suốt của thẻ cài đặt và các hàng danh sách.",
     importButton: "Nhập",
     exportButton: "Xuất",
     resetAllButton: "Đặt lại tất cả",
@@ -1834,14 +1896,15 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Tìm kiếm mô hình...",
       selectAvatarModel: "Chọn mẫu Avatar",
       selectSceneModel: "Chọn mô hình cảnh",
+      selectWriterModel: "Chọn mô hình viết cảnh",
       useFirstAvailable: "Sử dụng mô hình có sẵn đầu tiên",
+      useFirstCompatible: "Dùng mô hình viết tương thích đầu tiên",
     },
     mode: {
       title: "Chế độ",
       description: "Chọn cách xử lý các prompt cảnh được phát hiện từ đầu ra của mô hình.",
       auto: "Tự động",
-      autoDescription:
-        "Tạo ảnh cảnh ngay khi mô hình cung cấp prompt cảnh.",
+      autoDescription: "Tạo ảnh cảnh ngay khi mô hình cung cấp prompt cảnh.",
       askFirst: "Hỏi trước",
       askFirstDescription:
         "Hiển thị prompt cảnh đã phát hiện và chờ bạn chấp thuận trước khi tạo ảnh.",
@@ -1863,6 +1926,11 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Tạo cảnh",
         description:
           "Mô hình dành riêng cho hình ảnh cảnh được tạo từ bối cảnh hội thoại hoặc lời nhắc cảnh.",
+      },
+      writer: {
+        title: "Trình viết cảnh",
+        description:
+          "Mô hình văn bản đa phương thức dành riêng để soạn prompt cảnh và mô tả tham chiếu thiết kế từ ngữ cảnh chat, avatar và hình ảnh tham chiếu.",
       },
     },
   },
@@ -1905,7 +1973,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "Ứng dụng gặp sự cố ngay bây giờ",
-      forceCrashDesc: "Chấm dứt ngay lập tức quá trình ứng dụng gốc để kiểm tra tính năng phát hiện sự cố",
+      forceCrashDesc:
+        "Chấm dứt ngay lập tức quá trình ứng dụng gốc để kiểm tra tính năng phát hiện sự cố",
       forceCrashConfirm:
         "Điều này sẽ ngay lập tức làm hỏng ứng dụng để kiểm tra trình phát hiện sự cố. Tiếp tục?",
     },
@@ -2410,7 +2479,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Tìm theo tên tệp, đường dẫn, id phiên hoặc id thực thể",
       empty: {
         title: "Không có hình ảnh nào khớp với chế độ xem này",
-        description: "Hãy thử bộ lọc hoặc từ khóa khác. Thư viện chỉ hiển thị các hình ảnh đã được lưu trong bộ nhớ cục bộ của ứng dụng.",
+        description:
+          "Hãy thử bộ lọc hoặc từ khóa khác. Thư viện chỉ hiển thị các hình ảnh đã được lưu trong bộ nhớ cục bộ của ứng dụng.",
       },
       actions: {
         sort: "Sắp xếp",
@@ -2433,7 +2503,8 @@ export const viMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Xóa ảnh?",
-        message: "Bạn có chắc muốn xóa \"{{filename}}\" không? Việc này có thể làm hỏng avatar, nền chat hoặc tệp đính kèm tin nhắn vẫn đang dùng ảnh này.",
+        message:
+          'Bạn có chắc muốn xóa "{{filename}}" không? Việc này có thể làm hỏng avatar, nền chat hoặc tệp đính kèm tin nhắn vẫn đang dùng ảnh này.',
       },
     },
     deleteConfirm: {

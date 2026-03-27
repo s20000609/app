@@ -12,6 +12,7 @@ import {
   DISCORD_SERVER_LINK,
   DOWNLOADS_PAGE_LINK,
   GITHUB_REPO_LINK,
+  SUBREDDIT_LINK,
 } from "../../../core/utils/links";
 import { getPlatform } from "../../../core/utils/platform";
 import { isDevelopmentMode, setDeveloperModeOverride } from "../../../core/utils/env";
@@ -318,6 +319,17 @@ export function AboutPage() {
                 title: t("about.links.discord"),
                 subtitle: t("about.links.discordDescription"),
                 url: DISCORD_SERVER_LINK,
+              },
+              {
+                key: "reddit",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                    <path d="M14.19 14.79c.11.11.11.29 0 .4c-.54.54-1.42.8-2.69.8s-2.15-.26-2.69-.8a.283.283 0 1 1 .4-.4c.43.43 1.18.63 2.29.63s1.86-.2 2.29-.63a.283.283 0 0 1 .4 0M9.5 13.01c0-.55-.45-.99-1-.99s-1 .44-1 .99s.45 1 1 1s1-.45 1-1m5 0c0-.55-.45-.99-1-.99s-1 .44-1 .99s.45 1 1 1s1-.45 1-1m6.5-.99c0-1.54-1.25-2.79-2.79-2.79c-.76 0-1.45.3-1.95.79c-1.36-.93-3.17-1.52-5.16-1.58l.88-2.78l2.39.56a1.99 1.99 0 1 0 .33-1.11l-2.68-.63a.56.56 0 0 0-.67.37l-1.01 3.18c-2.08.03-3.98.62-5.39 1.58a2.79 2.79 0 0 0-4.74 2c0 .81.35 1.55.9 2.06a4.91 4.91 0 0 0-.1.97c0 2.95 3.39 5.35 7.56 5.35s7.56-2.4 7.56-5.35c0-.33-.04-.65-.1-.97c.56-.51.9-1.25.9-2.06" />
+                  </svg>
+                ),
+                title: t("about.links.reddit"),
+                subtitle: t("about.links.redditDescription"),
+                url: SUBREDDIT_LINK,
               },
             ].map((item) => (
               <button

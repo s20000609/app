@@ -22,6 +22,7 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "I-convert ang mga File",
       usageAnalytics: "Analytics ng Paggamit",
       changelog: "Changelog",
+      about: "Tungkol",
       createSystemPrompt: "Gumawa ng System Prompt",
       editSystemPrompt: "I-edit ang System Prompt",
       systemPrompts: "Mga System Prompt",
@@ -58,6 +59,7 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Download ng Embedding",
       embeddingTest: "Pagsubok ng Embedding",
       editModel: "I-edit ang Modelo",
+      messageDebug: "Pag-debug ng Mensahe",
     },
     bottomNav: {
       chats: "Mga Chat",
@@ -166,6 +168,7 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Dokumentasyon", subtitle: "Mga gabay at reference" },
       github: { title: "Mag-report ng Isyu", subtitle: "Mga bug at feedback • v{{version}}" },
       discord: { title: "Sumali sa Discord", subtitle: "Komunidad at tulong" },
+      about: { title: "Tungkol", subtitle: "Bersyon, mga update at mga link" },
       changelog: { title: "Changelog", subtitle: "Mga bago" },
       reset: { title: "I-reset", subtitle: "Burahin ang lahat" },
       developer: { title: "Mga Tool ng Developer", subtitle: "Debug at pagsubok" },
@@ -226,6 +229,64 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "I-save",
   },
 
+  updates: {
+    available: {
+      title: "May bagong bersyon",
+      description: "Available ang v{{latestVersion}}. Nasa v{{currentVersion}} ka.",
+      actions: {
+        view: "Tingnan ang release",
+      },
+    },
+  },
+
+  about: {
+    kicker: "Impormasyon ng App",
+    appName: "LettuceAI",
+    description: "Mga detalye ng bersyon, pagsusuri ng update, at mga kapaki-pakinabang na link.",
+    info: {
+      version: "Bersyon",
+      channel: "Channel",
+      platform: "Platform",
+    },
+    buildChannel: {
+      dev: "Build para sa development",
+      release: "Stable na release",
+    },
+    update: {
+      sectionTitle: "Mga update",
+      title: "Mga update ng app",
+      description:
+        "Manwal na tingnan ang mga bagong release o i-disable ang awtomatikong pagsusuri sa pagsisimula.",
+      autoChecks: "Awtomatikong pagsusuri ng update",
+      autoChecksDescription:
+        "Kapag naka-enable, titingin ang LettuceAI ng mga bagong bersyon kapag binuksan ang app.",
+      checkNow: "Suriin ang mga update",
+      checking: "Sinusuri ang mga update...",
+      upToDateTitle: "Naka-update ka na",
+      upToDateDescription: "Walang mas bagong release na available para sa device na ito ngayon.",
+      failedTitle: "Nabigo ang pagsusuri ng update",
+      failedDescription: "Hindi masuri ang mga update ngayon. Subukan muli mamaya.",
+    },
+    links: {
+      sectionTitle: "Mga link",
+      website: "Website",
+      websiteDescription: "Download page at impormasyon ng release",
+      github: "GitHub",
+      githubDescription: "Source code, mga issue, at development",
+      discord: "Discord",
+      discordDescription: "Server ng komunidad at suporta",
+      reddit: "Reddit",
+      redditDescription: "Mga talakayan ng komunidad, feedback, at mga update",
+    },
+    developerMode: {
+      enable: "I-enable ang Developer Mode",
+      enabled: "Naka-enable ang Developer Mode",
+    },
+    errors: {
+      saveTitle: "Hindi ma-save ang preference",
+      saveDescription: "Hindi nabago ang preference mo sa pagsusuri ng update.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Mag-tap kahit saan para i-dismiss",
@@ -706,6 +767,7 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Gumawa muli ng larawan ng eksena",
       chatAppearance: "Hitsura ng Chat",
       delete: "Tanggalin",
+      debug: "Debug",
       unpinToDelete: "I-unpin para matanggal",
       editPlaceholder: "I-edit ang iyong mensahe...",
       memoriesUsed: "{{count}} alaala ang ginamit",
@@ -1879,14 +1941,16 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Maghanap ng mga modelo...",
       selectAvatarModel: "Pumili ng Avatar Model",
       selectSceneModel: "Pumili ng Scene Model",
+      selectWriterModel: "Pumili ng modelo ng tagasulat ng eksena",
       useFirstAvailable: "Gamitin ang unang available na modelo",
+      useFirstCompatible: "Gamitin ang unang compatible na modelo ng tagasulat",
     },
     mode: {
       title: "Pag-uugali",
-      description: "Piliin kung paano hahawakan ang mga scene prompt na natukoy mula sa output ng modelo.",
+      description:
+        "Piliin kung paano hahawakan ang mga scene prompt na natukoy mula sa output ng modelo.",
       auto: "Awtomatiko",
-      autoDescription:
-        "Gumawa agad ng scene image kapag nagbigay ang modelo ng scene prompt.",
+      autoDescription: "Gumawa agad ng scene image kapag nagbigay ang modelo ng scene prompt.",
       askFirst: "Magtanong muna",
       askFirstDescription:
         "Ipakita muna ang natukoy na scene prompt at hintayin ang iyong pahintulot bago gumawa ng larawan.",
@@ -1909,6 +1973,11 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Paglikha ng Scene",
         description:
           "Nakatalagang modelo para sa mga scene image na bubuuin mula sa konteksto ng usapan o scene prompts.",
+      },
+      writer: {
+        title: "Tagasulat ng eksena",
+        description:
+          "Nakatalagang multimodal text model para gumawa ng mga prompt ng eksena at mga paglalarawan ng design reference mula sa chat context, mga avatar, at mga reference image.",
       },
     },
   },
@@ -2462,7 +2531,8 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Maghanap ayon sa filename, path, session id, o entity id",
       empty: {
         title: "Walang tugmang larawan sa view na ito",
-        description: "Subukan ang ibang filter o termino sa paghahanap. Mga larawang nakaimbak na sa lokal na storage ng app lang ang ipinapakita ng library.",
+        description:
+          "Subukan ang ibang filter o termino sa paghahanap. Mga larawang nakaimbak na sa lokal na storage ng app lang ang ipinapakita ng library.",
       },
       actions: {
         sort: "Ayusin",
@@ -2485,7 +2555,8 @@ export const filMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Tanggalin ang larawan?",
-        message: "Sigurado ka bang gusto mong tanggalin ang \"{{filename}}\"? Maaaring masira nito ang mga avatar, chat background, o message attachment na gumagamit pa nito.",
+        message:
+          'Sigurado ka bang gusto mong tanggalin ang "{{filename}}"? Maaaring masira nito ang mga avatar, chat background, o message attachment na gumagamit pa nito.',
       },
     },
     deleteConfirm: {

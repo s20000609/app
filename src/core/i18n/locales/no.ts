@@ -22,6 +22,7 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Konverter filer",
       usageAnalytics: "Bruksanalyse",
       changelog: "Endringslogg",
+      about: "Om",
       createSystemPrompt: "Opprett systemprompt",
       editSystemPrompt: "Rediger systemprompt",
       systemPrompts: "Systemprompter",
@@ -58,6 +59,7 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Nedlasting av embedding",
       embeddingTest: "Embeddingtest",
       editModel: "Rediger modell",
+      messageDebug: "Meldingsdebugging",
     },
     bottomNav: {
       chats: "Samtaler",
@@ -163,6 +165,7 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Dokumentasjon", subtitle: "Guider og referanse" },
       github: { title: "Rapporter problemer", subtitle: "Feil og tilbakemeldinger • v{{version}}" },
       discord: { title: "Bli med på Discord", subtitle: "Fellesskap og hjelp" },
+      about: { title: "Om", subtitle: "Versjon, oppdateringer og lenker" },
       changelog: { title: "Endringslogg", subtitle: "Hva er nytt" },
       reset: { title: "Tilbakestill", subtitle: "Slett alt" },
       developer: { title: "Utviklerverktøy", subtitle: "Feilsøking og testing" },
@@ -222,6 +225,63 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Lagre",
   },
 
+  updates: {
+    available: {
+      title: "Ny versjon tilgjengelig",
+      description: "v{{latestVersion}} er tilgjengelig. Du bruker v{{currentVersion}}.",
+      actions: {
+        view: "Se utgivelse",
+      },
+    },
+  },
+
+  about: {
+    kicker: "Appinfo",
+    appName: "LettuceAI",
+    description: "Versjonsdetaljer, oppdateringssjekker og nyttige lenker.",
+    info: {
+      version: "Versjon",
+      channel: "Kanal",
+      platform: "Plattform",
+    },
+    buildChannel: {
+      dev: "Utviklingsbygg",
+      release: "Stabil utgivelse",
+    },
+    update: {
+      sectionTitle: "Oppdateringer",
+      title: "Appoppdateringer",
+      description: "Se etter nye utgivelser manuelt eller deaktiver automatiske oppstartssjekker.",
+      autoChecks: "Automatiske oppdateringssjekker",
+      autoChecksDescription:
+        "Når dette er aktivert, sjekker LettuceAI etter nye versjoner når appen åpnes.",
+      checkNow: "Se etter oppdateringer",
+      checking: "Sjekker etter oppdateringer...",
+      upToDateTitle: "Du er oppdatert",
+      upToDateDescription: "Ingen nyere utgivelse er tilgjengelig for denne enheten akkurat nå.",
+      failedTitle: "Oppdateringssjekk mislyktes",
+      failedDescription: "Kunne ikke sjekke etter oppdateringer akkurat nå. Prøv igjen om litt.",
+    },
+    links: {
+      sectionTitle: "Lenker",
+      website: "Nettside",
+      websiteDescription: "Nedlastingsside og informasjon om utgivelser",
+      github: "GitHub",
+      githubDescription: "Kildekode, saker og utvikling",
+      discord: "Discord",
+      discordDescription: "Fellesskapsserver og støtte",
+      reddit: "Reddit",
+      redditDescription: "Fellesskapsdiskusjoner, tilbakemeldinger og oppdateringer",
+    },
+    developerMode: {
+      enable: "Aktiver utviklermodus",
+      enabled: "Utviklermodus aktivert",
+    },
+    errors: {
+      saveTitle: "Kunne ikke lagre preferanse",
+      saveDescription: "Preferansen din for oppdateringssjekk ble ikke endret.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Trykk hvor som helst for å lukke",
@@ -532,8 +592,7 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
     helpMeReply: "Hjelp meg å svare",
     sceneImage: {
       modeTitle: "Scenebilde",
-      modeDescription:
-        "Velg om du vil skrive scenemeldingen selv eller la AI-en tegne den først.",
+      modeDescription: "Velg om du vil skrive scenemeldingen selv eller la AI-en tegne den først.",
       writePrompt: "Skriv spørsmål",
       writePromptDesc: "Skriv inn den nøyaktige scenebildemeldingen du vil bruke.",
       askAi: "Spør AI",
@@ -691,6 +750,7 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Regenerer scenebilde",
       chatAppearance: "Chatutseende",
       delete: "Slett",
+      debug: "Debug",
       unpinToDelete: "Løsne for å slette",
       editPlaceholder: "Rediger meldingen din...",
       memoriesUsed: "{{count}} minner brukt",
@@ -979,7 +1039,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Minimum 2 karakterer kreves",
       removeCharacter: "Fjern karakter",
       groupMinCharacters: "En gruppe krever minst 2 karakterer",
-      mutedCharactersNote: "Dempede karakterer hoppes over av automatisk talervalg, men kan fortsatt svare via eksplisitt `@omtale`.",
+      mutedCharactersNote:
+        "Dempede karakterer hoppes over av automatisk talervalg, men kan fortsatt svare via eksplisitt `@omtale`.",
       addCharacterTitle: "Legg til karakter",
       allCharactersInGroup: "Alle karakterer er allerede i denne gruppen.",
       removeCharacterTitle: "Fjern karakter?",
@@ -1022,7 +1083,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Minimum 2 karakterer kreves",
       removeCharacter: "Fjern karakter",
       groupMinCharacters: "En gruppechat krever minst 2 karakterer",
-      mutedCharactersNote: "Dempede karakterer hoppes over av automatisk talervalg, men kan fortsatt svare via eksplisitt `@omtale`.",
+      mutedCharactersNote:
+        "Dempede karakterer hoppes over av automatisk talervalg, men kan fortsatt svare via eksplisitt `@omtale`.",
       data: "Data",
       dataSubtitle: "Eksporter eller importer samtaler",
       export: "Eksporter",
@@ -1050,7 +1112,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "Uten meldinger",
       withoutMessagesDesc: "Klon kun oppsett (karakterer, startscene)",
       branchWithCharacterTitle: "Forgren med karakter",
-      branchWithCharacterDesc: "Velg en karakter for å fortsette som 1-til-1 samtale. Alle meldinger fra denne gruppen konverteres.",
+      branchWithCharacterDesc:
+        "Velg en karakter for å fortsette som 1-til-1 samtale. Alle meldinger fra denne gruppen konverteres.",
       continueWith: "Fortsett samtale med {{name}}",
       exportChatPackageTitle: "Eksporter chatpakke",
       includeCharacterSnapshots: "Inkluder karakter-øyeblikksbilder",
@@ -1450,7 +1513,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "Gi personaen din et beskrivende navn",
       nicknameLabel: "KALLENAVN (VALGFRITT)",
       nicknamePlaceholder: "f.eks. Jobbvariant, Rollespillmodus...",
-      nicknameHint: "Et privat kallenavn for å skille varianter av denne personaen i biblioteket ditt",
+      nicknameHint:
+        "Et privat kallenavn for å skille varianter av denne personaen i biblioteket ditt",
       descriptionLabel: "BESKRIVELSE",
       descriptionPlaceholder:
         "Beskriv hvordan AI-en skal tiltale deg, dine preferanser, bakgrunn eller kommunikasjonsstil...",
@@ -1682,8 +1746,7 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
     previewLabel: "Forhåndsvisning",
     settingsCardsLabel: "Innstillingskort",
     settingsCardsOpacity: "Kortopasitet",
-    settingsCardsOpacityDesc:
-      "Styrer hvor gjennomsiktige innstillingskort og listerader ser ut.",
+    settingsCardsOpacityDesc: "Styrer hvor gjennomsiktige innstillingskort og listerader ser ut.",
     importButton: "Importer",
     exportButton: "Eksporter",
     resetAllButton: "Tilbakestill alle",
@@ -1844,14 +1907,16 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Søk etter modeller...",
       selectAvatarModel: "Velg Avatar-modell",
       selectSceneModel: "Velg Scenemodell",
+      selectWriterModel: "Velg modell for sceneskriver",
       useFirstAvailable: "Bruk den første tilgjengelige modellen",
+      useFirstCompatible: "Bruk første kompatible skrivermodell",
     },
     mode: {
       title: "Atferd",
-      description: "Bestem hvordan sceneledetekster som oppdages i modellens utdata skal håndteres.",
+      description:
+        "Bestem hvordan sceneledetekster som oppdages i modellens utdata skal håndteres.",
       auto: "Automatisk",
-      autoDescription:
-        "Generer scenebildet med en gang modellen gir en sceneledetekst.",
+      autoDescription: "Generer scenebildet med en gang modellen gir en sceneledetekst.",
       askFirst: "Spør først",
       askFirstDescription:
         "Vis den oppdagede sceneledeteksten og vent på godkjenningen din før et bilde genereres.",
@@ -1874,6 +1939,11 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Scenegenerering",
         description:
           "Reservert modell for scenebilder generert fra samtalekontekst eller sceneforespørsler.",
+      },
+      writer: {
+        title: "Sceneskriver",
+        description:
+          "Reservert multimodal tekstmodell for å utforme sceneforespørsler og designreferansebeskrivelser fra chatsammenheng, avatarer og referansebilder.",
       },
     },
   },
@@ -1917,7 +1987,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "Crash-appen nå",
-      forceCrashDesc: "Avslutter umiddelbart den opprinnelige appprosessen for å teste krasjdeteksjon",
+      forceCrashDesc:
+        "Avslutter umiddelbart den opprinnelige appprosessen for å teste krasjdeteksjon",
       forceCrashConfirm:
         "Dette vil umiddelbart krasje appen for å teste krasjdetektoren. Fortsette?",
     },
@@ -2426,7 +2497,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Søk etter filnavn, sti, økt-ID eller entitets-ID",
       empty: {
         title: "Ingen bilder matcher denne visningen",
-        description: "Prøv et annet filter eller søkeord. Biblioteket viser bare bilder som allerede er lagret lokalt i appen.",
+        description:
+          "Prøv et annet filter eller søkeord. Biblioteket viser bare bilder som allerede er lagret lokalt i appen.",
       },
       actions: {
         sort: "Sorter",
@@ -2449,7 +2521,8 @@ export const noMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Slette bildet?",
-        message: "Er du sikker på at du vil slette \"{{filename}}\"? Dette kan ødelegge avatarer, chatbakgrunner eller meldingsvedlegg som fortsatt bruker det.",
+        message:
+          'Er du sikker på at du vil slette "{{filename}}"? Dette kan ødelegge avatarer, chatbakgrunner eller meldingsvedlegg som fortsatt bruker det.',
       },
     },
     deleteConfirm: {

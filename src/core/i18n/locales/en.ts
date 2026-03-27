@@ -262,6 +262,8 @@ export const enMessages = {
       githubDescription: "Source code, issues, and development",
       discord: "Discord",
       discordDescription: "Community server and support",
+      reddit: "Reddit",
+      redditDescription: "Community discussions, feedback, and updates",
     },
     developerMode: {
       enable: "Enable Developer Mode",

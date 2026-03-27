@@ -22,6 +22,7 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "ファイル変換",
       usageAnalytics: "利用分析",
       changelog: "変更履歴",
+      about: "情報",
       createSystemPrompt: "システムプロンプト作成",
       editSystemPrompt: "システムプロンプト編集",
       systemPrompts: "システムプロンプト",
@@ -58,6 +59,7 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "埋め込みダウンロード",
       embeddingTest: "埋め込みテスト",
       editModel: "モデル編集",
+      messageDebug: "メッセージデバッグ",
     },
     bottomNav: {
       chats: "チャット",
@@ -160,6 +162,7 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "ドキュメント", subtitle: "ガイドとリファレンス" },
       github: { title: "問題を報告", subtitle: "バグとフィードバック • v{{version}}" },
       discord: { title: "Discordに参加", subtitle: "コミュニティとヘルプ" },
+      about: { title: "情報", subtitle: "バージョン、更新、リンク" },
       changelog: { title: "変更履歴", subtitle: "新機能" },
       reset: { title: "リセット", subtitle: "すべて消去" },
       developer: { title: "開発者ツール", subtitle: "デバッグとテスト" },
@@ -219,6 +222,65 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "保存",
   },
 
+  updates: {
+    available: {
+      title: "新しいバージョンがあります",
+      description:
+        "v{{latestVersion}} が利用可能です。現在のバージョンは v{{currentVersion}} です。",
+      actions: {
+        view: "リリースを見る",
+      },
+    },
+  },
+
+  about: {
+    kicker: "アプリ情報",
+    appName: "LettuceAI",
+    description: "バージョン情報、アップデート確認、便利なリンク。",
+    info: {
+      version: "バージョン",
+      channel: "チャンネル",
+      platform: "プラットフォーム",
+    },
+    buildChannel: {
+      dev: "開発ビルド",
+      release: "安定版",
+    },
+    update: {
+      sectionTitle: "アップデート",
+      title: "アプリのアップデート",
+      description: "新しいリリースを手動で確認するか、起動時の自動チェックを無効にできます。",
+      autoChecks: "自動アップデート確認",
+      autoChecksDescription:
+        "有効にすると、LettuceAI はアプリ起動時に新しいバージョンを確認します。",
+      checkNow: "アップデートを確認",
+      checking: "アップデートを確認中...",
+      upToDateTitle: "最新の状態です",
+      upToDateDescription: "現在、この端末で利用できる新しいリリースはありません。",
+      failedTitle: "アップデートの確認に失敗しました",
+      failedDescription:
+        "現在アップデートを確認できませんでした。しばらくしてからもう一度お試しください。",
+    },
+    links: {
+      sectionTitle: "リンク",
+      website: "ウェブサイト",
+      websiteDescription: "ダウンロードページとリリース情報",
+      github: "GitHub",
+      githubDescription: "ソースコード、Issue、開発情報",
+      discord: "Discord",
+      discordDescription: "コミュニティサーバーとサポート",
+      reddit: "Reddit",
+      redditDescription: "コミュニティの議論、フィードバック、更新情報",
+    },
+    developerMode: {
+      enable: "開発者モードを有効にする",
+      enabled: "開発者モードが有効です",
+    },
+    errors: {
+      saveTitle: "設定を保存できませんでした",
+      saveDescription: "アップデート確認の設定は変更されませんでした。",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "どこかをタップして閉じる",
@@ -686,6 +748,7 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "シーン画像を再生成する",
       chatAppearance: "チャット外観",
       delete: "削除",
+      debug: "デバッグ",
       unpinToDelete: "削除するにはピン留め解除",
       editPlaceholder: "メッセージを編集...",
       memoriesUsed: "{{count}}件のメモリ使用",
@@ -973,7 +1036,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "最低2キャラクター必要",
       removeCharacter: "キャラクターを削除",
       groupMinCharacters: "グループには最低2キャラクターが必要です",
-      mutedCharactersNote: "ミュートされたキャラクターは自動話者選択でスキップされますが、明示的な`@メンション`で応答できます。",
+      mutedCharactersNote:
+        "ミュートされたキャラクターは自動話者選択でスキップされますが、明示的な`@メンション`で応答できます。",
       addCharacterTitle: "キャラクターを追加",
       allCharactersInGroup: "すべてのキャラクターはすでにこのグループにいます。",
       removeCharacterTitle: "キャラクターを削除しますか？",
@@ -1016,7 +1080,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "最低2キャラクター必要",
       removeCharacter: "キャラクターを削除",
       groupMinCharacters: "グループチャットには最低2キャラクターが必要です",
-      mutedCharactersNote: "ミュートされたキャラクターは自動話者選択でスキップされますが、明示的な`@メンション`で応答できます。",
+      mutedCharactersNote:
+        "ミュートされたキャラクターは自動話者選択でスキップされますが、明示的な`@メンション`で応答できます。",
       data: "データ",
       dataSubtitle: "会話のエクスポートまたはインポート",
       export: "エクスポート",
@@ -1044,7 +1109,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "メッセージなし",
       withoutMessagesDesc: "設定のみ複製（キャラクター、開始シーン）",
       branchWithCharacterTitle: "キャラクターで分岐",
-      branchWithCharacterDesc: "1対1の会話として続行するキャラクターを選択してください。このグループのすべてのメッセージが変換されます。",
+      branchWithCharacterDesc:
+        "1対1の会話として続行するキャラクターを選択してください。このグループのすべてのメッセージが変換されます。",
       continueWith: "{{name}}との会話を続行",
       exportChatPackageTitle: "チャットパッケージをエクスポート",
       includeCharacterSnapshots: "キャラクタースナップショットを含める",
@@ -1444,7 +1510,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "ペルソナに説明的な名前を付けてください",
       nicknameLabel: "ニックネーム (任意)",
       nicknamePlaceholder: "例：仕事用、RPGモードなど...",
-      nicknameHint: "ライブラリ内のこのペルソナのバリエーションを区別するためのプライベートなニックネーム",
+      nicknameHint:
+        "ライブラリ内のこのペルソナのバリエーションを区別するためのプライベートなニックネーム",
       descriptionLabel: "説明",
       descriptionPlaceholder:
         "AIがあなたにどう対応すべきか、あなたの好み、背景、コミュニケーションスタイルを説明...",
@@ -1676,8 +1743,7 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
     previewLabel: "プレビュー",
     settingsCardsLabel: "設定カード",
     settingsCardsOpacity: "カードの不透明度",
-    settingsCardsOpacityDesc:
-      "設定カードやリスト行がどの程度透けて見えるかを調整します。",
+    settingsCardsOpacityDesc: "設定カードやリスト行がどの程度透けて見えるかを調整します。",
     importButton: "インポート",
     exportButton: "エクスポート",
     resetAllButton: "すべてリセット",
@@ -1835,17 +1901,17 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "モデルを検索...",
       selectAvatarModel: "アバターモデルの選択",
       selectSceneModel: "シーンモデルの選択",
+      selectWriterModel: "シーンライターモデルを選択",
       useFirstAvailable: "最初に利用可能なモデルを使用する",
+      useFirstCompatible: "最初の互換性のあるライターモデルを使う",
     },
     mode: {
       title: "動作",
       description: "モデル出力から検出したシーンプロンプトをどう扱うかを選択します。",
       auto: "自動",
-      autoDescription:
-        "モデルがシーンプロンプトを返したら、すぐにシーン画像を生成します。",
+      autoDescription: "モデルがシーンプロンプトを返したら、すぐにシーン画像を生成します。",
       askFirst: "先に確認",
-      askFirstDescription:
-        "検出したシーンプロンプトを表示し、画像生成の前に承認を待ちます。",
+      askFirstDescription: "検出したシーンプロンプトを表示し、画像生成の前に承認を待ちます。",
       manual: "手動",
       manualDescription:
         "モデルの応答に含まれるシーンプロンプトは無視します。ユーザーが手動で実行した操作だけを使います。",
@@ -1864,6 +1930,11 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "シーンの生成",
         description:
           "会話コンテキストまたはシーン プロンプトから生成されたシーン イメージ用の予約モデル。",
+      },
+      writer: {
+        title: "シーンライター",
+        description:
+          "チャットの文脈、アバター、参照画像をもとに、シーン用プロンプトやデザイン参照説明文を作成するための専用マルチモーダルテキストモデルです。",
       },
     },
   },
@@ -1906,7 +1977,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "今すぐアプリをクラッシュさせる",
-      forceCrashDesc: "クラッシュ検出をテストするためにネイティブ アプリ プロセスをただちに終了します。",
+      forceCrashDesc:
+        "クラッシュ検出をテストするためにネイティブ アプリ プロセスをただちに終了します。",
       forceCrashConfirm:
         "これにより、アプリがすぐにクラッシュし、クラッシュ検出機能がテストされます。続く？",
     },
@@ -2412,7 +2484,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "ファイル名、パス、セッションID、エンティティIDで検索",
       empty: {
         title: "この表示に一致する画像はありません",
-        description: "別のフィルターや検索語を試してください。ライブラリにはアプリのローカルストレージに保存済みの画像だけが表示されます。",
+        description:
+          "別のフィルターや検索語を試してください。ライブラリにはアプリのローカルストレージに保存済みの画像だけが表示されます。",
       },
       actions: {
         sort: "並び替え",
@@ -2435,7 +2508,8 @@ export const jaMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "画像を削除しますか？",
-        message: "本当に \"{{filename}}\" を削除しますか？ まだ使っているアバター、チャット背景、メッセージ添付が壊れる可能性があります。",
+        message:
+          '本当に "{{filename}}" を削除しますか？ まだ使っているアバター、チャット背景、メッセージ添付が壊れる可能性があります。',
       },
     },
     deleteConfirm: {

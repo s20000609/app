@@ -22,6 +22,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "轉換檔案",
       usageAnalytics: "使用分析",
       changelog: "更新日誌",
+      about: "關於",
       createSystemPrompt: "新增系統提示",
       editSystemPrompt: "編輯系統提示",
       systemPrompts: "系統提示",
@@ -58,6 +59,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "嵌入模型下載",
       embeddingTest: "嵌入測試",
       editModel: "編輯模型",
+      messageDebug: "訊息除錯",
     },
     bottomNav: {
       chats: "對話",
@@ -160,6 +162,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "說明文件", subtitle: "教學與參考" },
       github: { title: "回報問題", subtitle: "錯誤與意見 • v{{version}}" },
       discord: { title: "加入 Discord", subtitle: "社群與協助" },
+      about: { title: "關於", subtitle: "版本、更新與連結" },
       changelog: { title: "更新日誌", subtitle: "最新變更" },
       reset: { title: "重設", subtitle: "清除所有資料" },
       developer: { title: "開發者工具", subtitle: "除錯與測試" },
@@ -219,6 +222,62 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "儲存",
   },
 
+  updates: {
+    available: {
+      title: "有新版本可用",
+      description: "v{{latestVersion}} 已可使用。您目前使用的是 v{{currentVersion}}。",
+      actions: {
+        view: "查看版本",
+      },
+    },
+  },
+
+  about: {
+    kicker: "應用程式資訊",
+    appName: "LettuceAI",
+    description: "版本詳細資訊、更新檢查與實用連結。",
+    info: {
+      version: "版本",
+      channel: "頻道",
+      platform: "平台",
+    },
+    buildChannel: {
+      dev: "開發版",
+      release: "穩定版",
+    },
+    update: {
+      sectionTitle: "更新",
+      title: "應用程式更新",
+      description: "可手動檢查新版本，或停用啟動時自動檢查。",
+      autoChecks: "自動檢查更新",
+      autoChecksDescription: "啟用後，LettuceAI 會在應用程式開啟時檢查新版本。",
+      checkNow: "檢查更新",
+      checking: "正在檢查更新...",
+      upToDateTitle: "目前已是最新版本",
+      upToDateDescription: "目前此裝置沒有可用的更新版本。",
+      failedTitle: "更新檢查失敗",
+      failedDescription: "目前無法檢查更新。請稍後再試。",
+    },
+    links: {
+      sectionTitle: "連結",
+      website: "網站",
+      websiteDescription: "下載頁面與版本資訊",
+      github: "GitHub",
+      githubDescription: "原始碼、議題與開發資訊",
+      discord: "Discord",
+      discordDescription: "社群伺服器與支援",
+      reddit: "Reddit",
+      redditDescription: "社群討論、回饋與更新",
+    },
+    developerMode: {
+      enable: "啟用開發者模式",
+      enabled: "已啟用開發者模式",
+    },
+    errors: {
+      saveTitle: "無法儲存偏好設定",
+      saveDescription: "您的更新檢查偏好未被變更。",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "點擊任意處關閉",
@@ -517,8 +576,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
     helpMeReply: "幫我回覆",
     sceneImage: {
       modeTitle: "場景影像",
-      modeDescription:
-        "選擇自己寫場景提示還是讓 AI 先起草。",
+      modeDescription: "選擇自己寫場景提示還是讓 AI 先起草。",
       writePrompt: "寫提示",
       writePromptDesc: "輸入您要使用的確切場景影像提示。",
       askAi: "詢問人工智慧",
@@ -527,8 +585,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateTitle: "重新生成場景影像",
       aiTitle: "AI場景提示",
       promptLabel: "場景提示",
-      promptPlaceholder:
-        "描述場景、人物、情緒、燈光、鏡頭取景和重要細節…",
+      promptPlaceholder: "描述場景、人物、情緒、燈光、鏡頭取景和重要細節…",
       suggestedPrompt: "建議提示",
       regeneratePrompt: "再生",
       editPrompt: "編輯提示",
@@ -675,6 +732,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "重新生成場景影像",
       chatAppearance: "對話外觀",
       delete: "刪除",
+      debug: "除錯",
       unpinToDelete: "取消釘選後才能刪除",
       editPlaceholder: "編輯您的訊息...",
       memoriesUsed: "使用了 {{count}} 條記憶",
@@ -1806,20 +1864,19 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "搜尋型號...",
       selectAvatarModel: "選擇頭像模型",
       selectSceneModel: "選擇場景模型",
+      selectWriterModel: "選擇場景撰寫模型",
       useFirstAvailable: "使用第一個可用模型",
+      useFirstCompatible: "使用第一個相容的撰寫模型",
     },
     mode: {
       title: "模式",
       description: "選擇如何處理由模型輸出中偵測到的場景提示詞。",
       auto: "自動",
-      autoDescription:
-        "模型提供場景提示詞時立即生成場景圖片。",
+      autoDescription: "模型提供場景提示詞時立即生成場景圖片。",
       askFirst: "先詢問",
-      askFirstDescription:
-        "先顯示偵測到的場景提示詞，並在生成圖片前等待你的確認。",
+      askFirstDescription: "先顯示偵測到的場景提示詞，並在生成圖片前等待你的確認。",
       manual: "手動",
-      manualDescription:
-        "忽略模型回應中的場景提示詞。只使用由使用者手動觸發的操作。",
+      manualDescription: "忽略模型回應中的場景提示詞。只使用由使用者手動觸發的操作。",
     },
     empty: {
       title: "沒有圖片模型",
@@ -1828,13 +1885,16 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
     sections: {
       avatar: {
         title: "阿凡達一代",
-        description:
-          "從頭像選擇器或相關個人資料圖像流產生頭像時使用的預設模型。",
+        description: "從頭像選擇器或相關個人資料圖像流產生頭像時使用的預設模型。",
       },
       scene: {
         title: "場景生成",
+        description: "為從對話情境或場景提示產生的場景影像保留的模型。",
+      },
+      writer: {
+        title: "場景撰寫器",
         description:
-          "為從對話情境或場景提示產生的場景影像保留的模型。",
+          "保留給多模態文字模型使用，根據聊天內容、頭像與參考圖片撰寫場景提示與設計參考描述。",
       },
     },
   },
@@ -1878,8 +1938,7 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
     crashTesting: {
       forceCrash: "立即崩潰應用程式",
       forceCrashDesc: "立即終止本機應用程式進程以測試崩潰偵測",
-      forceCrashConfirm:
-        "這將立即使應用程式崩潰以測試崩潰檢測器。繼續？",
+      forceCrashConfirm: "這將立即使應用程式崩潰以測試崩潰檢測器。繼續？",
     },
     environmentInfo: {
       mode: "模式",
@@ -2378,7 +2437,8 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "依檔名、路徑、工作階段 ID 或實體 ID 搜尋",
       empty: {
         title: "此檢視沒有符合的圖片",
-        description: "請嘗試其他篩選條件或搜尋詞。圖片庫只會顯示已儲存在應用程式本機儲存空間中的圖片。",
+        description:
+          "請嘗試其他篩選條件或搜尋詞。圖片庫只會顯示已儲存在應用程式本機儲存空間中的圖片。",
       },
       actions: {
         sort: "排序",
@@ -2401,7 +2461,8 @@ export const zhHantMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "要刪除圖片嗎？",
-        message: "確定要刪除 \"{{filename}}\" 嗎？這可能會讓仍在使用它的頭像、聊天背景或訊息附件失效。",
+        message:
+          '確定要刪除 "{{filename}}" 嗎？這可能會讓仍在使用它的頭像、聊天背景或訊息附件失效。',
       },
     },
     deleteConfirm: {

@@ -22,6 +22,7 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Dateien konvertieren",
       usageAnalytics: "Nutzungsanalysen",
       changelog: "Änderungsprotokoll",
+      about: "Info",
       createSystemPrompt: "System-Prompt erstellen",
       editSystemPrompt: "System-Prompt bearbeiten",
       systemPrompts: "System-Prompts",
@@ -58,6 +59,7 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Embedding-Download",
       embeddingTest: "Embedding-Test",
       editModel: "Modell bearbeiten",
+      messageDebug: "Nachrichten-Debug",
     },
     bottomNav: {
       chats: "Chats",
@@ -166,6 +168,7 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Dokumentation", subtitle: "Anleitungen & Referenz" },
       github: { title: "Probleme melden", subtitle: "Fehler & Feedback • v{{version}}" },
       discord: { title: "Discord beitreten", subtitle: "Community & Hilfe" },
+      about: { title: "Info", subtitle: "Version, Updates & Links" },
       changelog: { title: "Änderungsprotokoll", subtitle: "Was ist neu" },
       reset: { title: "Zurücksetzen", subtitle: "Alles löschen" },
       developer: { title: "Entwickler-Tools", subtitle: "Debug & Tests" },
@@ -226,6 +229,65 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Speichern",
   },
 
+  updates: {
+    available: {
+      title: "Neue Version verfügbar",
+      description: "v{{latestVersion}} ist verfügbar. Du verwendest v{{currentVersion}}.",
+      actions: {
+        view: "Release ansehen",
+      },
+    },
+  },
+
+  about: {
+    kicker: "App-Info",
+    appName: "LettuceAI",
+    description: "Versionsdetails, Update-Prüfungen und nützliche Links.",
+    info: {
+      version: "Version",
+      channel: "Kanal",
+      platform: "Plattform",
+    },
+    buildChannel: {
+      dev: "Entwicklungs-Build",
+      release: "Stabile Version",
+    },
+    update: {
+      sectionTitle: "Updates",
+      title: "App-Updates",
+      description:
+        "Suche manuell nach neuen Versionen oder deaktiviere automatische Prüfungen beim Start.",
+      autoChecks: "Automatische Update-Prüfungen",
+      autoChecksDescription:
+        "Wenn aktiviert, sucht LettuceAI beim Öffnen der App nach neuen Versionen.",
+      checkNow: "Nach Updates suchen",
+      checking: "Suche nach Updates...",
+      upToDateTitle: "Du bist auf dem neuesten Stand",
+      upToDateDescription: "Derzeit ist keine neuere Version für dieses Gerät verfügbar.",
+      failedTitle: "Update-Prüfung fehlgeschlagen",
+      failedDescription:
+        "Updates konnten gerade nicht geprüft werden. Versuche es gleich noch einmal.",
+    },
+    links: {
+      sectionTitle: "Links",
+      website: "Website",
+      websiteDescription: "Download-Seite und Release-Informationen",
+      github: "GitHub",
+      githubDescription: "Quellcode, Issues und Entwicklung",
+      discord: "Discord",
+      discordDescription: "Community-Server und Hilfe",
+      reddit: "Reddit",
+      redditDescription: "Community-Diskussionen, Feedback und Updates",
+    },
+    developerMode: {
+      enable: "Entwicklermodus aktivieren",
+      enabled: "Entwicklermodus aktiviert",
+    },
+    errors: {
+      saveTitle: "Einstellung konnte nicht gespeichert werden",
+      saveDescription: "Deine Einstellung zur Update-Prüfung wurde nicht geändert.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Tippe irgendwo zum Schließen",
@@ -266,9 +328,11 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       nextVariant: "Nächste Variante",
       variantCounter: "{{current}} / {{total}}",
       editRequest: "Anfrage bearbeiten",
-      editRequestPlaceholder: "Machen Sie die Haare dunkler, fügen Sie eine Brille hinzu, behalten Sie das gleiche Gesicht ...",
+      editRequestPlaceholder:
+        "Machen Sie die Haare dunkler, fügen Sie eine Brille hinzu, behalten Sie das gleiche Gesicht ...",
       applyEdit: "Bearbeiten anwenden",
-      editImageLoadError: "Der generierte Avatar konnte nicht für die Bearbeitung vorbereitet werden",
+      editImageLoadError:
+        "Der generierte Avatar konnte nicht für die Bearbeitung vorbereitet werden",
       aiAssistant: "KI-Assistent",
       backToResults: "Zurück zur Eingabeaufforderung",
       magicInTheWorks: "Magie in Arbeit...",
@@ -543,9 +607,11 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       modeDescription:
         "Wählen Sie, ob Sie die Szenenaufforderung selbst schreiben oder sie zuerst von der KI entwerfen lassen möchten.",
       writePrompt: "Eingabeaufforderung schreiben",
-      writePromptDesc: "Geben Sie die genaue Szenenbildaufforderung ein, die Sie verwenden möchten.",
+      writePromptDesc:
+        "Geben Sie die genaue Szenenbildaufforderung ein, die Sie verwenden möchten.",
       askAi: "Fragen Sie die KI",
-      askAiDesc: "Lassen Sie das aktuelle Chat-Modell ab dem ausgewählten Moment eine Szenenaufforderung entwerfen.",
+      askAiDesc:
+        "Lassen Sie das aktuelle Chat-Modell ab dem ausgewählten Moment eine Szenenaufforderung entwerfen.",
       generateTitle: "Szenenbild generieren",
       regenerateTitle: "Szenenbild neu generieren",
       aiTitle: "AI-Szenen-Eingabeaufforderung",
@@ -699,6 +765,7 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Szenenbild neu generieren",
       chatAppearance: "Chat-Darstellung",
       delete: "Löschen",
+      debug: "Debug",
       unpinToDelete: "Loslösen zum Löschen",
       editPlaceholder: "Nachricht bearbeiten...",
       memoriesUsed: "{{count}} Erinnerungen verwendet",
@@ -989,7 +1056,8 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Mindestens 2 Charaktere erforderlich",
       removeCharacter: "Charakter entfernen",
       groupMinCharacters: "Eine Gruppe benötigt mindestens 2 Charaktere",
-      mutedCharactersNote: "Stummgeschaltete Charaktere werden bei der automatischen Sprecherauswahl übersprungen, können aber über explizite `@Erwähnung` antworten.",
+      mutedCharactersNote:
+        "Stummgeschaltete Charaktere werden bei der automatischen Sprecherauswahl übersprungen, können aber über explizite `@Erwähnung` antworten.",
       addCharacterTitle: "Charakter hinzufügen",
       allCharactersInGroup: "Alle Charaktere sind bereits in dieser Gruppe.",
       removeCharacterTitle: "Charakter entfernen?",
@@ -1032,7 +1100,8 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Mindestens 2 Charaktere erforderlich",
       removeCharacter: "Charakter entfernen",
       groupMinCharacters: "Ein Gruppenchat benötigt mindestens 2 Charaktere",
-      mutedCharactersNote: "Stummgeschaltete Charaktere werden bei der automatischen Sprecherauswahl übersprungen, können aber über explizite `@Erwähnung` antworten.",
+      mutedCharactersNote:
+        "Stummgeschaltete Charaktere werden bei der automatischen Sprecherauswahl übersprungen, können aber über explizite `@Erwähnung` antworten.",
       data: "Daten",
       dataSubtitle: "Gespräche exportieren oder importieren",
       export: "Exportieren",
@@ -1060,7 +1129,8 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "Ohne Nachrichten",
       withoutMessagesDesc: "Nur Einstellungen klonen (Charaktere, Startszene)",
       branchWithCharacterTitle: "Mit Charakter verzweigen",
-      branchWithCharacterDesc: "Wähle einen Charakter, um als 1-zu-1-Gespräch fortzufahren. Alle Nachrichten aus dieser Gruppe werden konvertiert.",
+      branchWithCharacterDesc:
+        "Wähle einen Charakter, um als 1-zu-1-Gespräch fortzufahren. Alle Nachrichten aus dieser Gruppe werden konvertiert.",
       continueWith: "Gespräch mit {{name}} fortsetzen",
       exportChatPackageTitle: "Chatpaket exportieren",
       includeCharacterSnapshots: "Charakter-Snapshots einschließen",
@@ -1467,7 +1537,8 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "Gib deiner Persona einen beschreibenden Namen",
       nicknameLabel: "SPITZNAME (OPTIONAL)",
       nicknamePlaceholder: "z. B. Arbeitsvariante, RPG-Modus...",
-      nicknameHint: "Ein privater Spitzname, um Varianten dieser Persona in Ihrer Bibliothek zu unterscheiden",
+      nicknameHint:
+        "Ein privater Spitzname, um Varianten dieser Persona in Ihrer Bibliothek zu unterscheiden",
       descriptionLabel: "BESCHREIBUNG",
       descriptionPlaceholder:
         "Beschreibe, wie die KI dich ansprechen soll, deine Vorlieben, Hintergrund oder Kommunikationsstil...",
@@ -1864,7 +1935,9 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Modelle suchen...",
       selectAvatarModel: "Wählen Sie Avatar-Modell aus",
       selectSceneModel: "Wählen Sie Szenenmodell aus",
+      selectWriterModel: "Szenenautor-Modell auswählen",
       useFirstAvailable: "Verwenden Sie das erste verfügbare Modell",
+      useFirstCompatible: "Erstes kompatibles Autorenmodell verwenden",
     },
     mode: {
       title: "Modus",
@@ -1894,6 +1967,11 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Szenengenerierung",
         description:
           "Reserviertes Modell für Szenenbilder, die aus Gesprächskontext oder Szenenaufforderungen generiert werden.",
+      },
+      writer: {
+        title: "Szenenautor",
+        description:
+          "Reserviertes multimodales Textmodell zum Entwerfen von Szenen-Prompts und Design-Referenzbeschreibungen aus Chat-Kontext, Avataren und Referenzbildern.",
       },
     },
   },
@@ -2446,7 +2524,8 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Nach Dateiname, Pfad, Sitzungs-ID oder Entitäts-ID suchen",
       empty: {
         title: "Keine Bilder für diese Ansicht gefunden",
-        description: "Versuche einen anderen Filter oder Suchbegriff. Die Bibliothek zeigt nur Bilder, die bereits im lokalen Speicher der App liegen.",
+        description:
+          "Versuche einen anderen Filter oder Suchbegriff. Die Bibliothek zeigt nur Bilder, die bereits im lokalen Speicher der App liegen.",
       },
       actions: {
         sort: "Sortieren",
@@ -2469,7 +2548,8 @@ export const deMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Bild löschen?",
-        message: "Möchtest du \"{{filename}}\" wirklich löschen? Dadurch können Avatare, Chat-Hintergründe oder Nachrichtenanhänge kaputtgehen, die es noch verwenden.",
+        message:
+          'Möchtest du "{{filename}}" wirklich löschen? Dadurch können Avatare, Chat-Hintergründe oder Nachrichtenanhänge kaputtgehen, die es noch verwenden.',
       },
     },
     deleteConfirm: {

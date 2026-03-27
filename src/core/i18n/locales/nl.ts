@@ -22,6 +22,7 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Bestanden converteren",
       usageAnalytics: "Gebruiksanalyse",
       changelog: "Wijzigingslogboek",
+      about: "Over",
       createSystemPrompt: "Systeemprompt aanmaken",
       editSystemPrompt: "Systeemprompt bewerken",
       systemPrompts: "Systeemprompts",
@@ -58,6 +59,7 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Embedding downloaden",
       embeddingTest: "Embedding testen",
       editModel: "Model bewerken",
+      messageDebug: "Berichtdebug",
     },
     bottomNav: {
       chats: "Chats",
@@ -163,6 +165,7 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Documentatie", subtitle: "Handleidingen & referentie" },
       github: { title: "Problemen melden", subtitle: "Bugs & feedback • v{{version}}" },
       discord: { title: "Discord betreden", subtitle: "Community & hulp" },
+      about: { title: "Over", subtitle: "Versie, updates en links" },
       changelog: { title: "Wijzigingslogboek", subtitle: "Wat is er nieuw" },
       reset: { title: "Resetten", subtitle: "Alles wissen" },
       developer: { title: "Ontwikkelaarstools", subtitle: "Debug & testen" },
@@ -222,6 +225,65 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Opslaan",
   },
 
+  updates: {
+    available: {
+      title: "Nieuwe versie beschikbaar",
+      description: "v{{latestVersion}} is beschikbaar. Je gebruikt v{{currentVersion}}.",
+      actions: {
+        view: "Release bekijken",
+      },
+    },
+  },
+
+  about: {
+    kicker: "App-info",
+    appName: "LettuceAI",
+    description: "Versiedetails, updatecontroles en handige links.",
+    info: {
+      version: "Versie",
+      channel: "Kanaal",
+      platform: "Platform",
+    },
+    buildChannel: {
+      dev: "Ontwikkelbuild",
+      release: "Stabiele release",
+    },
+    update: {
+      sectionTitle: "Updates",
+      title: "App-updates",
+      description:
+        "Controleer handmatig op nieuwe releases of schakel automatische controles bij het opstarten uit.",
+      autoChecks: "Automatische updatecontroles",
+      autoChecksDescription:
+        "Wanneer ingeschakeld controleert LettuceAI op nieuwe versies wanneer de app wordt geopend.",
+      checkNow: "Controleren op updates",
+      checking: "Controleren op updates...",
+      upToDateTitle: "Je bent up-to-date",
+      upToDateDescription:
+        "Er is op dit moment geen nieuwere release beschikbaar voor dit apparaat.",
+      failedTitle: "Updatecontrole mislukt",
+      failedDescription: "Kon nu niet op updates controleren. Probeer het zo opnieuw.",
+    },
+    links: {
+      sectionTitle: "Links",
+      website: "Website",
+      websiteDescription: "Downloadpagina en release-informatie",
+      github: "GitHub",
+      githubDescription: "Broncode, issues en ontwikkeling",
+      discord: "Discord",
+      discordDescription: "Communityserver en ondersteuning",
+      reddit: "Reddit",
+      redditDescription: "Communitydiscussies, feedback en updates",
+    },
+    developerMode: {
+      enable: "Ontwikkelaarsmodus inschakelen",
+      enabled: "Ontwikkelaarsmodus ingeschakeld",
+    },
+    errors: {
+      saveTitle: "Voorkeur kon niet worden opgeslagen",
+      saveDescription: "Je voorkeur voor updatecontrole is niet gewijzigd.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Tik ergens om te sluiten",
@@ -261,7 +323,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       nextVariant: "Volgende variant",
       variantCounter: "{{current}} / {{total}}",
       editRequest: "Verzoek bewerken",
-      editRequestPlaceholder: "Maak het haar donkerder, voeg een bril toe, houd het gezicht hetzelfde...",
+      editRequestPlaceholder:
+        "Maak het haar donkerder, voeg een bril toe, houd het gezicht hetzelfde...",
       applyEdit: "Toepassen Bewerken",
       editImageLoadError: "Kan de gegenereerde avatar niet voorbereiden voor bewerking",
       aiAssistant: "AI-assistent",
@@ -540,7 +603,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       writePrompt: "Schrijf prompt",
       writePromptDesc: "Typ de exacte scènebeeldprompt die u wilt gebruiken.",
       askAi: "Vraag het AI",
-      askAiDesc: "Laat het huidige chatmodel een scèneprompt opstellen vanaf het geselecteerde moment.",
+      askAiDesc:
+        "Laat het huidige chatmodel een scèneprompt opstellen vanaf het geselecteerde moment.",
       generateTitle: "Genereer een scèneafbeelding",
       regenerateTitle: "Scèneafbeelding opnieuw genereren",
       aiTitle: "AI-scèneprompt",
@@ -694,6 +758,7 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Scènebeeld opnieuw genereren",
       chatAppearance: "Chatuiterlijk",
       delete: "Verwijderen",
+      debug: "Debug",
       unpinToDelete: "Losmaken om te verwijderen",
       editPlaceholder: "Bewerk je bericht...",
       memoriesUsed: "{{count}} herinneringen gebruikt",
@@ -984,7 +1049,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Minimaal 2 personages vereist",
       removeCharacter: "Personage verwijderen",
       groupMinCharacters: "Een groep vereist minimaal 2 personages",
-      mutedCharactersNote: "Gedempte personages worden overgeslagen bij automatische sprekerselectie, maar kunnen nog steeds reageren via een expliciete `@vermelding`.",
+      mutedCharactersNote:
+        "Gedempte personages worden overgeslagen bij automatische sprekerselectie, maar kunnen nog steeds reageren via een expliciete `@vermelding`.",
       addCharacterTitle: "Personage toevoegen",
       allCharactersInGroup: "Alle personages zijn al in deze groep.",
       removeCharacterTitle: "Personage verwijderen?",
@@ -1027,7 +1093,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Minimaal 2 personages vereist",
       removeCharacter: "Personage verwijderen",
       groupMinCharacters: "Een groepschat vereist minimaal 2 personages",
-      mutedCharactersNote: "Gedempte personages worden overgeslagen bij automatische sprekerselectie, maar kunnen nog steeds reageren via een expliciete `@vermelding`.",
+      mutedCharactersNote:
+        "Gedempte personages worden overgeslagen bij automatische sprekerselectie, maar kunnen nog steeds reageren via een expliciete `@vermelding`.",
       data: "Gegevens",
       dataSubtitle: "Gesprekken exporteren of importeren",
       export: "Exporteren",
@@ -1055,7 +1122,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "Zonder berichten",
       withoutMessagesDesc: "Alleen instellingen klonen (personages, startscène)",
       branchWithCharacterTitle: "Vertakken met personage",
-      branchWithCharacterDesc: "Selecteer een personage om door te gaan als 1-op-1 gesprek. Alle berichten uit deze groep worden geconverteerd.",
+      branchWithCharacterDesc:
+        "Selecteer een personage om door te gaan als 1-op-1 gesprek. Alle berichten uit deze groep worden geconverteerd.",
       continueWith: "Gesprek voortzetten met {{name}}",
       exportChatPackageTitle: "Chatpakket exporteren",
       includeCharacterSnapshots: "Personage-snapshots opnemen",
@@ -1067,7 +1135,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       selectCharacterPlaceholder: "Personage selecteren...",
       continue: "Doorgaan",
       importChatPackageTitle: "Chatpakket importeren",
-      importChatPackageDesc: "Dit importeert het geselecteerde `.chatpkg` als een nieuwe groepssessie.",
+      importChatPackageDesc:
+        "Dit importeert het geselecteerde `.chatpkg` als een nieuwe groepssessie.",
       importing: "Importeren...",
     },
   },
@@ -1458,7 +1527,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "Geef je persona een beschrijvende naam",
       nicknameLabel: "BIJNAAM (OPTIONEEL)",
       nicknamePlaceholder: "bijv. Werkvariant, RPG-modus...",
-      nicknameHint: "Een privébynaam om varianten van deze persona in je bibliotheek te onderscheiden",
+      nicknameHint:
+        "Een privébynaam om varianten van deze persona in je bibliotheek te onderscheiden",
       descriptionLabel: "BESCHRIJVING",
       descriptionPlaceholder:
         "Beschrijf hoe de AI je moet aanspreken, je voorkeuren, achtergrond of communicatiestijl...",
@@ -1851,14 +1921,15 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Modellen zoeken...",
       selectAvatarModel: "Selecteer Avatarmodel",
       selectSceneModel: "Selecteer Scènemodel",
+      selectWriterModel: "Selecteer model voor scèneschrijver",
       useFirstAvailable: "Gebruik het eerst beschikbare model",
+      useFirstCompatible: "Gebruik het eerste compatibele schrijversmodel",
     },
     mode: {
       title: "Gedrag",
       description: "Bepaal hoe scèneprompts uit de modeluitvoer moeten worden verwerkt.",
       auto: "Automatisch",
-      autoDescription:
-        "Genereer direct een scèneafbeelding zodra het model een scèneprompt geeft.",
+      autoDescription: "Genereer direct een scèneafbeelding zodra het model een scèneprompt geeft.",
       askFirst: "Eerst vragen",
       askFirstDescription:
         "Toon de gedetecteerde scèneprompt en wacht op jouw goedkeuring voordat er een afbeelding wordt gemaakt.",
@@ -1881,6 +1952,11 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Scène genereren",
         description:
           "Gereserveerd model voor scènebeelden gegenereerd op basis van gesprekscontext of scène-aanwijzingen.",
+      },
+      writer: {
+        title: "Scèneschrijver",
+        description:
+          "Gereserveerd multimodaal tekstmodel voor het opstellen van scèneprompts en beschrijvingen van ontwerpreferenties op basis van chatcontext, avatars en referentieafbeeldingen.",
       },
     },
   },
@@ -1924,7 +2000,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "Crash-app nu",
-      forceCrashDesc: "Beëindigt onmiddellijk het systeemeigen app-proces om crashdetectie te testen",
+      forceCrashDesc:
+        "Beëindigt onmiddellijk het systeemeigen app-proces om crashdetectie te testen",
       forceCrashConfirm:
         "Hierdoor crasht de app onmiddellijk om de crashdetector te testen. Doorgaan?",
     },
@@ -2433,7 +2510,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchPlaceholder: "Zoek op bestandsnaam, pad, sessie-id of entiteits-id",
       empty: {
         title: "Geen afbeeldingen voor deze weergave",
-        description: "Probeer een ander filter of zoekwoord. De bibliotheek toont alleen afbeeldingen die al in de lokale opslag van de app staan.",
+        description:
+          "Probeer een ander filter of zoekwoord. De bibliotheek toont alleen afbeeldingen die al in de lokale opslag van de app staan.",
       },
       actions: {
         sort: "Sorteren",
@@ -2456,7 +2534,8 @@ export const nlMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Afbeelding verwijderen?",
-        message: "Weet je zeker dat je \"{{filename}}\" wilt verwijderen? Hierdoor kunnen avatars, chatachtergronden of berichtbijlagen die dit nog gebruiken kapotgaan.",
+        message:
+          'Weet je zeker dat je "{{filename}}" wilt verwijderen? Hierdoor kunnen avatars, chatachtergronden of berichtbijlagen die dit nog gebruiken kapotgaan.',
       },
     },
     deleteConfirm: {

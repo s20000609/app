@@ -22,6 +22,7 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       convertFiles: "Μετατροπή Αρχείων",
       usageAnalytics: "Αναλυτικά Χρήσης",
       changelog: "Ιστορικό Αλλαγών",
+      about: "Σχετικά",
       createSystemPrompt: "Δημιουργία Προτροπής Συστήματος",
       editSystemPrompt: "Επεξεργασία Προτροπής Συστήματος",
       systemPrompts: "Προτροπές Συστήματος",
@@ -58,6 +59,7 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       embeddingDownload: "Λήψη Embedding",
       embeddingTest: "Δοκιμή Embedding",
       editModel: "Επεξεργασία Μοντέλου",
+      messageDebug: "Αποσφαλμάτωση Μηνυμάτων",
     },
     bottomNav: {
       chats: "Συνομιλίες",
@@ -145,7 +147,10 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
     items: {
       providers: { title: "Πάροχοι", subtitle: "Σύνδεση σε υπηρεσίες AI" },
       models: { title: "Μοντέλα", subtitle: "Ρύθμιση μοντέλων AI" },
-      imageGeneration: { title: "Δημιουργία εικόνων", subtitle: "Δημιουργήστε και δοκιμάστε εικόνες" },
+      imageGeneration: {
+        title: "Δημιουργία εικόνων",
+        subtitle: "Δημιουργήστε και δοκιμάστε εικόνες",
+      },
       voices: { title: "Φωνές", subtitle: "Φωνές μετατροπής κειμένου σε ομιλία" },
       accessibility: { title: "Προσβασιμότητα", subtitle: "Ηχητικά σήματα & απτική ανάδραση" },
       prompts: { title: "Προτροπές Συστήματος", subtitle: "Διαμόρφωση προσωπικότητας AI" },
@@ -160,6 +165,7 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       docs: { title: "Τεκμηρίωση", subtitle: "Οδηγοί & αναφορά" },
       github: { title: "Αναφορά Προβλημάτων", subtitle: "Σφάλματα & σχόλια • v{{version}}" },
       discord: { title: "Discord", subtitle: "Κοινότητα & βοήθεια" },
+      about: { title: "Σχετικά", subtitle: "Έκδοση, ενημερώσεις και σύνδεσμοι" },
       changelog: { title: "Ιστορικό Αλλαγών", subtitle: "Τι νέο υπάρχει" },
       reset: { title: "Επαναφορά", subtitle: "Διαγραφή όλων" },
       developer: { title: "Εργαλεία Προγραμματιστή", subtitle: "Εντοπισμός σφαλμάτων & δοκιμές" },
@@ -219,6 +225,66 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
     save: "Αποθήκευση",
   },
 
+  updates: {
+    available: {
+      title: "Νέα έκδοση διαθέσιμη",
+      description: "Η v{{latestVersion}} είναι διαθέσιμη. Χρησιμοποιείτε την v{{currentVersion}}.",
+      actions: {
+        view: "Προβολή έκδοσης",
+      },
+    },
+  },
+
+  about: {
+    kicker: "Πληροφορίες Εφαρμογής",
+    appName: "LettuceAI",
+    description: "Λεπτομέρειες έκδοσης, έλεγχοι ενημερώσεων και χρήσιμοι σύνδεσμοι.",
+    info: {
+      version: "Έκδοση",
+      channel: "Κανάλι",
+      platform: "Πλατφόρμα",
+    },
+    buildChannel: {
+      dev: "Έκδοση ανάπτυξης",
+      release: "Σταθερή έκδοση",
+    },
+    update: {
+      sectionTitle: "Ενημερώσεις",
+      title: "Ενημερώσεις εφαρμογής",
+      description:
+        "Ελέγξτε χειροκίνητα για νέες εκδόσεις ή απενεργοποιήστε τους αυτόματους ελέγχους κατά την εκκίνηση.",
+      autoChecks: "Αυτόματοι έλεγχοι ενημερώσεων",
+      autoChecksDescription:
+        "Όταν είναι ενεργό, το LettuceAI ελέγχει για νέες εκδόσεις όταν ανοίγει η εφαρμογή.",
+      checkNow: "Έλεγχος για ενημερώσεις",
+      checking: "Έλεγχος για ενημερώσεις...",
+      upToDateTitle: "Είστε ενημερωμένοι",
+      upToDateDescription:
+        "Δεν υπάρχει νεότερη έκδοση διαθέσιμη για αυτήν τη συσκευή αυτή τη στιγμή.",
+      failedTitle: "Ο έλεγχος ενημερώσεων απέτυχε",
+      failedDescription:
+        "Δεν ήταν δυνατός ο έλεγχος για ενημερώσεις αυτή τη στιγμή. Δοκιμάστε ξανά σε λίγο.",
+    },
+    links: {
+      sectionTitle: "Σύνδεσμοι",
+      website: "Ιστότοπος",
+      websiteDescription: "Σελίδα λήψης και πληροφορίες έκδοσης",
+      github: "GitHub",
+      githubDescription: "Πηγαίος κώδικας, ζητήματα και ανάπτυξη",
+      discord: "Discord",
+      discordDescription: "Διακομιστής κοινότητας και υποστήριξη",
+      reddit: "Reddit",
+      redditDescription: "Συζητήσεις κοινότητας, σχόλια και ενημερώσεις",
+    },
+    developerMode: {
+      enable: "Ενεργοποίηση Λειτουργίας Προγραμματιστή",
+      enabled: "Η Λειτουργία Προγραμματιστή Ενεργοποιήθηκε",
+    },
+    errors: {
+      saveTitle: "Δεν ήταν δυνατή η αποθήκευση της προτίμησης",
+      saveDescription: "Η προτίμησή σας για τον έλεγχο ενημερώσεων δεν άλλαξε.",
+    },
+  },
   components: {
     tooltip: {
       dismissHint: "Πατήστε οπουδήποτε για απόρριψη",
@@ -258,7 +324,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       nextVariant: "Επόμενη παραλλαγή",
       variantCounter: "{{current}} / {{total}}",
       editRequest: "Επεξεργασία αιτήματος",
-      editRequestPlaceholder: "Κάντε τα μαλλιά πιο σκούρα, προσθέστε γυαλιά, διατηρήστε το πρόσωπο ίδιο...",
+      editRequestPlaceholder:
+        "Κάντε τα μαλλιά πιο σκούρα, προσθέστε γυαλιά, διατηρήστε το πρόσωπο ίδιο...",
       applyEdit: "Εφαρμογή Επεξεργασίας",
       editImageLoadError: "Αποτυχία προετοιμασίας του avatar που δημιουργήθηκε για επεξεργασία",
       aiAssistant: "Βοηθός AI",
@@ -535,9 +602,11 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       modeDescription:
         "Επιλέξτε εάν θα γράψετε μόνοι σας το μήνυμα της σκηνής ή θα αφήσετε το AI να το σχεδιάσει πρώτα.",
       writePrompt: "Προτροπή εγγραφής",
-      writePromptDesc: "Πληκτρολογήστε το ακριβές μήνυμα εικόνας σκηνής που θέλετε να χρησιμοποιήσετε.",
+      writePromptDesc:
+        "Πληκτρολογήστε το ακριβές μήνυμα εικόνας σκηνής που θέλετε να χρησιμοποιήσετε.",
       askAi: "Ρωτήστε το AI",
-      askAiDesc: "Αφήστε το τρέχον μοντέλο συνομιλίας να σχεδιάσει μια προτροπή σκηνής από την επιλεγμένη στιγμή.",
+      askAiDesc:
+        "Αφήστε το τρέχον μοντέλο συνομιλίας να σχεδιάσει μια προτροπή σκηνής από την επιλεγμένη στιγμή.",
       generateTitle: "Δημιουργία εικόνας σκηνής",
       regenerateTitle: "Αναγέννηση εικόνας σκηνής",
       aiTitle: "Προτροπή σκηνής AI",
@@ -691,6 +760,7 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       regenerateSceneImage: "Αναγέννηση εικόνας σκηνής",
       chatAppearance: "Εμφάνιση Συνομιλίας",
       delete: "Διαγραφή",
+      debug: "Αποσφαλμάτωση",
       unpinToDelete: "Ξεκαρφιτσώστε για διαγραφή",
       editPlaceholder: "Επεξεργαστείτε το μήνυμά σας...",
       memoriesUsed: "{{count}} αναμνήσεις χρησιμοποιήθηκαν",
@@ -982,7 +1052,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Απαιτούνται τουλάχιστον 2 χαρακτήρες",
       removeCharacter: "Αφαίρεση χαρακτήρα",
       groupMinCharacters: "Μια ομάδα απαιτεί τουλάχιστον 2 χαρακτήρες",
-      mutedCharactersNote: "Οι χαρακτήρες σε σίγαση παραλείπονται από την αυτόματη επιλογή ομιλητή, αλλά μπορούν ακόμα να απαντήσουν μέσω ρητής `@αναφοράς`.",
+      mutedCharactersNote:
+        "Οι χαρακτήρες σε σίγαση παραλείπονται από την αυτόματη επιλογή ομιλητή, αλλά μπορούν ακόμα να απαντήσουν μέσω ρητής `@αναφοράς`.",
       addCharacterTitle: "Προσθήκη χαρακτήρα",
       allCharactersInGroup: "Όλοι οι χαρακτήρες είναι ήδη σε αυτήν την ομάδα.",
       removeCharacterTitle: "Αφαίρεση χαρακτήρα;",
@@ -1025,7 +1096,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       minTwoRequired: "Απαιτούνται τουλάχιστον 2 χαρακτήρες",
       removeCharacter: "Αφαίρεση χαρακτήρα",
       groupMinCharacters: "Μια ομαδική συνομιλία απαιτεί τουλάχιστον 2 χαρακτήρες",
-      mutedCharactersNote: "Οι χαρακτήρες σε σίγαση παραλείπονται από την αυτόματη επιλογή ομιλητή, αλλά μπορούν ακόμα να απαντήσουν μέσω ρητής `@αναφοράς`.",
+      mutedCharactersNote:
+        "Οι χαρακτήρες σε σίγαση παραλείπονται από την αυτόματη επιλογή ομιλητή, αλλά μπορούν ακόμα να απαντήσουν μέσω ρητής `@αναφοράς`.",
       data: "Δεδομένα",
       dataSubtitle: "Εξαγωγή ή εισαγωγή συνομιλιών",
       export: "Εξαγωγή",
@@ -1053,7 +1125,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       withoutMessages: "Χωρίς μηνύματα",
       withoutMessagesDesc: "Κλωνοποίηση μόνο ρυθμίσεων (χαρακτήρες, αρχική σκηνή)",
       branchWithCharacterTitle: "Διακλάδωση με χαρακτήρα",
-      branchWithCharacterDesc: "Επιλέξτε χαρακτήρα για συνέχιση ως 1-προς-1 συνομιλία. Όλα τα μηνύματα αυτής της ομάδας θα μετατραπούν.",
+      branchWithCharacterDesc:
+        "Επιλέξτε χαρακτήρα για συνέχιση ως 1-προς-1 συνομιλία. Όλα τα μηνύματα αυτής της ομάδας θα μετατραπούν.",
       continueWith: "Συνέχιση συνομιλίας με {{name}}",
       exportChatPackageTitle: "Εξαγωγή πακέτου συνομιλίας",
       includeCharacterSnapshots: "Συμπερίληψη στιγμιοτύπων χαρακτήρων",
@@ -1459,7 +1532,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       nameHint: "Δώστε στην περσόνα σας ένα περιγραφικό όνομα",
       nicknameLabel: "ΨΕΥΔΩΝΥΜΟ (ΠΡΟΑΙΡΕΤΙΚΟ)",
       nicknamePlaceholder: "π.χ., Παραλλαγή Εργασίας, Λειτουργία RPG...",
-      nicknameHint: "Ένα ιδιωτικό ψευδώνυμο για τη διάκριση των παραλλαγών αυτής της περσόνας στη βιβλιοθήκη σας",
+      nicknameHint:
+        "Ένα ιδιωτικό ψευδώνυμο για τη διάκριση των παραλλαγών αυτής της περσόνας στη βιβλιοθήκη σας",
       descriptionLabel: "ΠΕΡΙΓΡΑΦΗ",
       descriptionPlaceholder:
         "Περιγράψτε πώς θα σας απευθύνεται η AI, τις προτιμήσεις σας, ιστορικό ή στυλ επικοινωνίας...",
@@ -1853,14 +1927,16 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       searchModels: "Αναζήτηση μοντέλων...",
       selectAvatarModel: "Επιλέξτε Μοντέλο Avatar",
       selectSceneModel: "Επιλέξτε Μοντέλο σκηνής",
+      selectWriterModel: "Επιλογή μοντέλου συγγραφέα σκηνών",
       useFirstAvailable: "Χρησιμοποιήστε το πρώτο διαθέσιμο μοντέλο",
+      useFirstCompatible: "Χρήση του πρώτου συμβατού μοντέλου συγγραφέα",
     },
     mode: {
       title: "Συμπεριφορά",
-      description: "Επιλέξτε πώς θα χειρίζονται τα prompts σκηνής που εντοπίζονται στην έξοδο του μοντέλου.",
+      description:
+        "Επιλέξτε πώς θα χειρίζονται τα prompts σκηνής που εντοπίζονται στην έξοδο του μοντέλου.",
       auto: "Αυτόματα",
-      autoDescription:
-        "Δημιούργησε αμέσως εικόνα σκηνής όταν το μοντέλο δώσει prompt σκηνής.",
+      autoDescription: "Δημιούργησε αμέσως εικόνα σκηνής όταν το μοντέλο δώσει prompt σκηνής.",
       askFirst: "Να ζητείται πρώτα",
       askFirstDescription:
         "Εμφάνισε το ανιχνευμένο prompt σκηνής και περίμενε την έγκρισή σου πριν δημιουργηθεί εικόνα.",
@@ -1882,6 +1958,11 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
         title: "Γενιά Σκηνής",
         description:
           "Δεσμευμένο μοντέλο για εικόνες σκηνής που δημιουργούνται από περιβάλλον συνομιλίας ή προτροπές σκηνής.",
+      },
+      writer: {
+        title: "Συγγραφέας σκηνών",
+        description:
+          "Δεσμευμένο πολυτροπικό μοντέλο κειμένου για σύνταξη προτροπών σκηνής και περιγραφών αναφοράς σχεδιασμού από το περιεχόμενο συνομιλίας, τα άβαταρ και τις εικόνες αναφοράς.",
       },
     },
   },
@@ -1925,7 +2006,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
     },
     crashTesting: {
       forceCrash: "Διακοπή εφαρμογής τώρα",
-      forceCrashDesc: "Τερματίζει αμέσως τη διαδικασία εγγενούς εφαρμογής για να δοκιμάσει τον εντοπισμό σφαλμάτων",
+      forceCrashDesc:
+        "Τερματίζει αμέσως τη διαδικασία εγγενούς εφαρμογής για να δοκιμάσει τον εντοπισμό σφαλμάτων",
       forceCrashConfirm:
         "Αυτό θα διακόψει αμέσως την εφαρμογή για να δοκιμάσει τον ανιχνευτή σύγκρουσης. Συνεχίζω;",
     },
@@ -2431,10 +2513,12 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
         attachments: "Συνημμένα",
         other: "Άλλα",
       },
-      searchPlaceholder: "Αναζήτηση με όνομα αρχείου, διαδρομή, αναγνωριστικό συνεδρίας ή οντότητας",
+      searchPlaceholder:
+        "Αναζήτηση με όνομα αρχείου, διαδρομή, αναγνωριστικό συνεδρίας ή οντότητας",
       empty: {
         title: "Δεν υπάρχουν εικόνες για αυτή την προβολή",
-        description: "Δοκίμασε άλλο φίλτρο ή όρο αναζήτησης. Η βιβλιοθήκη εμφανίζει μόνο εικόνες που είναι ήδη αποθηκευμένες τοπικά στην εφαρμογή.",
+        description:
+          "Δοκίμασε άλλο φίλτρο ή όρο αναζήτησης. Η βιβλιοθήκη εμφανίζει μόνο εικόνες που είναι ήδη αποθηκευμένες τοπικά στην εφαρμογή.",
       },
       actions: {
         sort: "Ταξινόμηση",
@@ -2457,7 +2541,8 @@ export const elMessages: DeepPartialMessageTree<LocaleMessages> = {
       },
       deleteConfirm: {
         title: "Διαγραφή εικόνας;",
-        message: "Θέλεις σίγουρα να διαγράψεις το \"{{filename}}\"; Αυτό μπορεί να χαλάσει άβαταρ, φόντα συνομιλίας ή συνημμένα μηνυμάτων που το χρησιμοποιούν ακόμη.",
+        message:
+          'Θέλεις σίγουρα να διαγράψεις το "{{filename}}"; Αυτό μπορεί να χαλάσει άβαταρ, φόντα συνομιλίας ή συνημμένα μηνυμάτων που το χρησιμοποιούν ακόμη.',
       },
     },
     deleteConfirm: {
