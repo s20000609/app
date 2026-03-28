@@ -5,6 +5,7 @@ use std::sync::RwLock;
 
 use super::legacy::storage_root;
 use crate::migrations;
+use crate::sync::db::LOCAL_SYNC_STATE_VERSION;
 use crate::utils::{log_info, log_warn, now_millis};
 
 pub fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -900,6 +901,26 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
         reset_sync_state = true;
     }
 
+    let sync_state_schema_version = conn
+        .query_row(
+            "SELECT value FROM sync_local_state WHERE key = 'sync_state_schema_version'",
+            [],
+            |row| row.get::<_, String>(0),
+        )
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok());
+    if sync_state_schema_version != Some(LOCAL_SYNC_STATE_VERSION) {
+        log_warn(
+            _app,
+            "db",
+            format!(
+                "Resetting sync state because local sync_state_schema_version is {:?} instead of {}",
+                sync_state_schema_version, LOCAL_SYNC_STATE_VERSION
+            ),
+        );
+        reset_sync_state = true;
+    }
+
     if reset_sync_state {
         conn.execute("DELETE FROM sync_changes", [])
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
@@ -908,6 +929,12 @@ pub fn init_db(_app: &tauri::AppHandle, conn: &Connection) -> Result<(), String>
         conn.execute("DELETE FROM sync_peer_cursors", [])
             .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
     }
+
+    conn.execute(
+        "INSERT OR REPLACE INTO sync_local_state (key, value) VALUES ('sync_state_schema_version', ?1)",
+        params![LOCAL_SYNC_STATE_VERSION.to_string()],
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
 
     // Migrations: add reasoning_tokens and image_tokens to usage_records if missing
     let mut stmt = conn
