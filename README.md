@@ -1,16 +1,20 @@
 <div align="center">
   <img src="https://github.com/LettuceAI/.github/blob/main/profile/LettuceAI-banner.png" alt="LettuceAI Banner" />
-  
+
+
+   
   # LettuceAI
   
-  **Official application repository for LettuceAI**
+  Privacy-first AI roleplay & storytelling app with long-term memory, custom characters, and 20+ providers. Runs on Android, Windows, macOS, and Linux.
   
   [Overview](#overview) • [Install](#install) • [Development](#development) • [Android](#android) • [iOS](#ios) • [Contributing](#contributing)
 </div>
 
 ## Overview
 
-This repository contains the LettuceAI application. LettuceAI is a privacy-first, cross‑platform roleplay and storytelling app built with Tauri v2, React, and TypeScript. It runs locally, keeps data on‑device, and lets users bring their own API keys and models.
+  LettuceAI is a free, open-source AI chat app built with Tauri v2, React, and TypeScript. It keeps all chats, characters, and API keys on your device — nothing is
+  sent to us. Bring your own keys from OpenAI, Anthropic, Google Gemini, DeepSeek, Mistral, Groq, or any of 20+ supported providers, or run local models with Ollama
+  and llama.cpp.
 
 ## Screenshots
 
