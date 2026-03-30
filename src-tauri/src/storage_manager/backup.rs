@@ -1531,6 +1531,37 @@ fn import_settings(app: &tauri::AppHandle, data: &JsonValue) -> Result<(), Strin
     Ok(())
 }
 
+fn disable_dynamic_memory_in_advanced_settings(settings: &mut serde_json::Value) {
+    let Some(obj) = settings.as_object_mut() else {
+        *settings = serde_json::json!({
+            "dynamicMemory": {
+                "enabled": false
+            }
+        });
+        return;
+    };
+
+    match obj.get_mut("dynamicMemory") {
+        Some(dynamic_memory) => {
+            if let Some(dynamic_obj) = dynamic_memory.as_object_mut() {
+                dynamic_obj.insert("enabled".to_string(), serde_json::Value::Bool(false));
+            } else {
+                *dynamic_memory = serde_json::json!({
+                    "enabled": false
+                });
+            }
+        }
+        None => {
+            obj.insert(
+                "dynamicMemory".to_string(),
+                serde_json::json!({
+                    "enabled": false
+                }),
+            );
+        }
+    }
+}
+
 fn import_provider_credentials(app: &tauri::AppHandle, data: &JsonValue) -> Result<(), String> {
     let conn = open_db(app)?;
     conn.execute("DELETE FROM provider_credentials", [])
@@ -3375,7 +3406,7 @@ fn copy_dir_all(src: &PathBuf, dst: &PathBuf) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::sanitize_media_archive_name;
+    use super::{disable_dynamic_memory_in_advanced_settings, sanitize_media_archive_name};
     use std::path::PathBuf;
 
     #[test]
@@ -3413,6 +3444,35 @@ mod tests {
         };
 
         assert!(super::require_encrypted_backup(&manifest).is_err());
+    }
+
+    #[test]
+    fn disable_dynamic_memory_preserves_imported_settings() {
+        let mut settings = serde_json::json!({
+            "dynamicMemory": {
+                "enabled": true,
+                "summaryMessageInterval": 42,
+                "maxEntries": 99,
+                "retrievalLimit": 7,
+                "contextEnrichmentEnabled": false
+            },
+            "groupDynamicMemory": {
+                "enabled": true,
+                "summaryMessageInterval": 11
+            }
+        });
+
+        disable_dynamic_memory_in_advanced_settings(&mut settings);
+
+        assert_eq!(
+            settings["dynamicMemory"]["enabled"],
+            serde_json::Value::Bool(false)
+        );
+        assert_eq!(settings["dynamicMemory"]["summaryMessageInterval"], 42);
+        assert_eq!(settings["dynamicMemory"]["maxEntries"], 99);
+        assert_eq!(settings["dynamicMemory"]["retrievalLimit"], 7);
+        assert_eq!(settings["dynamicMemory"]["contextEnrichmentEnabled"], false);
+        assert_eq!(settings["groupDynamicMemory"]["enabled"], true);
     }
 }
 
@@ -4638,26 +4698,16 @@ pub async fn backup_disable_dynamic_memory(app: tauri::AppHandle) -> Result<(), 
     };
 
     let mut settings = current_settings;
-    if let Some(obj) = settings.as_object_mut() {
-        // Always set dynamicMemory.enabled = false
-        obj.insert(
-            "dynamicMemory".to_string(),
-            serde_json::json!({
-                "enabled": false,
-                "summaryMessageInterval": 20,
-                "maxEntries": 50
-            }),
-        );
+    disable_dynamic_memory_in_advanced_settings(&mut settings);
 
-        let new_json = serde_json::to_string(&settings)
-            .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
-        conn.execute(
-            "UPDATE settings SET advanced_settings = ? WHERE id = 1",
-            [&new_json],
-        )
+    let new_json = serde_json::to_string(&settings)
         .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
-        log_info(&app, "backup", "Disabled dynamic memory in global settings");
-    }
+    conn.execute(
+        "UPDATE settings SET advanced_settings = ? WHERE id = 1",
+        [&new_json],
+    )
+    .map_err(|e| crate::utils::err_to_string(module_path!(), line!(), e))?;
+    log_info(&app, "backup", "Disabled dynamic memory in global settings");
 
     // Reload database to ensure frontend gets updated data
     super::db::reload_database(&app)?;
